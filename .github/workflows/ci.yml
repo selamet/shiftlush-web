@@ -24,6 +24,11 @@ jobs:
       - name: Every translation key exists
         run: npm run lint:i18n
 
+      # Runs after the checksum check above, so it reads the contract the
+      # backend actually published rather than a stale copy.
+      - name: Every API error code has a Turkish message
+        run: npm run lint:errors
+
       - name: Build
         run: npm run build
 
