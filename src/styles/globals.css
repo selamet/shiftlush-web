@@ -219,6 +219,18 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Tailwind v4 dropped the preflight rule that gave buttons a pointer cursor,
+     so without this every button, tab and select in the app shows an arrow and
+     reads as non-interactive. Disabled controls are excluded on purpose. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  select:not(:disabled),
+  summary,
+  label:has(input[type="checkbox"]:not(:disabled)),
+  label:has(input[type="radio"]:not(:disabled)) {
+    cursor: pointer;
+  }
+
   /* Every number that sits in a column must align on the decimal. */
   .tnum {
     font-variant-numeric: tabular-nums;

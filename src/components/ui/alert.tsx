@@ -26,16 +26,26 @@ const toneIcon: Record<Tone, React.ComponentType<{ className?: string }>> = {
 interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
   tone: Tone;
   title?: string;
+  /**
+   * Stretches to the container. Correct for form-level errors, where the block
+   * should line up with the fields it refers to.
+   *
+   * Off by default: a one-line notice stretched across a 1400px content area
+   * reads as a filled band rather than a deliberate marker, and the emphasis
+   * ends up coming from sheer area instead of from the design.
+   */
+  block?: boolean;
 }
 
-export function Alert({ tone, title, className, children, ...props }: AlertProps) {
+export function Alert({ tone, title, block, className, children, ...props }: AlertProps) {
   const Icon = toneIcon[tone];
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
       className={cn(
         // 3px left stripe: border weight is meaningful here, not decorative.
-        "flex items-start gap-2.5 rounded-md border-l-[3px] px-3 py-2.5 text-body",
+        "flex items-start gap-2.5 rounded-md border-l-[3px] py-2 pl-2.5 pr-3.5 text-body",
+        block ? "w-full" : "w-fit max-w-full",
         toneClass[tone],
         className,
       )}

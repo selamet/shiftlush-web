@@ -30,14 +30,37 @@ type Value = string | number | null | undefined;
  * and on a maintenance record "not measured" is itself information the
  * technician needs before going to site.
  */
-function FieldRow({ label, value }: { label: string; value: Value }) {
+function FieldRow({
+  label,
+  value,
+  to,
+  params,
+}: {
+  label: string;
+  value: Value;
+  /** Turns the value into a link. Used for the related-record rail. */
+  to?: string;
+  params?: Record<string, string>;
+}) {
   const empty = value == null || value === "";
+  const body = empty ? "—" : value;
+
   return (
     <div className="flex items-baseline justify-between gap-4 border-b border-border-subtle py-2 last:border-0">
-      <span className="text-help text-muted-foreground">{label}</span>
-      <span className={cn("text-cell text-right", empty && "text-subtle")}>
-        {empty ? "—" : value}
-      </span>
+      <span className="shrink-0 text-help text-muted-foreground">{label}</span>
+      {to && !empty ? (
+        <Link
+          to={to}
+          params={params}
+          className="min-w-0 text-right text-cell text-primary break-words hover:underline"
+        >
+          {body}
+        </Link>
+      ) : (
+        <span className={cn("min-w-0 text-right text-cell break-words", empty && "text-subtle")}>
+          {body}
+        </span>
+      )}
     </div>
   );
 }
@@ -80,11 +103,17 @@ export function ElevatorDetailScreen() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1.5">
           <nav className="flex flex-wrap items-center gap-1.5 text-help text-muted-foreground">
-            <span>{t("customer.title")}</span>
+            <Link to="/customers" className="hover:underline">
+              {t("customer.title")}
+            </Link>
             <ChevronRight className="size-3" aria-hidden="true" />
-            <span>{elevator.customer}</span>
+            <Link to="/customers/$id" params={{ id: "c1" }} className="hover:underline">
+              {elevator.customer}
+            </Link>
             <ChevronRight className="size-3" aria-hidden="true" />
-            <span>{elevator.building}</span>
+            <Link to="/buildings" className="hover:underline">
+              {elevator.building}
+            </Link>
             <ChevronRight className="size-3" aria-hidden="true" />
             <span className="text-foreground">{elevator.name}</span>
           </nav>
@@ -296,9 +325,14 @@ export function ElevatorDetailScreen() {
         <div className="flex flex-col gap-4">
           <RailCard title={t("detail.relatedRecords")}>
             <div className="flex flex-col">
-              <FieldRow label={t("building.singular")} value={elevator.building} />
-              <FieldRow label={t("complex.singular")} value={elevator.complex} />
-              <FieldRow label={t("customer.singular")} value={elevator.customer} />
+              <FieldRow label={t("building.singular")} value={elevator.building} to="/buildings" />
+              <FieldRow label={t("complex.singular")} value={elevator.complex} to="/complexes" />
+              <FieldRow
+                label={t("customer.singular")}
+                value={elevator.customer}
+                to="/customers/$id"
+                params={{ id: "c1" }}
+              />
               <FieldRow
                 label={t("address.fields.neighborhood")}
                 value={`${elevator.neighborhood} · ${elevator.district}`}
@@ -311,6 +345,8 @@ export function ElevatorDetailScreen() {
               <FieldRow
                 label={t("contract.fields.contractNumber")}
                 value={elevator.contract.contract_number}
+                to="/contracts/$id"
+                params={{ id: "k1" }}
               />
               <FieldRow
                 label={t("contract.fields.scope")}

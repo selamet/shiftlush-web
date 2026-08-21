@@ -78,7 +78,7 @@ export function ElevatorListScreen() {
           {/* A serious non-conformity at inspection, so it is surfaced in the
               row rather than buried among 31 record fields. */}
           {!row.has_car_door && (
-            <span className="inline-flex items-center gap-1 text-help text-warning">
+            <span className="inline-flex items-center gap-1 px-2 text-help text-warning">
               <TriangleAlert className="size-3 shrink-0" aria-hidden="true" />
               {t("elevator.hints.noCarDoorShort")}
             </span>

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, CircleAlert, Check } from "lucide-react";
+import buildings from "@fixtures/demo-buildings.json";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -72,7 +74,7 @@ function RecordStatusPanel({ onGoToError }: { onGoToError: () => void }) {
   const errorTabs = TABS.filter((tab) => tab.errors > 0);
 
   return (
-    <aside className="flex w-72 shrink-0 flex-col gap-5 border-l border-border-subtle bg-card p-5">
+    <aside className="flex w-72 shrink-0 flex-col gap-5 overflow-y-auto border-l border-border-subtle bg-card p-5">
       <div className="flex flex-col gap-2">
         <h2 className="text-cardtitle">{t("form.recordStatus")}</h2>
         <div className="flex items-baseline gap-1.5">
@@ -138,6 +140,7 @@ export function ElevatorFormScreen() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("identity");
   const [dirtyCount] = useState(4);
+  const [confirmingExit, setConfirmingExit] = useState(false);
 
   return (
     <div className="flex h-full flex-col">
@@ -190,9 +193,16 @@ export function ElevatorFormScreen() {
                 label={t("elevator.fields.building")}
                 htmlFor="ef-building"
                 required
-                className="sm:col-span-2"
               >
-                <Input defaultValue={elevator.building} />
+                <select
+                  id="ef-building"
+                  defaultValue={elevator.building}
+                  className="h-control-md w-full rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg"
+                >
+                  {buildings.map((building) => (
+                    <option key={building.id}>{building.name}</option>
+                  ))}
+                </select>
               </Field>
 
               <Field
@@ -264,7 +274,11 @@ export function ElevatorFormScreen() {
           </span>
         )}
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" size="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => (dirtyCount > 0 ? setConfirmingExit(true) : undefined)}
+          >
             {t("form.discard")}
           </Button>
           <Button variant="secondary" size="sm">
@@ -273,6 +287,22 @@ export function ElevatorFormScreen() {
           <Button size="sm">{t("form.saveAllTabs")}</Button>
         </div>
       </div>
+
+      {/* Leaving with unsaved edits is the one place this form can lose work,
+          so the dialog names what would be lost instead of asking in general. */}
+      <ConfirmDialog
+        open={confirmingExit}
+        weight="heavy"
+        title={t("form.unsavedChangesTitle")}
+        body={t("form.unsavedChangesBody", { count: dirtyCount })}
+        consequences={[
+          `${t("elevator.fields.maintenanceIntervalDays")}: 15 → 30`,
+          `${t("elevator.fields.stopCount")}: 8`,
+        ]}
+        confirmLabel={t("form.discardChanges")}
+        onConfirm={() => setConfirmingExit(false)}
+        onCancel={() => setConfirmingExit(false)}
+      />
     </div>
   );
 }

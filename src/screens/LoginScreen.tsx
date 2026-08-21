@@ -86,13 +86,13 @@ export function LoginScreen() {
         >
           <h1 className="text-title">{t("login.heading")}</h1>
 
-          {state === "invalid" && <Alert tone="error" title={t("login.invalidCredentials")} />}
+          {state === "invalid" && <Alert tone="error" block title={t("login.invalidCredentials")} />}
 
           {/* A lockout is the system protecting the account, not the user making
               a mistake — so it is warning-toned, and the way out (password
               reset) sits inside the same block rather than somewhere else. */}
           {state === "locked" && (
-            <Alert tone="warning" title={t("login.lockedTitle")}>
+            <Alert tone="warning" block title={t("login.lockedTitle")}>
               <p className="text-help">{t("login.lockedBody", { minutes: 15 })}</p>
               <a href="/password-reset" className="mt-1 inline-block text-help underline">
                 {t("auth.resetPassword")}

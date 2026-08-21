@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
 import { ChevronRight, FileText, Ban, RefreshCw, Lock } from "lucide-react";
 import contract from "@fixtures/demo-contract.json";
 import { cn } from "@/lib/utils";
@@ -50,7 +51,9 @@ export function ContractDetailScreen() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1.5">
           <nav className="flex items-center gap-1.5 text-help text-muted-foreground">
-            <span>{t("contract.title")}</span>
+            <Link to="/contracts" className="hover:underline">
+              {t("contract.title")}
+            </Link>
             <ChevronRight className="size-3" aria-hidden="true" />
             <span className="text-foreground font-mono">{contract.contract_number}</span>
           </nav>
@@ -79,7 +82,18 @@ export function ContractDetailScreen() {
         <div className="flex flex-col gap-4">
           <Card title={t("contract.singular")}>
             <div className="flex flex-col">
-              <Row label={t("contract.fields.customer")} value={contract.customer} />
+              <Row
+                label={t("contract.fields.customer")}
+                value={
+                  <Link
+                    to="/customers/$id"
+                    params={{ id: "c1" }}
+                    className="text-primary hover:underline"
+                  >
+                    {contract.customer}
+                  </Link>
+                }
+              />
               <Row
                 label={t("contract.fields.scope")}
                 value={enumLabel("contract.scope", contract.scope)}
@@ -139,7 +153,13 @@ export function ContractDetailScreen() {
                         className="h-control-md border-b border-border-subtle last:border-0"
                       >
                         <td className="px-2 font-mono tnum whitespace-nowrap">
-                          {elevator.registration_number}
+                          <Link
+                            to="/elevators/$id"
+                            params={{ id: "e1" }}
+                            className="text-primary hover:underline"
+                          >
+                            {elevator.registration_number}
+                          </Link>
                         </td>
                         <td className="px-2">
                           <div className="flex flex-col leading-tight">

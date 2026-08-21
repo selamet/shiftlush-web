@@ -125,7 +125,7 @@ export function QrLabelScreen() {
             <span className="tnum">{t("qrLabels.sheetCount", { count: sheets })}</span>
           </div>
 
-          <Alert tone="info" title={t("qrLabels.printNotice")}>
+          <Alert tone="info" block title={t("qrLabels.printNotice")}>
             <p className="text-help">{t("qrLabels.minSize")}</p>
           </Alert>
         </div>
