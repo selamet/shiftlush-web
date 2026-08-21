@@ -65,9 +65,9 @@ Bana bir logo işareti (wordmark + sembol) ve markanın tek cümlelik görsel ta
 ## Pazarlık dışı teknik kısıtlar
 
 - Vite + React 19 + TypeScript + TailwindCSS + shadcn/ui ile birebir uygulanacak. Sunucu
-  tarafı render yok, tamamen istemci tarafı bir SPA. shadcn/ui'de
-  karşılığı olmayan bileşen icat etme; her tasarım kararı bir Tailwind sınıfına ve bir
-  shadcn bileşenine karşılık gelmeli.
+  tarafı render yok, tamamen istemci tarafı bir SPA. shadcn/ui'de karşılığı olmayan bileşen
+  icat etme; her tasarım kararı bir Tailwind sınıfına ve bir shadcn bileşenine karşılık
+  gelmeli.
 - İkon seti: lucide-react. Başka set kullanma, emoji ikon kullanma.
 - Arayüzdeki HER metin Türkçe. Tek bir İngilizce kelime bile bırakma.
 - Türkçe metinler İngilizce karşılıklarından ortalama %20 daha uzun. Buton, etiket ve
