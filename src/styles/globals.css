@@ -251,3 +251,29 @@
     transform: translate(-50%, -50%);
   }
 }
+
+@media print {
+  /* Only the sheet goes on paper: the shell, its scroll containers and the
+     theme background all have to get out of the way, or the labels print
+     inside a 1024px-wide box with a grey ground. */
+  html,
+  body {
+    background: #ffffff !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  [data-app-chrome] {
+    display: none !important;
+  }
+
+  [data-app-main] {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+}

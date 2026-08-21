@@ -19,6 +19,25 @@ import { Button } from "@/components/ui/button";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
 import { InspectionLabel } from "@/components/ui/inspection-label";
 
+/** Seven columns, chosen for what someone scanning 500 rows actually needs.
+ *  Below md the three context columns drop and the identifier goes sticky —
+ *  the table stays a table, it never becomes a card grid. */
+interface Column {
+  key: string;
+  sticky?: boolean;
+  hideOnMobile?: boolean;
+}
+
+const COLUMNS: Column[] = [
+  { key: "elevator.fields.registrationNumber", sticky: true },
+  { key: "elevator.singular", hideOnMobile: true },
+  { key: "building.singular", hideOnMobile: true },
+  { key: "elevator.fields.status" },
+  { key: "elevator.fields.inspectionLabel" },
+  { key: "elevator.fields.nextInspectionDate" },
+  { key: "elevator.fields.brand", hideOnMobile: true },
+];
+
 const TOTAL = 342;
 const PAGE_SIZE = 25;
 
@@ -166,7 +185,7 @@ export function ElevatorListScreen() {
           <table className="w-full border-collapse text-cell">
             <thead className="border-b border-border bg-background">
               <tr>
-                <th className="w-10 px-3">
+                <th className="sticky left-0 z-10 w-10 bg-background px-3">
                   <input
                     type="checkbox"
                     aria-label={t("common.actions")}
@@ -175,21 +194,17 @@ export function ElevatorListScreen() {
                     className="size-4 rounded-xs accent-primary"
                   />
                 </th>
-                {[
-                  "elevator.fields.registrationNumber",
-                  "elevator.singular",
-                  "building.singular",
-                  "elevator.fields.status",
-                  "elevator.fields.inspectionLabel",
-                  "elevator.fields.nextInspectionDate",
-                  "elevator.fields.brand",
-                ].map((key) => (
+                {COLUMNS.map((column) => (
                   <th
-                    key={key}
+                    key={column.key}
                     scope="col"
-                    className="h-8 px-3 text-left text-colhead uppercase text-muted-foreground whitespace-nowrap"
+                    className={cn(
+                      "h-8 px-3 text-left text-colhead uppercase text-muted-foreground whitespace-nowrap",
+                      column.sticky && "sticky left-10 z-10 bg-background",
+                      column.hideOnMobile && "hidden md:table-cell",
+                    )}
                   >
-                    {t(key)}
+                    {t(column.key)}
                   </th>
                 ))}
               </tr>
@@ -199,9 +214,9 @@ export function ElevatorListScreen() {
                 <tr
                   key={row.id}
                   data-selected={selected.includes(row.id) || undefined}
-                  className="h-control-md border-b border-border-subtle transition-colors last:border-0 hover:bg-muted data-[selected]:bg-selected"
+                  className="group h-14 border-b border-border-subtle transition-colors last:border-0 hover:bg-muted data-[selected]:bg-selected md:h-control-md"
                 >
-                  <td className="px-3">
+                  <td className="sticky left-0 z-10 bg-card px-3 group-hover:bg-muted md:static md:bg-transparent">
                     <input
                       type="checkbox"
                       aria-label={row.registration_number}
@@ -210,12 +225,20 @@ export function ElevatorListScreen() {
                       className="size-4 rounded-xs accent-primary"
                     />
                   </td>
-                  <td className="px-3 font-mono tnum whitespace-nowrap">
-                    {row.registration_number}
+                  {/* Sticky on narrow screens so the identifier stays put while
+                      the rest scrolls sideways. The building moves in underneath
+                      it because its own column is hidden at this width. */}
+                  <td className="sticky left-10 z-10 bg-card px-3 font-mono tnum whitespace-nowrap group-hover:bg-muted md:static md:bg-transparent">
+                    <span className="flex flex-col leading-tight">
+                      {row.registration_number}
+                      <span className="truncate font-sans text-help text-muted-foreground md:hidden">
+                        {row.building}
+                      </span>
+                    </span>
                   </td>
                   {/* Three stacked columns are what take this table from 12
                       columns to 7 — the reason it never scrolls sideways. */}
-                  <td className="px-3">
+                  <td className="hidden px-3 md:table-cell">
                     <div className="flex flex-col leading-tight">
                       <span className="text-cell">{row.name}</span>
                       <span className="flex items-center gap-1.5 text-help text-muted-foreground">
@@ -230,7 +253,7 @@ export function ElevatorListScreen() {
                       </span>
                     </div>
                   </td>
-                  <td className="px-3">
+                  <td className="hidden px-3 md:table-cell">
                     <div className="flex flex-col leading-tight">
                       <span className="text-cell">{row.building}</span>
                       <span className="truncate text-help text-muted-foreground">
@@ -257,7 +280,7 @@ export function ElevatorListScreen() {
                   <td className="px-3 tnum whitespace-nowrap text-muted-foreground">
                     {formatDate(row.next_inspection_date) || "—"}
                   </td>
-                  <td className="px-3">
+                  <td className="hidden px-3 md:table-cell">
                     <div className="flex flex-col leading-tight">
                       <span className="text-cell">{row.brand ?? "—"}</span>
                       <span className="text-help text-muted-foreground">{row.model ?? ""}</span>
@@ -296,7 +319,12 @@ export function ElevatorListScreen() {
         </div>
       </div>
 
-      <p className="px-6 pb-8 text-help text-muted-foreground">{t("list.sharableFilters")}</p>
+      <p className="flex flex-wrap items-center gap-2 px-6 pb-8 text-help text-muted-foreground">
+        <span className="inline-flex items-center gap-1 rounded-sm border border-border-strong px-1.5 md:hidden">
+          {t("list.swipeHint")}
+        </span>
+        {t("list.sharableFilters")}
+      </p>
     </div>
   );
 }

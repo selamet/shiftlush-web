@@ -11,6 +11,10 @@ import { SessionProvider } from "@/lib/session";
 import { LoginScreen } from "@/screens/LoginScreen";
 import { ElevatorListScreen } from "@/screens/ElevatorListScreen";
 import { ElevatorFormScreen } from "@/screens/ElevatorFormScreen";
+import { ElevatorDetailScreen } from "@/screens/ElevatorDetailScreen";
+import { ContractDetailScreen } from "@/screens/ContractDetailScreen";
+import { QrLabelScreen } from "@/screens/QrLabelScreen";
+import { AddressPicker } from "@/components/forms/AddressPicker";
 import { StyleGuide } from "@/styleguide/StyleGuide";
 
 const rootRoute = createRootRoute({
@@ -67,12 +71,19 @@ const styleguideRoute = createRoute({
 });
 
 const elevatorsRoute = shellChild("/elevators", ElevatorListScreen);
+const elevatorDetailRoute = shellChild("/elevators/$id", ElevatorDetailScreen);
 const elevatorEditRoute = shellChild("/elevators/$id/edit", ElevatorFormScreen);
+const contractDetailRoute = shellChild("/contracts/$id", ContractDetailScreen);
+const addressDemoRoute = shellChild("/buildings/new", () => (
+  <div className="p-6">
+    <AddressPicker />
+  </div>
+));
 const customersRoute = shellChild("/customers", () => <Placeholder titleKey="customer.title" />);
 const complexesRoute = shellChild("/complexes", () => <Placeholder titleKey="complex.title" />);
 const buildingsRoute = shellChild("/buildings", () => <Placeholder titleKey="building.title" />);
 const contractsRoute = shellChild("/contracts", () => <Placeholder titleKey="contract.title" />);
-const qrLabelsRoute = shellChild("/qr-labels", () => <Placeholder titleKey="qr.title" />);
+const qrLabelsRoute = shellChild("/qr-labels", QrLabelScreen);
 const usersRoute = shellChild("/users", () => <Placeholder titleKey="user.title" />);
 const auditLogsRoute = shellChild("/audit-logs", () => <Placeholder titleKey="nav.auditLogs" />);
 const settingsRoute = shellChild("/settings", () => <Placeholder titleKey="company.title" />);
@@ -83,7 +94,10 @@ const routeTree = rootRoute.addChildren([
   styleguideRoute,
   shellRoute.addChildren([
     elevatorsRoute,
+    elevatorDetailRoute,
     elevatorEditRoute,
+    contractDetailRoute,
+    addressDemoRoute,
     customersRoute,
     complexesRoute,
     buildingsRoute,

@@ -25,7 +25,8 @@ The backend is expected at `http://localhost:8000/api/v1`
 | `npm run typecheck` | Types only |
 | `npm run lint:tr` | Fails if any Turkish character appears under `src/` |
 | `npm run lint:i18n` | Fails on a translation key with no entry in `messages/tr.json` |
-| `npm run verify` | All of the above, then the build |
+| `npm run smoke` | Renders every screen for every role and fails on any render error |
+| `npm run verify` | All of the above, plus the build |
 
 ## Language rule
 
@@ -78,11 +79,21 @@ src/
 
 ## Screens
 
-Built: login, app shell, elevator list, elevator form. Not yet built: elevator
-detail, address picker, contract detail, QR label printing — the remaining
-routes render a named placeholder rather than 404, so the gap stays visible.
+| Route | Screen |
+|---|---|
+| `/login` | Login |
+| `/elevators` | Elevator list |
+| `/elevators/:id` | Elevator record |
+| `/elevators/:id/edit` | Elevator form |
+| `/contracts/:id` | Contract, with role-scoped fields |
+| `/buildings/new` | Address picker |
+| `/qr-labels` | QR label sheet |
+| `/styleguide` | Design system reference |
 
-Two behaviours are worth knowing before touching them:
+Customers, complexes, users, audit logs and settings render a named placeholder
+rather than a 404, so the gap stays visible in the nav.
+
+Four behaviours are worth knowing before touching them:
 
 - **Boot skeleton.** The access token lives in memory, so a page load has no
   session and no role until the refresh call returns. The shell renders at full
@@ -92,6 +103,21 @@ Two behaviours are worth knowing before touching them:
   transaction boundaries. Saving per tab would teach users to save six times and
   produce half-written records. Empty fields are counted in neutral grey; red is
   reserved for values that are actually invalid.
+- **The list stays a table on mobile.** Below `md` the three context columns
+  drop and the identifier column goes sticky while the rest scrolls sideways.
+  It does not become a card grid: the mental model, column headings, sorting and
+  pagination stay identical to desktop so there is only one thing to learn.
+- **A map suggestion never fills a field silently.** Reverse geocoding is a
+  suggestion, and three signals say so at once — warning tone, an explicit
+  "not certain" heading, and two buttons of equal weight. Writing the wrong
+  neighbourhood in is worse than leaving it blank. When no neighbourhood
+  matches at all, focus moves to the free-text description and that field
+  becomes the sole address of record.
+
+The map itself is still a placeholder surface: every interaction state is
+implemented, but no tile layer is wired up. `src/lib/map-provider.ts` is the
+seam — reverse geocoding goes through our own backend, never straight from the
+browser to the provider.
 
 ## Documentation
 

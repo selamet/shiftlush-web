@@ -1,0 +1,19 @@
+{
+  "provinces": ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya"],
+  "districts": ["Ataşehir", "Kadıköy", "Üsküdar", "Kağıthane", "Bahçelievler"],
+  "neighborhoodQuery": "küç",
+  "neighborhoodResults": [
+    { "name": "Küçükbakkalköy Mah.", "context": "Ataşehir / İstanbul", "type": "neighborhood" },
+    { "name": "Küçükçekmece Mah.", "context": "Küçükçekmece / İstanbul", "type": "neighborhood" },
+    { "name": "Küçüksu", "context": "Beykoz / İstanbul", "type": "village" }
+  ],
+  "street": "Işıklar Cad.",
+  "buildingNumber": "14",
+  "addressNote": "Sahil yolundan girip Migros'un arkasındaki ikinci sokak, sitenin bekçi kulübesinin karşısı. Bina girişi arka cephede.",
+  "suggestion": {
+    "first": "Küçükbakkalköy",
+    "second": "Barbaros",
+    "latitude": "40.98214",
+    "longitude": "29.10457"
+  }
+}

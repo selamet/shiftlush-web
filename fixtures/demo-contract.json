@@ -1,0 +1,50 @@
+{
+  "contract_number": "2026-0043",
+  "customer": "Çamlıca Konakları Site Yönetimi",
+  "status": "active",
+  "scope": "maintenance_and_repair",
+  "start_date": "2026-02-01T00:00:00Z",
+  "end_date": "2027-01-31T00:00:00Z",
+  "pricing_type": "per_elevator",
+  "monthly_fee": "4750.00",
+  "currency": "TRY",
+  "vat_rate": "20.00",
+  "billing_period": "monthly",
+  "auto_renew": true,
+  "renewal_notice_days": 60,
+  "signed_document": "2026-0043 imzalı sözleşme.pdf",
+  "elevators": [
+    {
+      "registration_number": "34-2019-004512",
+      "name": "Sol asansör",
+      "building": "Çamlıca Konakları A Blok",
+      "status": "active",
+      "inspection_label": "green",
+      "unit_price": "1250.00"
+    },
+    {
+      "registration_number": "34-2020-006201",
+      "name": "Sağ asansör",
+      "building": "Çamlıca Konakları A Blok",
+      "status": "suspended",
+      "inspection_label": "green",
+      "unit_price": "1250.00"
+    },
+    {
+      "registration_number": "34-2018-001187",
+      "name": "Yük asansörü",
+      "building": "Çamlıca Konakları B Blok",
+      "status": "active",
+      "inspection_label": "yellow",
+      "unit_price": "1450.00"
+    },
+    {
+      "registration_number": "34-2017-002930",
+      "name": "Servis asansörü",
+      "building": "Çamlıca Konakları B Blok",
+      "status": "active",
+      "inspection_label": "blue",
+      "unit_price": "800.00"
+    }
+  ]
+}

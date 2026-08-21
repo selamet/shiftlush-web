@@ -7,14 +7,18 @@ import { useTheme } from "@/lib/theme";
 import { enumLabel } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarNav, SidebarSkeleton } from "./Sidebar";
+import { ROLES, type Role } from "./nav-config";
 
 function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const { t } = useTranslation();
-  const { fullName, role } = useSession();
+  const { fullName, role, setRole } = useSession();
   const { theme, toggle } = useTheme();
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle bg-card px-4">
+    <header
+      data-app-chrome
+      className="flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle bg-card px-4"
+    >
       <Button
         size="icon"
         variant="ghost"
@@ -38,6 +42,24 @@ function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
       </label>
 
       <div className="ml-auto flex items-center gap-2">
+        {/* Dev affordance: the role normally comes from the session. It is
+            exposed here so the role-scoped navigation and the hidden financial
+            fields can be reviewed without five accounts. Remove once the real
+            auth flow lands. */}
+        {role && (
+          <select
+            value={role}
+            onChange={(event) => setRole(event.target.value as Role)}
+            aria-label={t("user.fields.role")}
+            className="h-control-xs rounded-sm border border-dashed border-border-strong bg-card px-1.5 text-help text-muted-foreground focus-ring"
+          >
+            {ROLES.map((value) => (
+              <option key={value} value={value}>
+                {enumLabel("user.role", value)}
+              </option>
+            ))}
+          </select>
+        )}
         <Button size="icon" variant="ghost" onClick={toggle} aria-label={t("styleguide.toggleTheme")}>
           {theme === "dark" ? <Sun /> : <Moon />}
         </Button>
@@ -61,7 +83,10 @@ function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
 
 function TopbarSkeleton() {
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle bg-card px-4">
+    <header
+      data-app-chrome
+      className="flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle bg-card px-4"
+    >
       <div className="h-control-sm w-full max-w-md rounded-md bg-muted" />
       <div className="ml-auto flex items-center gap-2.5">
         <div className="hidden h-6 w-28 rounded-xs bg-muted sm:block" />
@@ -86,7 +111,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <div className="hidden lg:block">
+      <div data-app-chrome className="hidden lg:block">
         {restoring ? <SidebarSkeleton /> : <Sidebar role={role} />}
       </div>
 
@@ -116,7 +141,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {restoring ? <TopbarSkeleton /> : <Topbar onOpenMenu={() => setDrawerOpen(true)} />}
-        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
+        <main data-app-main className="min-h-0 flex-1 overflow-y-auto">
+          {children}
+        </main>
         {restoring && (
           <div
             role="status"

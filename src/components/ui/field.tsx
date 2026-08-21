@@ -72,6 +72,13 @@ interface FieldProps {
   error?: string;
   children: React.ReactNode;
   className?: string;
+  /**
+   * Set false when the child is a wrapper rather than the control itself (an
+   * input with an adornment, a textarea with a counter). Field would otherwise
+   * put `htmlFor` on the wrapper and the page would carry a duplicate id, which
+   * silently breaks the label association. The caller sets the id instead.
+   */
+  bindChild?: boolean;
 }
 
 export function Field({
@@ -82,6 +89,7 @@ export function Field({
   error,
   children,
   className,
+  bindChild = true,
 }: FieldProps) {
   const describedBy = error ? `${htmlFor}-error` : hint ? `${htmlFor}-hint` : undefined;
 
@@ -90,7 +98,7 @@ export function Field({
       <Label htmlFor={htmlFor} required={required}>
         {label}
       </Label>
-      {React.isValidElement(children)
+      {bindChild && React.isValidElement(children)
         ? React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
             id: htmlFor,
             "aria-describedby": describedBy,
