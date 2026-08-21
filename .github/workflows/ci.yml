@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: No Turkish in src
+        run: npm run lint:tr
+
+      - name: Every translation key exists
+        run: npm run lint:i18n
+
+      - name: Build
+        run: npm run build
+
+      - name: Every route renders
+        run: npm run smoke
+
+      - name: The contract matches the backend
+        # Both repositories hold a copy of the generated spec. Without this the
+        # two drift apart silently and the frontend builds against a contract
+        # the backend stopped serving.
+        run: |
+          echo "$(cat openapi/v1.sha256)  openapi/v1.yaml" | shasum -a 256 -c - \
+            || (echo "openapi/v1.yaml does not match its checksum. Run 'make sync-spec' in shiftlush-api." && exit 1)
