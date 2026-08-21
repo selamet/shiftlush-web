@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Columns3, Download, Plus, Search, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Columns3,
+  Download,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -91,6 +100,10 @@ export function ListPage<T>({
 }: ListPageProps<T>) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<string[]>([]);
+  // Six controls stacked vertically push the table off a phone screen, so the
+  // filters collapse behind one button below md. Search stays out: it is the
+  // control people reach for first.
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const ids = rows.map(rowKey);
   const allSelected = ids.length > 0 && selected.length === ids.length;
@@ -142,14 +155,36 @@ export function ListPage<T>({
               className="h-control-sm w-full rounded-md border border-input bg-card pl-9 pr-3 text-body placeholder:text-subtle focus-ring pointer-coarse:h-control-md"
             />
           </label>
-          {filters.map((filter) => (
-            <FilterButton key={filter.labelKey} label={t(filter.labelKey)} count={filter.count} />
-          ))}
-          <div className="ml-auto">
-            <Button variant="secondary" size="sm">
-              <Columns3 />
-              {t("list.columns")}
-            </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="md:hidden"
+            onClick={() => setFiltersOpen((open) => !open)}
+          >
+            <SlidersHorizontal />
+            {filtersOpen ? t("list.hideFilters") : t("list.filters")}
+            {activeFilters && activeFilters.length > 0 && (
+              <span className="tnum rounded-sm bg-primary-soft px-1.5 text-help font-medium text-primary">
+                {activeFilters.length}
+              </span>
+            )}
+          </Button>
+
+          <div
+            className={cn(
+              "w-full flex-wrap items-center gap-2 md:flex md:w-auto md:flex-1",
+              filtersOpen ? "flex" : "hidden",
+            )}
+          >
+            {filters.map((filter) => (
+              <FilterButton key={filter.labelKey} label={t(filter.labelKey)} count={filter.count} />
+            ))}
+            <div className="md:ml-auto">
+              <Button variant="secondary" size="sm">
+                <Columns3 />
+                {t("list.columns")}
+              </Button>
+            </div>
           </div>
         </div>
       )}

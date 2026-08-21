@@ -478,7 +478,9 @@
     "perPage": "Sayfada",
     "swipeHint": "Kaydır",
     "showResults": "{{count}} kaydı göster",
-    "sharableFilters": "Filtreler adres çubuğunda taşınır — bu bağlantıyı ekip arkadaşınıza gönderebilirsiniz"
+    "sharableFilters": "Filtreler adres çubuğunda taşınır — bu bağlantıyı ekip arkadaşınıza gönderebilirsiniz",
+    "filters": "Filtreler",
+    "hideFilters": "Filtreleri gizle"
   },
   "form": {
     "unsavedChanges": "Kaydedilmemiş değişiklikler",

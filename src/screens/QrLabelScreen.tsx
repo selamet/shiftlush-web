@@ -141,6 +141,10 @@ export function QrLabelScreen() {
               {t("qrLabels.emptySelection")}
             </div>
           ) : (
+            // The sheet is a fixed physical size, so on a narrow screen it
+            // scrolls rather than being squeezed — a preview that lies about
+            // proportions is worse than one you have to pan.
+            <div className="max-w-full overflow-x-auto">
             <div
               className={cn(
                 // A4 at real proportions so the preview is trustworthy.
@@ -157,6 +161,7 @@ export function QrLabelScreen() {
                   building={row.building}
                 />
               ))}
+            </div>
             </div>
           )}
         </div>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CircleHelp, Pause, Lock, PowerOff, FileClock, Ban } from "lucide-react";
+import { CircleHelp, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { enumLabel, isUnknownEnum } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
@@ -62,19 +62,26 @@ export function StatusChip({ weight, icon: Icon, className, children, ...props }
 
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Weight alone carries the distinction; only `suspended` also takes an icon.
+ *
+ * An icon on every state would make the icon meaningless — it stops being a
+ * signal and becomes decoration, and the weight scale it was meant to
+ * reinforce gets harder to read at a glance across 500 rows.
+ */
 const ELEVATOR_STATUS: Record<string, { weight: ChipWeight; icon?: typeof Pause }> = {
   active: { weight: "silent" },
   suspended: { weight: "outline", icon: Pause },
-  sealed: { weight: "ink", icon: Lock },
-  out_of_service: { weight: "recessed", icon: PowerOff },
+  sealed: { weight: "ink" },
+  out_of_service: { weight: "recessed" },
   uncontracted: { weight: "dashed" },
 };
 
 const CONTRACT_STATUS: Record<string, { weight: ChipWeight; icon?: typeof Pause }> = {
   draft: { weight: "dashed" },
   active: { weight: "silent" },
-  expired: { weight: "outline", icon: FileClock },
-  terminated: { weight: "ink", icon: Ban },
+  expired: { weight: "outline" },
+  terminated: { weight: "ink" },
   renewed: { weight: "recessed" },
 };
 

@@ -136,6 +136,52 @@ function RecordStatusPanel({ onGoToError }: { onGoToError: () => void }) {
   );
 }
 
+/**
+ * What the status rail becomes below xl.
+ *
+ * The rail is the only place that says where the error is and offers a way to
+ * it; hiding it on narrow screens left the user unable to save with no visible
+ * reason why. The completeness figure compresses to one line, but the error
+ * block keeps its weight and its "go to error" action.
+ */
+function RecordStatusStrip({ onGoToError }: { onGoToError: () => void }) {
+  const { t } = useTranslation();
+  const errorTabs = TABS.filter((tab) => tab.errors > 0);
+
+  return (
+    <div className="flex flex-col gap-2 border-b border-border-subtle px-6 py-3 xl:hidden">
+      <div className="flex items-center gap-2">
+        <span className="tnum text-label">
+          {t("form.fieldsFilled", { filled: FILLED, total: TOTAL_FIELDS })}
+        </span>
+        <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary"
+            style={{ width: `${Math.round((FILLED / TOTAL_FIELDS) * 100)}%` }}
+          />
+        </div>
+      </div>
+      {errorTabs.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border-l-[3px] border-destructive bg-destructive-bg px-3 py-2">
+          <span className="text-label text-destructive">
+            {t("form.errorCount", { count: errorTabs.length })}
+          </span>
+          <span className="text-help text-destructive">
+            {t("elevator.fields.nextInspectionDate")}
+          </span>
+          <button
+            type="button"
+            onClick={onGoToError}
+            className="ml-auto text-help text-destructive underline"
+          >
+            {t("form.goToError")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ElevatorFormScreen() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("identity");
@@ -167,7 +213,7 @@ export function ElevatorFormScreen() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-1 border-b border-border px-6">
+      <div className="flex gap-1 overflow-x-auto border-b border-border px-6">
         {TABS.map((tab) => (
           <TabButton
             key={tab.key}
@@ -177,6 +223,8 @@ export function ElevatorFormScreen() {
           />
         ))}
       </div>
+
+      <RecordStatusStrip onGoToError={() => setActiveTab("inspection")} />
 
       <div className="flex min-h-0 flex-1">
         <div className="min-w-0 flex-1 overflow-y-auto p-6">
