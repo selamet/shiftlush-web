@@ -1,0 +1,5 @@
+[
+  { "id": "s1", "name": "Çamlıca Konakları", "customer": "Çamlıca Konakları Site Yönetimi", "neighborhood": "Barbaros Mah.", "district": "Ataşehir", "building_count": 8, "elevator_count": 31 },
+  { "id": "s2", "name": "Nurtepe Sitesi", "customer": "Nurtepe Sitesi Yönetimi", "neighborhood": "Merkez Mah.", "district": "Kağıthane", "building_count": 5, "elevator_count": 17 },
+  { "id": "s3", "name": "Kayaşehir 24. Bölge", "customer": "Bahçelievler Belediyesi", "neighborhood": "Kayaşehir Mah.", "district": "Başakşehir", "building_count": 3, "elevator_count": 6 }
+]

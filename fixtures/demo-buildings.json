@@ -1,0 +1,7 @@
+[
+  { "id": "b1", "name": "Çamlıca Konakları A Blok", "complex": "Çamlıca Konakları", "customer": "Çamlıca Konakları Site Yönetimi", "type": "residential", "neighborhood": "Barbaros Mah.", "district": "Ataşehir", "floor_count": 12, "unit_count": 48, "elevator_count": 4, "is_active": true },
+  { "id": "b2", "name": "Çamlıca Konakları B Blok", "complex": "Çamlıca Konakları", "customer": "Çamlıca Konakları Site Yönetimi", "type": "residential", "neighborhood": "Barbaros Mah.", "district": "Ataşehir", "floor_count": 12, "unit_count": 48, "elevator_count": 4, "is_active": true },
+  { "id": "b3", "name": "Ofis Kule 1", "complex": null, "customer": "Ataşehir Ofis Kule A.Ş.", "type": "commercial", "neighborhood": "Küçükbakkalköy Mah.", "district": "Ataşehir", "floor_count": 24, "unit_count": 96, "elevator_count": 8, "is_active": true },
+  { "id": "b4", "name": "Bahçelievler Kültür Merkezi", "complex": null, "customer": "Bahçelievler Belediyesi", "type": "public", "neighborhood": "Cumhuriyet Mah.", "district": "Bahçelievler", "floor_count": 4, "unit_count": null, "elevator_count": 3, "is_active": true },
+  { "id": "b5", "name": "Yıldız Apartmanı", "complex": null, "customer": "Yıldız Apartmanı Yönetimi", "type": "residential", "neighborhood": "Fenerbahçe Mah.", "district": "Kadıköy", "floor_count": 6, "unit_count": 12, "elevator_count": 1, "is_active": true }
+]

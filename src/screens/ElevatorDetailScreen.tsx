@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link, useParams } from "@tanstack/react-router";
 import {
   ChevronRight,
   Pencil,
@@ -15,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 import { useSession } from "@/lib/session";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
 import { InspectionLabel } from "@/components/ui/inspection-label";
@@ -65,6 +66,7 @@ const ATTACHMENT_ICON = {
 
 export function ElevatorDetailScreen() {
   const { t } = useTranslation();
+  const { id } = useParams({ strict: false }) as { id?: string };
   const { role } = useSession();
   const [tab, setTab] = useState<"record" | "attachments" | "history">("record");
 
@@ -108,10 +110,14 @@ export function ElevatorDetailScreen() {
             <Printer />
             {t("qr.printLabels")}
           </Button>
-          <Button size="sm">
+          <Link
+            to="/elevators/$id/edit"
+            params={{ id: id ?? "e1" }}
+            className={buttonVariants({ size: "sm" })}
+          >
             <Pencil />
             {t("common.edit")}
-          </Button>
+          </Link>
         </div>
       </div>
 

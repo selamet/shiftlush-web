@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 /**
- * Renders every screen once and fails on any error thrown during render.
+ * Renders every route of the real router, for every role, and fails on any
+ * error thrown during render.
  *
- * The build only proves the code type-checks and bundles. This proves each
- * screen actually renders: bad hook order, reading a field off a null fixture,
- * a component used before it is defined. Runs through Vite's SSR pipeline so
- * the real aliases, JSON imports and TSX transform are used.
+ * The build only proves the code type-checks and bundles. This proves the app
+ * actually renders and that every route in the tree resolves — including the
+ * ones you can only get to by clicking a link, which is exactly where dead
+ * screens hide.
  *
- * Browser globals the app touches at module or render time are stubbed —
- * that is the only concession to running outside a browser.
+ * Browser globals the app touches are stubbed; that is the only concession to
+ * running outside a browser.
  */
 import { createServer } from "vite";
 import { renderToString } from "react-dom/server";
@@ -31,16 +32,25 @@ globalThis.document = {
   getElementById: () => null,
 };
 globalThis.window = globalThis;
+globalThis.scrollTo = () => {};
 
-const SCREENS = [
-  ["LoginScreen", "/src/screens/LoginScreen.tsx"],
-  ["ElevatorListScreen", "/src/screens/ElevatorListScreen.tsx"],
-  ["ElevatorFormScreen", "/src/screens/ElevatorFormScreen.tsx"],
-  ["ElevatorDetailScreen", "/src/screens/ElevatorDetailScreen.tsx"],
-  ["ContractDetailScreen", "/src/screens/ContractDetailScreen.tsx"],
-  ["QrLabelScreen", "/src/screens/QrLabelScreen.tsx"],
-  ["AddressPicker", "/src/components/forms/AddressPicker.tsx"],
-  ["StyleGuide", "/src/styleguide/StyleGuide.tsx"],
+const PATHS = [
+  "/login",
+  "/styleguide",
+  "/elevators",
+  "/elevators/e1",
+  "/elevators/e1/edit",
+  "/customers",
+  "/customers/c1",
+  "/complexes",
+  "/buildings",
+  "/buildings/new",
+  "/contracts",
+  "/contracts/k1",
+  "/qr-labels",
+  "/users",
+  "/audit-logs",
+  "/settings",
 ];
 
 const ROLES = ["owner", "operations", "technician", "accountant"];
@@ -54,37 +64,30 @@ const server = await createServer({
 let failures = 0;
 try {
   await server.ssrLoadModule("/src/lib/i18n.ts");
-  const { SessionProvider } = await server.ssrLoadModule("/src/lib/session.tsx");
+  // Everything comes from the app's own module graph: importing the router
+  // package separately creates a second instance and React context stops
+  // matching, which looks like a render bug but is a module-identity bug.
+  const { createRouterForPath, RouterProvider } = await server.ssrLoadModule("/src/router.tsx");
 
-  for (const [name, path] of SCREENS) {
-    const module = await server.ssrLoadModule(path);
-    const Component = module[name];
-    if (typeof Component !== "function") {
-      console.error(`  FAIL  ${name} — export not found in ${path}`);
-      failures += 1;
-      continue;
-    }
-
-    // Role-scoped screens must render for every role, not just the default:
-    // that is where the hidden-field branches live.
+  for (const path of PATHS) {
+    const errors = [];
     for (const role of ROLES) {
       try {
-        const html = renderToString(
-          React.createElement(
-            SessionProvider,
-            { initialRole: role },
-            React.createElement(Component),
-          ),
-        );
-        if (!html || html.length < 40) {
-          throw new Error(`rendered ${html.length} characters`);
-        }
+        const router = createRouterForPath(path);
+        await router.load();
+        const html = renderToString(React.createElement(RouterProvider, { router }));
+        if (!html || html.length < 40) throw new Error(`rendered ${html.length} characters`);
       } catch (error) {
-        console.error(`  FAIL  ${name} [${role}] — ${error.message}`);
-        failures += 1;
+        errors.push(`${role}: ${error.message}`);
       }
     }
-    if (failures === 0) console.log(`  OK    ${name}`);
+    if (errors.length === 0) {
+      console.log(`  OK    ${path}`);
+    } else {
+      failures += errors.length;
+      console.error(`  FAIL  ${path}`);
+      for (const message of errors) console.error(`          ${message}`);
+    }
   }
 } finally {
   await server.close();
@@ -94,4 +97,4 @@ if (failures > 0) {
   console.error(`\n${failures} render failure(s)`);
   process.exit(1);
 }
-console.log(`\nAll ${SCREENS.length} screens render across ${ROLES.length} roles`);
+console.log(`\nAll ${PATHS.length} routes render across ${ROLES.length} roles`);

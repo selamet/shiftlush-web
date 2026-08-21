@@ -1,0 +1,7 @@
+[
+  { "id": "c1", "legal_name": "Çamlıca Konakları Site Yönetimi", "type": "complex_management", "tax_office": "Kadıköy", "tax_number": "1234567890", "phone": "0216 470 88 24", "primary_contact": "Ayşe Demir", "contact_phone": "0532 418 27 06", "building_count": 8, "elevator_count": 31, "is_active": true },
+  { "id": "c2", "legal_name": "Ataşehir Ofis Kule A.Ş.", "type": "corporate", "tax_office": "Ataşehir", "tax_number": "9876543210", "phone": "0216 688 12 40", "primary_contact": "Hakan Çelik", "contact_phone": "0533 207 94 18", "building_count": 2, "elevator_count": 14, "is_active": true },
+  { "id": "c3", "legal_name": "Bahçelievler Belediyesi", "type": "public", "tax_office": "Bahçelievler", "tax_number": "4561237890", "phone": "0212 441 30 90", "primary_contact": "Zeynep Kaya", "contact_phone": "0212 441 30 90", "building_count": 6, "elevator_count": 9, "is_active": true },
+  { "id": "c4", "legal_name": "Nurtepe Sitesi Yönetimi", "type": "complex_management", "tax_office": "Kağıthane", "tax_number": "3217896540", "phone": "0212 295 61 33", "primary_contact": "Emre Şahin", "contact_phone": "0535 619 72 44", "building_count": 5, "elevator_count": 17, "is_active": true },
+  { "id": "c5", "legal_name": "Yıldız Apartmanı Yönetimi", "type": "building_management", "tax_office": "Beşiktaş", "tax_number": null, "phone": "0555 302 18 76", "primary_contact": null, "contact_phone": null, "building_count": 1, "elevator_count": 1, "is_active": false }
+]

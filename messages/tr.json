@@ -135,7 +135,8 @@
       "noCarDoor": "Kabin kapısı yok — ağır uygunsuzluk",
       "noCarDoorShort": "Kabin kapısı yok",
       "qrRegenerateWarning": "QR kodu yenilendiğinde basılı etiketler geçersiz olur."
-    }
+    },
+    "add": "Asansör ekle"
   },
   "contract": {
     "title": "Sözleşmeler",
@@ -191,7 +192,8 @@
       "addElevator": "Asansör ekle",
       "removeElevator": "Asansörü çıkar"
     },
-    "financialsHidden": "Mali bilgileri görme yetkiniz yok"
+    "financialsHidden": "Mali bilgileri görme yetkiniz yok",
+    "add": "Sözleşme ekle"
   },
   "customer": {
     "title": "Müşteriler",
@@ -213,7 +215,11 @@
       "corporate": "Kurumsal",
       "public": "Kamu",
       "individual": "Şahıs"
-    }
+    },
+    "add": "Müşteri ekle",
+    "buildingCount": "Bina",
+    "elevatorCount": "Asansör",
+    "primaryContact": "Birincil iletişim"
   },
   "customerContact": {
     "title": "İletişim kişileri",
@@ -257,7 +263,8 @@
       "hotel": "Otel",
       "school": "Okul",
       "industrial": "Sanayi"
-    }
+    },
+    "add": "Bina ekle"
   },
   "complex": {
     "title": "Siteler",
@@ -266,7 +273,8 @@
       "name": "Site adı",
       "customer": "Müşteri",
       "notes": "Notlar"
-    }
+    },
+    "add": "Site ekle"
   },
   "user": {
     "title": "Kullanıcılar",
@@ -293,7 +301,8 @@
       "invite": "Kullanıcı davet et",
       "deactivate": "Pasifleştir",
       "assignCustomers": "Müşteri ata"
-    }
+    },
+    "invitePending": "Davet bekliyor"
   },
   "company": {
     "title": "Firma ayarları",
@@ -366,7 +375,57 @@
   "empty": {
     "noRecords": "Henüz kayıt yok",
     "noFilterResults": "Filtreye uyan kayıt bulunamadı",
-    "noAssignedCustomers": "Size atanmış müşteri bulunmuyor"
+    "noAssignedCustomers": "Size atanmış müşteri bulunmuyor",
+    "prerequisiteHint": "Bu kaydı açabilmek için önce bir üst kaydın var olması gerekiyor.",
+    "noCustomers": "Henüz müşteri kaydı yok",
+    "noComplexes": "Henüz site kaydı yok",
+    "noBuildings": "Henüz bina kaydı yok",
+    "noElevators": "Henüz asansör kaydı yok",
+    "noContracts": "Henüz sözleşme kaydı yok",
+    "noUsers": "Henüz kullanıcı yok",
+    "noAuditLogs": "Denetim kaydı bulunamadı"
+  },
+  "auditLog": {
+    "title": "Denetim kayıtları",
+    "fields": {
+      "record": "Kayıt",
+      "action": "İşlem",
+      "change": "Değişiklik",
+      "actor": "Kullanıcı",
+      "createdAt": "Tarih",
+      "ipAddress": "IP adresi",
+      "tableName": "Tablo"
+    },
+    "action": {
+      "create": "Oluşturma",
+      "update": "Güncelleme",
+      "delete": "Silme"
+    },
+    "table": {
+      "elevator": "Asansör",
+      "building": "Bina",
+      "complex": "Site",
+      "customer": "Müşteri",
+      "customer_contact": "İletişim kişisi",
+      "contract": "Sözleşme",
+      "contract_elevator": "Sözleşme–asansör",
+      "user": "Kullanıcı",
+      "company": "Firma",
+      "attachment": "Ek"
+    },
+    "maskedNotice": "Hassas alanlar maskelenmiştir"
+  },
+  "settings": {
+    "companyTab": "Firma bilgileri",
+    "profileTab": "Profilim",
+    "readOnlyForRole": "Firma ayarlarını yalnızca firma sahibi düzenleyebilir",
+    "identity": "Kimlik bilgileri",
+    "contact": "İletişim",
+    "address": "Adres",
+    "branding": "Marka",
+    "changePassword": "Şifremi değiştir",
+    "activeSessions": "Açık oturumlar",
+    "signOutOthers": "Diğer oturumları kapat"
   },
   "errors": {
     "VALIDATION_ERROR": "Girdiğiniz bilgilerde hata var",
@@ -552,5 +611,13 @@
     },
     "labelRule": "Doygun dolgu yalnızca etiket verisinde kullanılır. Sistem renkleri soluk zemin ve koyu metinle görünür — ikisi karışmaz.",
     "densityNote": "Satır yüksekliği 40 piksel, hücre iki satır."
+  },
+  "customerDetail": {
+    "contacts": "İletişim kişileri",
+    "buildings": "Binaları",
+    "contracts": "Sözleşmeleri",
+    "addContact": "İletişim kişisi ekle",
+    "noContacts": "Henüz iletişim kişisi yok",
+    "primaryBadge": "Birincil"
   }
 }

@@ -1,0 +1,7 @@
+[
+  { "id": "a1", "table_name": "elevator", "record_label": "34-2019-004512 · Sol asansör", "action": "update", "field_summary": "Etiket rengi: Sarı → Yeşil", "actor": "Mehmet Yılmaz", "created_at": "2026-03-14T08:24:00Z", "ip_address": "88.241.16.204" },
+  { "id": "a2", "table_name": "elevator", "record_label": "34-2019-004512 · Sol asansör", "action": "update", "field_summary": "Kontrol rapor no eklendi", "actor": "Mehmet Yılmaz", "created_at": "2026-03-14T08:23:00Z", "ip_address": "88.241.16.204" },
+  { "id": "a3", "table_name": "contract_elevator", "record_label": "2026-0043", "action": "create", "field_summary": "Asansör sözleşmeye eklendi", "actor": "Ayşe Demir", "created_at": "2026-02-01T06:12:00Z", "ip_address": "78.176.44.9" },
+  { "id": "a4", "table_name": "customer", "record_label": "Yıldız Apartmanı Yönetimi", "action": "delete", "field_summary": "Kayıt silindi", "actor": "Mehmet Yılmaz", "created_at": "2026-01-28T11:47:00Z", "ip_address": "88.241.16.204" },
+  { "id": "a5", "table_name": "user", "record_label": "Emre Şahin", "action": "create", "field_summary": "Davet gönderildi", "actor": "Mehmet Yılmaz", "created_at": "2026-01-19T09:03:00Z", "ip_address": "88.241.16.204" }
+]

@@ -85,15 +85,20 @@ src/
 | `/elevators` | Elevator list |
 | `/elevators/:id` | Elevator record |
 | `/elevators/:id/edit` | Elevator form |
-| `/contracts/:id` | Contract, with role-scoped fields |
+| `/customers` · `/customers/:id` | Customers |
+| `/complexes` · `/buildings` | Complexes and buildings |
 | `/buildings/new` | Address picker |
+| `/contracts` · `/contracts/:id` | Contracts, with role-scoped fields |
+| `/users` · `/audit-logs` | Administration |
+| `/settings` | Company settings and own profile |
 | `/qr-labels` | QR label sheet |
 | `/styleguide` | Design system reference |
 
-Customers, complexes, users, audit logs and settings render a named placeholder
-rather than a 404, so the gap stays visible in the nav.
+Every list is built on `components/list/ListPage`, so all five behave
+identically: same filter bar, same server-side pagination, same selection
+strip, same mobile behaviour. Someone who has learned one has learned them all.
 
-Four behaviours are worth knowing before touching them:
+Five behaviours are worth knowing before touching them:
 
 - **Boot skeleton.** The access token lives in memory, so a page load has no
   session and no role until the refresh call returns. The shell renders at full
@@ -113,6 +118,11 @@ Four behaviours are worth knowing before touching them:
   neighbourhood in is worse than leaving it blank. When no neighbourhood
   matches at all, focus moves to the free-text description and that field
   becomes the sole address of record.
+
+- **Empty lists point at their prerequisite.** A building needs a customer and
+  an elevator needs a building, so an empty list whose prerequisite is missing
+  links there instead of offering "add". The five empty states are the
+  onboarding path; there is no separate wizard.
 
 The map itself is still a placeholder surface: every interaction state is
 implemented, but no tile layer is wired up. `src/lib/map-provider.ts` is the

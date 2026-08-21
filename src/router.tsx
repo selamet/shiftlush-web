@@ -1,20 +1,29 @@
 import {
+  createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
   Outlet,
+  RouterProvider,
   redirect,
 } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/layout/AppShell";
 import { SessionProvider } from "@/lib/session";
+import { AddressPicker } from "@/components/forms/AddressPicker";
 import { LoginScreen } from "@/screens/LoginScreen";
 import { ElevatorListScreen } from "@/screens/ElevatorListScreen";
-import { ElevatorFormScreen } from "@/screens/ElevatorFormScreen";
 import { ElevatorDetailScreen } from "@/screens/ElevatorDetailScreen";
+import { ElevatorFormScreen } from "@/screens/ElevatorFormScreen";
+import { CustomerListScreen } from "@/screens/CustomerListScreen";
+import { CustomerDetailScreen } from "@/screens/CustomerDetailScreen";
+import { ComplexListScreen } from "@/screens/ComplexListScreen";
+import { BuildingListScreen } from "@/screens/BuildingListScreen";
+import { ContractListScreen } from "@/screens/ContractListScreen";
 import { ContractDetailScreen } from "@/screens/ContractDetailScreen";
+import { UserListScreen } from "@/screens/UserListScreen";
+import { AuditLogListScreen } from "@/screens/AuditLogListScreen";
+import { SettingsScreen } from "@/screens/SettingsScreen";
 import { QrLabelScreen } from "@/screens/QrLabelScreen";
-import { AddressPicker } from "@/components/forms/AddressPicker";
 import { StyleGuide } from "@/styleguide/StyleGuide";
 
 const rootRoute = createRootRoute({
@@ -24,17 +33,6 @@ const rootRoute = createRootRoute({
     </SessionProvider>
   ),
 });
-
-/** Screens not yet built. Named so the gap is obvious in the nav, not hidden. */
-function Placeholder({ titleKey }: { titleKey: string }) {
-  const { t } = useTranslation();
-  return (
-    <div className="flex flex-col gap-2 p-6">
-      <h1 className="text-title">{t(titleKey)}</h1>
-      <p className="text-body text-muted-foreground">{t("empty.noRecords")}</p>
-    </div>
-  );
-}
 
 const shellRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -70,43 +68,46 @@ const styleguideRoute = createRoute({
   component: StyleGuide,
 });
 
-const elevatorsRoute = shellChild("/elevators", ElevatorListScreen);
-const elevatorDetailRoute = shellChild("/elevators/$id", ElevatorDetailScreen);
-const elevatorEditRoute = shellChild("/elevators/$id/edit", ElevatorFormScreen);
-const contractDetailRoute = shellChild("/contracts/$id", ContractDetailScreen);
-const addressDemoRoute = shellChild("/buildings/new", () => (
-  <div className="p-6">
-    <AddressPicker />
-  </div>
-));
-const customersRoute = shellChild("/customers", () => <Placeholder titleKey="customer.title" />);
-const complexesRoute = shellChild("/complexes", () => <Placeholder titleKey="complex.title" />);
-const buildingsRoute = shellChild("/buildings", () => <Placeholder titleKey="building.title" />);
-const contractsRoute = shellChild("/contracts", () => <Placeholder titleKey="contract.title" />);
-const qrLabelsRoute = shellChild("/qr-labels", QrLabelScreen);
-const usersRoute = shellChild("/users", () => <Placeholder titleKey="user.title" />);
-const auditLogsRoute = shellChild("/audit-logs", () => <Placeholder titleKey="nav.auditLogs" />);
-const settingsRoute = shellChild("/settings", () => <Placeholder titleKey="company.title" />);
-
-const routeTree = rootRoute.addChildren([
+export const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   styleguideRoute,
   shellRoute.addChildren([
-    elevatorsRoute,
-    elevatorDetailRoute,
-    elevatorEditRoute,
-    contractDetailRoute,
-    addressDemoRoute,
-    customersRoute,
-    complexesRoute,
-    buildingsRoute,
-    contractsRoute,
-    qrLabelsRoute,
-    usersRoute,
-    auditLogsRoute,
-    settingsRoute,
+    shellChild("/elevators", ElevatorListScreen),
+    shellChild("/elevators/$id", ElevatorDetailScreen),
+    shellChild("/elevators/$id/edit", ElevatorFormScreen),
+    shellChild("/customers", CustomerListScreen),
+    shellChild("/customers/$id", CustomerDetailScreen),
+    shellChild("/complexes", ComplexListScreen),
+    shellChild("/buildings", BuildingListScreen),
+    // The address picker is the third step of the building form; until the
+    // rest of that form exists it is reachable on its own.
+    shellChild("/buildings/new", () => (
+      <div className="p-6">
+        <AddressPicker />
+      </div>
+    )),
+    shellChild("/contracts", ContractListScreen),
+    shellChild("/contracts/$id", ContractDetailScreen),
+    shellChild("/qr-labels", QrLabelScreen),
+    shellChild("/users", UserListScreen),
+    shellChild("/audit-logs", AuditLogListScreen),
+    shellChild("/settings", SettingsScreen),
   ]),
 ]);
 
 export const router = createRouter({ routeTree });
+
+export { RouterProvider };
+
+/**
+ * Builds a router pinned to one path. Used by the render smoke test so every
+ * route is exercised through the real tree — and so router internals come from
+ * this module graph rather than a second copy, which would break React context.
+ */
+export function createRouterForPath(path: string) {
+  return createRouter({
+    routeTree,
+    history: createMemoryHistory({ initialEntries: [path] }),
+  });
+}
