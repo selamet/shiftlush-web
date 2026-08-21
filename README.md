@@ -24,6 +24,8 @@ The backend is expected at `http://localhost:8000/api/v1`
 | `npm run build` | Type-check, then produce the static bundle in `dist/` |
 | `npm run typecheck` | Types only |
 | `npm run lint:tr` | Fails if any Turkish character appears under `src/` |
+| `npm run lint:i18n` | Fails on a translation key with no entry in `messages/tr.json` |
+| `npm run verify` | All of the above, then the build |
 
 ## Language rule
 
@@ -63,13 +65,33 @@ Run the app to browse the living reference at `/` (`src/styleguide/`).
 
 ```
 messages/tr.json          all user-facing text
-fixtures/                 demo data for the styleguide
+fixtures/                 demo data (also keeps Turkish out of src/)
 src/
 ├── components/ui/        design system primitives
-├── lib/                  i18n, formatting, theme, utils
+├── components/layout/    app shell, sidebar, role-based nav
+├── screens/              product screens
+├── lib/                  i18n, formatting, theme, session, utils
 ├── styles/globals.css    design tokens
-└── styleguide/           living design system reference
+├── styleguide/           living design system reference
+└── router.tsx            route tree
 ```
+
+## Screens
+
+Built: login, app shell, elevator list, elevator form. Not yet built: elevator
+detail, address picker, contract detail, QR label printing — the remaining
+routes render a named placeholder rather than 404, so the gap stays visible.
+
+Two behaviours are worth knowing before touching them:
+
+- **Boot skeleton.** The access token lives in memory, so a page load has no
+  session and no role until the refresh call returns. The shell renders at full
+  fidelity during that gap and only role-dependent parts are skeletons, so
+  nothing shifts when the session lands. Do not replace it with a spinner.
+- **One save per record.** The elevator form's tabs are navigation, not
+  transaction boundaries. Saving per tab would teach users to save six times and
+  produce half-written records. Empty fields are counted in neutral grey; red is
+  reserved for values that are actually invalid.
 
 ## Documentation
 

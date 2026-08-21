@@ -129,7 +129,11 @@
     "hints": {
       "maintenanceInterval": "1–30 gün arası. Varsayılan 30.",
       "mostFieldsOptional": "Alanların çoğu opsiyoneldir",
+      "categoryMissing": "Kategori girilmedi",
+      "stopCount": "{{count}} durak",
+      "addElevator": "Asansör ekle",
       "noCarDoor": "Kabin kapısı yok — ağır uygunsuzluk",
+      "noCarDoorShort": "Kabin kapısı yok",
       "qrRegenerateWarning": "QR kodu yenilendiğinde basılı etiketler geçersiz olur."
     }
   },
@@ -381,6 +385,82 @@
     "UNKNOWN": "Beklenmeyen bir hata oluştu",
     "requestIdLabel": "Hata kimliği",
     "requestIdHelp": "Destek ekibine bu kimliği iletin"
+  },
+  "nav": {
+    "groups": {
+      "records": "Kayıtlar",
+      "commercial": "Ticari",
+      "tools": "Araçlar",
+      "administration": "Yönetim"
+    },
+    "myCustomers": "Müşterilerim",
+    "assigned": "Atanan",
+    "auditLogs": "Denetim kayıtları",
+    "globalSearch": "Her yerde ara",
+    "settingsProfile": "Ayarlar — profilim",
+    "companySettingsReadOnly": "Firma ayarları salt okunur",
+    "companySettingsEditable": "Firma ayarlarını düzenleyebilir",
+    "openMenu": "Menüyü aç",
+    "closeMenu": "Menüyü kapat"
+  },
+  "list": {
+    "export": "Dışa aktar",
+    "columns": "Kolonlar",
+    "visibleColumns": "Görünen kolonlar",
+    "pinnedColumn": "sabit",
+    "addableColumns": "Eklenebilir",
+    "activeFilters": "Aktif filtreler",
+    "clearAll": "Tümünü temizle",
+    "clearSelection": "Seçimi kaldır",
+    "selectedElevators": "{{count}} asansör seçildi",
+    "selectAllInFilter": "Filtredeki {{count}} kaydın tümünü seç",
+    "changeStatus": "Durumu değiştir",
+    "addToContract": "Sözleşmeye ekle",
+    "perPage": "Sayfada",
+    "swipeHint": "Kaydır",
+    "showResults": "{{count}} kaydı göster",
+    "sharableFilters": "Filtreler adres çubuğunda taşınır — bu bağlantıyı ekip arkadaşınıza gönderebilirsiniz"
+  },
+  "form": {
+    "unsavedChanges": "Kaydedilmemiş değişiklikler",
+    "unsavedChangesTitle": "Kaydedilmemiş değişiklikler var",
+    "unsavedChangesBody": "{{count}} alanı değiştirdiniz. Sayfadan ayrılırsanız bu değişiklikler kaybolur.",
+    "saveAllTabs": "Tüm sekmeleri kaydet",
+    "saveAndNew": "Kaydet ve yeni ekle",
+    "saveAndExit": "Kaydet ve çık",
+    "backToEditing": "Düzenlemeye dön",
+    "discardChanges": "Değişiklikleri at",
+    "discard": "Vazgeç",
+    "recordStatus": "Künye durumu",
+    "fieldsFilled": "{{filled}} / {{total}} alan dolu",
+    "missingIsNotAnError": "Eksik alan hata değildir",
+    "tabsHeading": "Sekmeler",
+    "complete": "Tam",
+    "errorCount": "{{count}} hata",
+    "goToError": "Hataya git",
+    "validationTiming": "Doğrulama ne zaman",
+    "onBlur": "Alandan çıkışta",
+    "onSave": "Kaydetmede",
+    "onTabChange": "Sekme değişiminde",
+    "fieldCount": "{{count}} alan",
+    "requiredCount": "{{count}} zorunlu",
+    "draftKeptLocally": "Taslak yerel olarak korunuyor",
+    "notSaved": "Kaydedilmedi",
+    "uniqueWithinCompany": "Firma içinde benzersiz olmalı",
+    "optionalSuffix": "(opsiyonel)",
+    "internalCodeExample": "Örn. CK-A-01"
+  },
+  "boot": {
+    "refreshingSession": "Oturum tazeleniyor…"
+  },
+  "login": {
+    "heading": "Giriş yapın",
+    "lockoutNotice": "5 hatalı denemeden sonra hesap 15 dakika kilitlenir.",
+    "lockedTitle": "Hesap geçici olarak kilitli",
+    "lockedBody": "Güvenlik için {{minutes}} dakika bekleyin. Şifrenizi hatırlamıyorsanız sıfırlayabilirsiniz.",
+    "invalidCredentials": "E-posta veya şifre hatalı",
+    "tagline": "QR etiketle makine dairesinde saniyede eriş",
+    "qrHint": "Sahada QR okuttuğunuzda oturumunuz açıksa doğrudan asansör künyesine gidersiniz."
   },
   "styleguide": {
     "title": "ShiftLush Tasarım Sistemi",

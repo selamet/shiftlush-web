@@ -203,7 +203,7 @@ export function StyleGuide() {
                   <TableHead>{t("elevator.singular")}</TableHead>
                   <TableHead>{t("elevator.fields.brand")}</TableHead>
                   <TableHead className="text-right">
-                    {t("elevator.fields.capacityKg")}
+                    {t("elevator.fields.stopCount")}
                   </TableHead>
                   <TableHead>{t("elevator.fields.status")}</TableHead>
                   <TableHead>{t("elevator.fields.inspectionLabel")}</TableHead>
@@ -221,7 +221,7 @@ export function StyleGuide() {
                     <TableCell>
                       <TableCellStacked primary={row.brand} secondary={row.model} />
                     </TableCell>
-                    <TableCell numeric>{formatNumber(row.capacity_kg)}</TableCell>
+                    <TableCell numeric>{formatNumber(row.stop_count)}</TableCell>
                     <TableCell>
                       <ElevatorStatusChip value={row.status} />
                     </TableCell>
