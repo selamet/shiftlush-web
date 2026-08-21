@@ -1,8 +1,16 @@
 # Tasarım Fazı — Claude'a Verilecek Prompt
 
 > Bu dosya bir dokümantasyon değil, **kopyalanıp Claude'a yapıştırılacak prompt metnidir.**
-> Şartname (`faz1-sartname.md`) dosyasını eke koy, sonra aşağıdaki blokları **sırayla** gönder.
-> Tek seferde hepsini gönderme — üç aşamanın her biri ayrı bir artifact üretecek kadar büyük.
+>
+> **Eke koyulacak tek dosya: `docs/design-input.md`.**
+> Teknik şartnameyi (`shiftlush-api/faz1-sartname.md`) verme — 1750 satırın büyük kısmı
+> Django modeli, migration stratejisi ve KVKK uyumu. Tasarımcı için gürültü, dikkati dağıtır.
+> `design-input.md` şartnameden tasarımı ilgilendiren her şeyi damıtılmış halde içerir:
+> ürün bağlamı, roller ve yetki matrisi, ekran envanteri, ekranda görünen tüm alanlar ve
+> Türkçe etiketleri, enum karşılıkları, hata durumları, özel akışlar ve gerçekçi örnek veri.
+>
+> Blokları **sırayla** gönder — tek seferde hepsini gönderme, üç aşamanın her biri ayrı bir
+> artifact üretecek kadar büyük. Ek dosya konuşmada bir kez verilir, üç aşamada da geçerlidir.
 
 ---
 
@@ -30,12 +38,14 @@ tüketici ürünü estetiğine kaymasın.
 ## AŞAMA 1 — Tasarım sistemi
 
 ```
-Ekteki dosya, bir asansör bakım takip sisteminin Faz 1 teknik şartnamesi. Tamamını oku.
-Özellikle bölüm 5 (veri modeli), bölüm 6 (roller), bölüm 10 (Türkçe arayüz), bölüm 13
-(frontend yapısı) ve bölüm 20 (tasarım fazına devir notları) bu işin girdisi.
+Ekteki dosya (design-input.md), ShiftLush adlı bir asansör bakım takip sisteminin tasarım
+girdisi. Tamamını oku — ürün bağlamı, kullanıcı rolleri ve yetki matrisi, ekran envanteri,
+ekranda görünen tüm alanlar ve Türkçe etiketleri, enum karşılıkları, hata durumları, özel
+akışlar ve örnek veri orada. Tasarım kararlarının dayanağı bu dosyadır; Türkçe etiketleri
+oradan al, kendin çeviri uydurma.
 
 Senden bu sistemin GÖRSEL TASARIM SİSTEMİNİ kurmanı istiyorum. Ekran çizmeyeceksin;
-sonraki aşamalarda çizilecek ~25 ekranın tamamının üzerine oturacağı temeli kuracaksın.
+sonraki aşamalarda çizilecek ~29 ekranın tamamının üzerine oturacağı temeli kuracaksın.
 
 ## Ürün ve kullanıcı bağlamı
 
@@ -153,7 +163,7 @@ Her ekranı Aşama 1'deki token ve bileşenleri kullanarak, gerçek Türkçe iç
 
 2. UYGULAMA KABUĞU (app shell)
    Kenar çubuğu + üst bar + içerik alanı. Kenar çubuğu menüsü ROLE GÖRE değişiyor —
-   beş rolün gördüğü menüyü ayrı ayrı göster (şartname bölüm 6.2 yetki matrisi).
+   beş rolün gördüğü menüyü ayrı ayrı göster (design-input.md bölüm 2, yetki matrisi).
    Mobilde kenar çubuğu çekmece olur.
    Kritik detay: erişim jetonu bellekte tutuluyor, sayfa her yenilendiğinde oturum
    arka planda tazeleniyor. Bu ~300ms'lik açılış durumu için bir uygulama iskeleti tasarla —
@@ -174,7 +184,7 @@ Her ekranı Aşama 1'deki token ve bileşenleri kullanarak, gerçek Türkçe iç
    Çözmen gerekenler: hangi sekmede kaç zorunlu alan eksik kaldığı nasıl görünecek,
    kaydetme bir sekmede mi tüm formda mı, yarım bırakılan form ne oluyor, sekmeler arası
    geçişte doğrulama ne zaman çalışıyor.
-   Not: şartname zorunlu alan sayısını abartmamayı söylüyor — saha ekibi eksik bilgiyle
+   Not: alanların çoğu opsiyoneldir — saha ekibi eksik bilgiyle
    kayıt açmak zorunda. Yani "eksik ama geçerli" kayıt normal bir durum, hata değil.
    Bunu görsel olarak nasıl anlatacağını göster.
 
