@@ -149,13 +149,53 @@ Kararlarını kısa gerekçelerle yaz. Emin olmadığın yerde iki seçenek üre
 > Aşama 1'in çıktısı onaylandıktan sonra gönder.
 
 ```
-Tasarım sistemi onaylandı. Şimdi kilit ekranları çiz.
+Tasarım sistemi onaylandı ve KODA GEÇİRİLDİ. Şimdi kilit ekranları çiz.
 
-25 ekranın hepsini çizmeyeceğiz. Aşağıdaki 8 ekran, kalan hepsinin şablonunu belirliyor —
+29 ekranın hepsini çizmeyeceğiz. Aşağıdaki 8 ekran, kalan hepsinin şablonunu belirliyor —
 bunlar doğru olursa gerisi mekanik olarak türetilir.
 
-Her ekranı Aşama 1'deki token ve bileşenleri kullanarak, gerçek Türkçe içerik ve gerçekçi
-örnek veriyle çiz. Her ekran için hem masaüstü hem mobil kırılımı göster.
+Her ekranı Aşama 1'deki token ve bileşenlerle, gerçek Türkçe içerik ve gerçekçi örnek
+veriyle çiz. Her ekran için hem masaüstü hem mobil kırılımı göster.
+
+## Kilitlenmiş kararlar — bunları yeniden açma
+
+Aşama 1'in çıktısı uygulandı; aşağıdakiler artık kod. Sapmak isteyeceğin bir yer olursa
+önce bana sor, kendiliğinden değiştirme.
+
+**Renk yalnızca etiket verisinde doygundur.** Üç yasa:
+1. BİÇİM — periyodik kontrol etiketi 13 px dolu kare (3 px yarıçap). Sistem durumu soluk
+   zeminli blok veya 3 px sol şerit.
+2. DOYGUNLUK — etiket renkleri mat/orta doygunlukta; sistem renkleri ya çok soluk zemin
+   ya koyu metin. Aradaki bant hiç kullanılmaz.
+3. YERLEŞİM — etiket yalnızca "Etiket" kolonunda ve künyede. Sistem durumu satırın soluna,
+   alanın altına, formun üstüne, ekranın köşesine gelir; veri kolonuna asla girmez.
+
+**Enum durumları renksizdir.** Ayrımı çip ağırlığı ve ikon taşır, beş kademe:
+   çipsiz (beklenen hâl) · çerçeveli (geri döner) · dolu mürekkep (geri alınamaz, en ağır) ·
+   gömülü zemin (kayıt var, çalışmıyor) · kesikli (sistemin atadığı değer, seçilemez).
+   Bilinmeyen enum değeri: mono yazı + kesikli çerçeve + soru işareti, hata rengi YOK.
+
+**Tablo satırı 40 px, hücre iki satırlı.** 32 px reddedildi (ikinci satıra yer kalmayınca
+tablo 7'den 12 kolona çıkıyor ve yatay kaydırma geri geliyor). Tablolar düzdür, gölge yok.
+
+**Beş kontrol yüksekliği:** 28 (satır içi aksiyon, 40×40 isabet alanıyla) · 34 (masaüstü
+varsayılan) · 40 (yoğun form alanı, arama, tablo satırı) · 44 (mobil taban, WCAG 2.5.5) ·
+52 (sahada eldivenli birincil aksiyon). `pointer: coarse` altında hepsi bir kademe büyür.
+
+**Tip ölçeği:** ekran başlığı 28/34 · bölüm 20/28 · kart başlığı 16/22 · gövde 14/20 ·
+form etiketi 13/16 · tablo hücresi 13,5/18 · yardım metni 12,5/17 · kolon başlığı 11,5/14
+versal. Hiçbir okunacak metin 12,5 px altına inmez. Kolonlardaki rakamlar tabular-nums.
+
+**Kenarlık kalınlığı anlam taşır:** 1 px varsayılan · 1,5 px hatalı alan ve seçili çip ·
+2 px odak halkası (2 px boşlukla) · 3 px sol şerit durum/uyarı · 1 px kesikli sistem değeri.
+
+**Yarıçap:** 3 etiket karesi/onay kutusu · 5 çip/küçük buton · 6 buton/form alanı ·
+8 kart/panel/açılır menü · 12 diyalog/yan panel · tam yalnızca avatar ve sayaç balonu.
+
+**Gölge yalnızca yüzen şeylerde:** kart sm, açılır menü md, diyalog/yan panel lg. Koyu
+temada yükseklik gölgeyle değil kenarlıkla anlatılır.
+
+Yeni bir renk, yeni bir yükseklik, yeni bir yarıçap İCAT ETME. İhtiyaç duyarsan söyle.
 
 1. GİRİŞ EKRANI
    E-posta + şifre. Yanına: kayıt ol, şifremi unuttum. Marka varlığının tek güçlü göründüğü
