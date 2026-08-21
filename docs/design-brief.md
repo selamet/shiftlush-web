@@ -6,18 +6,24 @@
 
 ---
 
-## Göndermeden önce karar verilmesi gerekenler
+## Sabitlenen kararlar
 
-Aşağıdaki üç soruya cevap vermeden tasarıma başlama; üçü de tüm ekranları etkiliyor.
+- **Ürün adı: ShiftLush.** Depo adları (`shiftlush-api`, `shiftlush-web`) ve arayüzdeki
+  marka adı bununla hizalı. Şartnamedeki `elevator-api` / `elevator-web` referansları
+  düzeltildi.
+- **Sistem renkleri ile periyodik kontrol etiketi renkleri ayrışacak.** Asansör etiketi
+  `yeşil / mavi / sarı / kırmızı` olabiliyor ve bu **veri**, durum değil. Sistem de
+  başarı=yeşil, uyarı=sarı, hata=kırmızı kullanırsa kullanıcı "kırmızı etiketli asansör" ile
+  "hatalı kayıt" arasını ayıramaz. Aşama 1'de bunun çözülmesi açıkça isteniyor.
+- **Açık ve koyu tema, ikisi de tam.** Ofis kullanıcısı gün boyu açık temada; teknisyen
+  Faz 2'de loş makine dairesinde telefonla. Token seti baştan iki temalı kurulmalı.
 
-1. **Ürün adı ve marka.** Depo adları `shiftlush-*`, şartname `elevator-*` diyor. Arayüzde
-   görünecek ad hangisi? Prompt'ta `{ÜRÜN_ADI}` yazan yerleri bununla değiştir.
-2. **Sistem renkleri ile periyodik kontrol etiketi renklerinin çakışması.** Asansör etiketi
-   `yeşil / mavi / sarı / kırmızı` olabiliyor ve bu **veri**, durum değil. Sistem de
-   başarı=yeşil, uyarı=sarı, hata=kırmızı kullanırsa kullanıcı "kırmızı etiketli asansör" ile
-   "hatalı kayıt" arasını ayıramaz. Aşama 1'de bu problemi çözmesini açıkça isteyeceğiz.
-3. **Açık tema / koyu tema.** Ofis kullanıcısı gün boyu açık temada; teknisyen Faz 2'de loş
-   makine dairesinde telefonla. İkisi de gerekli — token seti baştan iki temalı kurulmalı.
+### Marka üzerine not
+
+"ShiftLush" İngilizce ve soyut bir ad; ürün ise Türkçe arayüzlü, ciddi bir endüstriyel
+B2B aracı. Tasarımın bu boşluğu kapatması gerekiyor: marka adı İngilizce kalabilir ama
+görsel dil asansör/bakım/güvenlik sektörüne ait okunmalı. Adın çağrıştırdığı yumuşak,
+tüketici ürünü estetiğine kaymasın.
 
 ---
 
@@ -33,7 +39,7 @@ sonraki aşamalarda çizilecek ~25 ekranın tamamının üzerine oturacağı tem
 
 ## Ürün ve kullanıcı bağlamı
 
-Ürün adı: {ÜRÜN_ADI}
+Ürün adı: ShiftLush
 Kullanıcı: Türkiye'de faaliyet gösteren asansör bakım firmaları.
 Tek bir firmada 50+ müşteri, 100+ bina, 500+ asansör, 60+ sözleşme kaydı olacak.
 
@@ -48,9 +54,18 @@ Beş rol var, üçü farklı bağlamda çalışıyor:
 Bu bir SaaS pazarlama sitesi değil, günde saatlerce bakılan bir iş aracı. "Etkileyici"
 değil "yorulmadan taranabilir" olmalı. Ama 2010'ların kurumsal gri panelini de istemiyorum.
 
+## Marka
+
+"ShiftLush" İngilizce ve soyut bir ad, ürün ise Türkçe arayüzlü ciddi bir endüstriyel
+B2B aracı. Marka adı İngilizce kalıyor ama görsel dil asansör / bakım / güvenlik sektörüne
+ait okunmalı. Adın çağrıştırabileceği yumuşak, tüketici ürünü estetiğine kayma.
+Sektör çağrışımı: dikey hareket, hassasiyet, mühendislik, güvenlik, süreklilik.
+Bana bir logo işareti (wordmark + sembol) ve markanın tek cümlelik görsel tanımını da ver.
+
 ## Pazarlık dışı teknik kısıtlar
 
-- Next.js 15 App Router + TailwindCSS + shadcn/ui ile birebir uygulanacak. shadcn/ui'de
+- Vite + React 19 + TypeScript + TailwindCSS + shadcn/ui ile birebir uygulanacak. Sunucu
+  tarafı render yok, tamamen istemci tarafı bir SPA. shadcn/ui'de
   karşılığı olmayan bileşen icat etme; her tasarım kararı bir Tailwind sınıfına ve bir
   shadcn bileşenine karşılık gelmeli.
 - İkon seti: lucide-react. Başka set kullanma, emoji ikon kullanma.
