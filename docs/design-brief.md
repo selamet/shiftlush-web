@@ -322,3 +322,73 @@ Kod fazına geçmeden önce tasarımdan şu üç şeyin çıkarılması gerekiyo
 2. `tailwind.config.ts` içine token eşlemesi
 3. `messages/tr.json` iskeleti — tasarımda görünen her metin buraya anahtarlanacak.
    Tasarımdan doğrudan çıkarılabilir; kod yazılırken tekrar düşünülmez.
+
+---
+
+## EK TUR — E7 ve E8
+
+> Aşama 2'nin son iki ekranı okunamadı: dosya 264 KB'a ulaştığı için okuma sınırında
+> (256 KiB) kesiliyor ve E7 yalnızca başlık olarak, E8 hiç gelmiyor. Bu ikisi şimdilik
+> şartnameden türetilerek kodlandı; tasarımcının kararlarıyla değiştirilecek.
+>
+> **Mevcut dosyayı bölme.** Claude Design'da **yeni bir dosya** aç
+> (`ShiftLush Ekranlar 2.dc.html`) ve aşağıdaki prompt'u aynı konuşmada gönder.
+> Yeni dosya küçük kalır, eksiksiz okunur, eski dosya olduğu gibi durur.
+>
+> Aşama 1 ve 2 aynı konuşmada olduğu için ek dosya vermeye gerek yok.
+
+```
+Aşama 2'nin son iki ekranı bana ulaşmadı — dosya okuma sınırını aştığı için kesildi.
+Bu ikisini YENİ bir dosyaya çiz: "ShiftLush Ekranlar 2.dc.html". Önceki dosyaya dokunma.
+
+Aşama 1'deki token'lar ve Aşama 2'de kurduğun kararlar aynen geçerli; hiçbirini yeniden
+açma. Özellikle: renk yalnızca etiket verisinde doygun, enum durumları renksiz ve ayrımı
+beş kademeli çip ağırlığı taşıyor (çipsiz / çerçeveli / dolu mürekkep / gömülü zemin /
+kesikli), ikon yalnızca "askıya alınmış"ta, tablo satırı 40 px iki satırlı hücreyle,
+kontrol yükseklikleri 28-34-40-44-52.
+
+7. SÖZLEŞME DETAYI — rol bazlı alan gizleme
+   Sözleşme bilgileri + kapsamındaki asansör listesi + mali bilgiler (aylık ücret, KDV,
+   birim fiyat) + imzalı PDF eki + fesih ve yenileme aksiyonları.
+
+   Kritik olan şu: `operations` rolü mali alanları GÖRMEZ, `accountant` teknik künyeyi
+   GÖRMEZ. Aynı ekranı bu üç rol için ayrı ayrı göster: owner, operations, accountant.
+
+   Karar vermeni istediğim nokta: gizlenen alanın yerinde ne olacak? Boşluk mu, kilit
+   ikonlu bir satır mı, hiç görünmemesi mi? Üçünün de bedeli var — boşluk "veri eksik"
+   gibi okunur, kilit ikonu her satırda tekrarlanırsa gürültü olur, hiç göstermemek
+   kullanıcıya alanın var olduğunu bile söylemez. Seçimini gerekçelendir.
+
+   Ayrıca "sözleşmeyi feshet" akışını tasarla. Bu geri alınamaz ve birden fazla tabloya
+   dokunuyor: kapsamdaki asansörlerin sözleşme ilişkisi kapanıyor, durumları
+   "Sözleşmesiz"e düşüyor, fesih gerekçesi zorunlu hale geliyor. Genel bir "emin misiniz?"
+   istemiyorum — sonuçları adıyla sayan bir onay istiyorum. Yenileme akışı da olsun,
+   ama ondan belirgin şekilde daha hafif olmalı.
+
+   Mobil hâlini de ver.
+
+8. QR ETİKET YAZDIRMA
+   Ekranda: seçim listesi (bina veya müşteri bazlı toplu seçim dahil) + önizleme + yazdır.
+
+   Çıktıda: A4'te 3×4 = 12 etiket. Her etikette QR, asansör adı, bina adı, asansör kimlik
+   no, firma logosu ve telefonu — hepsi Türkçe. A4 sayfa düzenini gerçek milimetre
+   ölçüleriyle göster.
+
+   Etiket makine dairesinde, loş ışıkta, tozlu ve yıllardır orada duran yıpranmış bir
+   çıkartma olarak okunacak. Baskı tasarımını buna göre yap: yüksek kontrast, kalın
+   tipografi, ince çizgi yok. QR en az 25×25 mm, hata düzeltme seviyesi H.
+
+   Ekran teması ne olursa olsun etiket siyah-beyaz basılır — bunu önizlemede de göster.
+
+   Çözmeni istediğim iki durum: seçim 12'yi aştığında sayfalar arası bölünme nasıl
+   görünüyor, ve hiç seçim yokken önizleme ne gösteriyor.
+
+Her ekranın altına aldığın kararları 2-3 cümleyle gerekçelendir.
+```
+
+### Bu turdan sonra
+
+Tasarım tarafı kapanır. Aşama 3'ün (durum matrisi — hata ve yükleme ekranları) backend
+sözleşmesi çıkana kadar beklemesi doğru: hata ekranlarını gerçek hata kodları ve yanıt
+şekilleri belirler, yükleme durumlarının yerini de neyin gerçekten yavaş olduğu belirler.
+Şimdi tasarlanırsa tahmine dayanır ve API gelince yeniden çizilir.
