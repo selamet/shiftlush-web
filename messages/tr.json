@@ -1,0 +1,403 @@
+{
+  "app": {
+    "name": "ShiftLush"
+  },
+  "common": {
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "deletePermanently": "Kalıcı olarak sil",
+    "edit": "Düzenle",
+    "add": "Ekle",
+    "search": "Ara…",
+    "filter": "Filtrele",
+    "clearFilters": "Filtreleri temizle",
+    "back": "Geri",
+    "next": "İleri",
+    "continue": "Devam",
+    "close": "Kapat",
+    "confirm": "Onayla",
+    "print": "Yazdır",
+    "download": "İndir",
+    "upload": "Yükle",
+    "yes": "Evet",
+    "no": "Hayır",
+    "none": "Yok",
+    "notSpecified": "Belirtilmedi",
+    "required": "Zorunlu",
+    "optional": "İsteğe bağlı",
+    "loading": "Yükleniyor…",
+    "actions": "İşlemler",
+    "selectedCount": "{{count}} kayıt seçildi",
+    "resultRange": "{{from}}-{{to}} / {{total}} kayıt",
+    "untranslatedValue": "Bu değerin Türkçe karşılığı henüz tanımlı değil"
+  },
+  "elevator": {
+    "title": "Asansörler",
+    "singular": "Asansör",
+    "fields": {
+      "building": "Bina",
+      "registrationNumber": "Asansör kimlik no",
+      "internalCode": "Firma iç kodu",
+      "name": "Asansör adı",
+      "status": "Durum",
+      "maintenanceIntervalDays": "Bakım periyodu (gün)",
+      "category": "Kategori",
+      "driveType": "Tahrik tipi",
+      "controlType": "Kumanda tipi",
+      "doorType": "Kapı tipi",
+      "hasCarDoor": "Kabin kapısı var",
+      "machineRoom": "Makine dairesi",
+      "capacityKg": "Taşıma kapasitesi (kg)",
+      "capacityPersons": "Kapasite (kişi)",
+      "stopCount": "Durak sayısı",
+      "entranceCount": "Giriş sayısı",
+      "speedMps": "Beyan hızı (m/s)",
+      "pitDepthMm": "Kuyu dibi derinliği (mm)",
+      "headroomMm": "Son kat yüksekliği (mm)",
+      "carWeightKg": "Kabin ağırlığı (kg)",
+      "brand": "Marka",
+      "model": "Model",
+      "serialNumber": "Seri no",
+      "manufacturer": "Üretici firma",
+      "installer": "Montajcı firma",
+      "installationDate": "Montaj tarihi",
+      "commissioningDate": "İlk kullanım tarihi",
+      "ceCertificateNumber": "CE belge no",
+      "warrantyEndDate": "Garanti bitiş tarihi",
+      "lastInspectionDate": "Son kontrol tarihi",
+      "inspectionLabel": "Etiket rengi",
+      "nextInspectionDate": "Sonraki kontrol tarihi",
+      "inspectionBody": "Muayene kuruluşu",
+      "inspectionReportNumber": "Kontrol rapor no",
+      "notes": "Notlar",
+      "qrToken": "QR kodu"
+    },
+    "tabs": {
+      "identity": "Kimlik",
+      "classification": "Sınıflandırma",
+      "technical": "Teknik",
+      "manufacturing": "Üretim ve montaj",
+      "inspection": "Periyodik kontrol",
+      "attachments": "Ekler"
+    },
+    "status": {
+      "active": "Aktif",
+      "suspended": "Askıya alınmış",
+      "sealed": "Mühürlü",
+      "outOfService": "Hizmet dışı",
+      "out_of_service": "Hizmet dışı",
+      "uncontracted": "Sözleşmesiz"
+    },
+    "category": {
+      "passenger": "İnsan asansörü",
+      "freight": "Yük asansörü",
+      "passenger_freight": "İnsan-yük asansörü",
+      "dumbwaiter": "Servis asansörü",
+      "accessibility_platform": "Engelli platformu",
+      "vehicle": "Araç asansörü"
+    },
+    "driveType": {
+      "geared_electric": "Dişlili elektrikli",
+      "gearless_electric": "Dişlisiz elektrikli",
+      "hydraulic": "Hidrolik"
+    },
+    "controlType": {
+      "simple_collective": "Basit toplamalı",
+      "down_collective": "Aşağı toplamalı",
+      "full_collective": "Tam toplamalı",
+      "group_control": "Grup kumandalı"
+    },
+    "doorType": {
+      "automatic_center": "Otomatik merkezi",
+      "automatic_side": "Otomatik yandan",
+      "semi_automatic": "Yarı otomatik",
+      "manual": "Manuel"
+    },
+    "machineRoom": {
+      "present": "Var",
+      "absent": "Yok",
+      "partial": "Kısmi"
+    },
+    "inspectionLabel": {
+      "green": "Yeşil",
+      "blue": "Mavi",
+      "yellow": "Sarı",
+      "red": "Kırmızı",
+      "none": "Etiketsiz"
+    },
+    "hints": {
+      "maintenanceInterval": "1–30 gün arası. Varsayılan 30.",
+      "mostFieldsOptional": "Alanların çoğu opsiyoneldir",
+      "noCarDoor": "Kabin kapısı yok — ağır uygunsuzluk",
+      "qrRegenerateWarning": "QR kodu yenilendiğinde basılı etiketler geçersiz olur."
+    }
+  },
+  "contract": {
+    "title": "Sözleşmeler",
+    "singular": "Sözleşme",
+    "fields": {
+      "contractNumber": "Sözleşme no",
+      "customer": "Müşteri",
+      "status": "Durum",
+      "scope": "Kapsam",
+      "startDate": "Başlangıç tarihi",
+      "endDate": "Bitiş tarihi",
+      "pricingType": "Fiyatlandırma tipi",
+      "monthlyFee": "Aylık ücret",
+      "currency": "Para birimi",
+      "vatRate": "KDV oranı (%)",
+      "billingPeriod": "Fatura dönemi",
+      "autoRenew": "Otomatik yenilensin",
+      "renewalNoticeDays": "Yenileme bildirim süresi (gün)",
+      "previousContract": "Önceki sözleşme",
+      "terminatedAt": "Fesih tarihi",
+      "terminationReason": "Fesih gerekçesi",
+      "signedDocument": "İmzalı sözleşme",
+      "unitPrice": "Birim fiyat",
+      "addedAt": "Eklenme tarihi",
+      "removedAt": "Çıkarılma tarihi",
+      "notes": "Notlar"
+    },
+    "status": {
+      "draft": "Taslak",
+      "active": "Aktif",
+      "expired": "Süresi dolmuş",
+      "terminated": "Feshedilmiş",
+      "renewed": "Yenilenmiş"
+    },
+    "scope": {
+      "maintenance_only": "Sadece bakım",
+      "maintenance_and_repair": "Bakım ve onarım",
+      "full_coverage": "Tam kapsam"
+    },
+    "pricingType": {
+      "per_elevator": "Asansör başına",
+      "flat": "Sabit ücret"
+    },
+    "billingPeriod": {
+      "monthly": "Aylık",
+      "quarterly": "3 aylık",
+      "semiannual": "6 aylık",
+      "annual": "Yıllık"
+    },
+    "actions": {
+      "terminate": "Sözleşmeyi feshet",
+      "renew": "Sözleşmeyi yenile",
+      "addElevator": "Asansör ekle",
+      "removeElevator": "Asansörü çıkar"
+    },
+    "financialsHidden": "Mali bilgileri görme yetkiniz yok"
+  },
+  "customer": {
+    "title": "Müşteriler",
+    "singular": "Müşteri",
+    "fields": {
+      "type": "Müşteri tipi",
+      "legalName": "Ticari unvan",
+      "taxOffice": "Vergi dairesi",
+      "taxNumber": "Vergi numarası",
+      "nationalId": "TC kimlik no",
+      "phone": "Telefon",
+      "email": "E-posta",
+      "notes": "Notlar",
+      "isActive": "Aktif"
+    },
+    "type": {
+      "complex_management": "Site yönetimi",
+      "building_management": "Bina yönetimi",
+      "corporate": "Kurumsal",
+      "public": "Kamu",
+      "individual": "Şahıs"
+    }
+  },
+  "customerContact": {
+    "title": "İletişim kişileri",
+    "fields": {
+      "fullName": "Ad soyad",
+      "role": "Görev",
+      "phone": "Telefon",
+      "email": "E-posta",
+      "isPrimary": "Birincil iletişim kişisi",
+      "notes": "Notlar"
+    },
+    "role": {
+      "manager": "Yönetici",
+      "auditor": "Denetçi",
+      "caretaker": "Görevli / kapıcı",
+      "technical_lead": "Teknik sorumlu",
+      "accounting": "Muhasebe",
+      "other": "Diğer"
+    }
+  },
+  "building": {
+    "title": "Binalar",
+    "singular": "Bina",
+    "fields": {
+      "customer": "Müşteri",
+      "complex": "Site",
+      "name": "Bina adı",
+      "type": "Bina tipi",
+      "addressNote": "Adres tarifi",
+      "floorCount": "Kat sayısı",
+      "unitCount": "Daire / ofis sayısı",
+      "isActive": "Aktif"
+    },
+    "type": {
+      "residential": "Konut",
+      "commercial": "Ticari",
+      "mixed_use": "Karma kullanım",
+      "public": "Kamu",
+      "hospital": "Hastane",
+      "mall": "AVM",
+      "hotel": "Otel",
+      "school": "Okul",
+      "industrial": "Sanayi"
+    }
+  },
+  "complex": {
+    "title": "Siteler",
+    "singular": "Site",
+    "fields": {
+      "name": "Site adı",
+      "customer": "Müşteri",
+      "notes": "Notlar"
+    }
+  },
+  "user": {
+    "title": "Kullanıcılar",
+    "singular": "Kullanıcı",
+    "fields": {
+      "firstName": "Ad",
+      "lastName": "Soyad",
+      "email": "E-posta",
+      "phone": "Telefon",
+      "role": "Rol",
+      "isActive": "Aktif",
+      "lastLoginAt": "Son giriş",
+      "certificateNumber": "Mesleki yeterlilik belge no",
+      "certificateValidUntil": "Belge geçerlilik tarihi"
+    },
+    "role": {
+      "owner": "Firma sahibi",
+      "admin": "Yönetici",
+      "operations": "Operasyon",
+      "technician": "Teknisyen",
+      "accountant": "Muhasebe"
+    },
+    "actions": {
+      "invite": "Kullanıcı davet et",
+      "deactivate": "Pasifleştir",
+      "assignCustomers": "Müşteri ata"
+    }
+  },
+  "company": {
+    "title": "Firma ayarları",
+    "fields": {
+      "legalName": "Ticari unvan",
+      "displayName": "Görünen ad",
+      "taxOffice": "Vergi dairesi",
+      "taxNumber": "Vergi numarası",
+      "mersisNumber": "MERSİS no",
+      "tradeRegistryNumber": "Ticaret sicil no",
+      "phone": "Telefon",
+      "email": "E-posta",
+      "website": "Web sitesi",
+      "logo": "Logo"
+    }
+  },
+  "address": {
+    "fields": {
+      "province": "İl",
+      "district": "İlçe",
+      "neighborhood": "Mahalle",
+      "street": "Sokak / cadde",
+      "buildingNumber": "Dış kapı no",
+      "unitNumber": "İç kapı no",
+      "location": "Konum"
+    },
+    "type": {
+      "neighborhood": "Mahalle",
+      "village": "Köy",
+      "town": "Belde"
+    },
+    "hints": {
+      "neighborhoodMinChars": "Aramak için en az 2 karakter girin",
+      "neighborhoodNotFound": "Mahalle bulunamadı — adres tarifi alanına yazın",
+      "locationMissing": "Konum girilmedi",
+      "geocodeSuggestion": "Harita önerisi — kontrol edip düzeltebilirsiniz"
+    }
+  },
+  "attachment": {
+    "title": "Ekler",
+    "category": {
+      "photo": "Fotoğraf",
+      "ce_certificate": "CE belgesi",
+      "declaration_of_conformity": "Uygunluk beyanı",
+      "permit": "Ruhsat",
+      "signed_contract": "İmzalı sözleşme",
+      "inspection_report": "Kontrol raporu",
+      "logo": "Logo",
+      "other": "Diğer"
+    }
+  },
+  "qr": {
+    "title": "QR etiket",
+    "printLabels": "QR etiketi yazdır",
+    "printSelected": "Seçilenlerin etiketini yazdır",
+    "regenerate": "QR kodunu yenile",
+    "scanPrompt": "QR okut"
+  },
+  "auth": {
+    "login": "Giriş yap",
+    "logout": "Çıkış yap",
+    "register": "Kayıt ol",
+    "forgotPassword": "Şifremi unuttum",
+    "resetPassword": "Şifremi sıfırla",
+    "password": "Şifre",
+    "newPassword": "Yeni şifre",
+    "sessionRestoring": "Oturum doğrulanıyor…",
+    "lockedOut": "Çok fazla başarısız deneme. 15 dakika sonra tekrar deneyin."
+  },
+  "empty": {
+    "noRecords": "Henüz kayıt yok",
+    "noFilterResults": "Filtreye uyan kayıt bulunamadı",
+    "noAssignedCustomers": "Size atanmış müşteri bulunmuyor"
+  },
+  "errors": {
+    "VALIDATION_ERROR": "Girdiğiniz bilgilerde hata var",
+    "INVALID_TAX_NUMBER": "Vergi numarası geçersiz",
+    "INVALID_NATIONAL_ID": "TC kimlik numarası geçersiz",
+    "END_DATE_BEFORE_START_DATE": "Bitiş tarihi başlangıç tarihinden önce olamaz",
+    "DUPLICATE_REGISTRATION_NUMBER": "Bu asansör kimlik numarası zaten kayıtlı",
+    "EMAIL_ALREADY_REGISTERED": "Bu e-posta adresi zaten kayıtlı",
+    "RECORD_IN_USE": "Bu kayıt kullanımda olduğu için silinemez",
+    "ELEVATOR_ALREADY_CONTRACTED": "Bu asansör zaten aktif bir sözleşmede",
+    "IDEMPOTENCY_KEY_REUSED": "İşlem tekrarlandı",
+    "FORBIDDEN": "Bu sayfayı görme yetkiniz yok",
+    "NOT_FOUND": "Kayıt bulunamadı",
+    "NETWORK_ERROR": "Sunucuya ulaşılamıyor",
+    "SESSION_EXPIRED": "Oturum süresi doldu",
+    "UNKNOWN": "Beklenmeyen bir hata oluştu",
+    "requestIdLabel": "Hata kimliği",
+    "requestIdHelp": "Destek ekibine bu kimliği iletin"
+  },
+  "styleguide": {
+    "title": "ShiftLush Tasarım Sistemi",
+    "subtitle": "Asansör bakım kayıt sisteminin görsel dili",
+    "toggleTheme": "Temayı değiştir",
+    "sections": {
+      "colors": "Renk sistemi",
+      "typography": "Tipografi",
+      "controls": "Kontrol yükseklikleri",
+      "buttons": "Buton",
+      "fields": "Form alanı",
+      "chips": "Rozet ve durum çipi",
+      "labels": "Etiket rengi paleti",
+      "status": "Sistem durum renkleri",
+      "table": "Liste ekranı"
+    },
+    "labelRule": "Doygun dolgu yalnızca etiket verisinde kullanılır. Sistem renkleri soluk zemin ve koyu metinle görünür — ikisi karışmaz.",
+    "densityNote": "Satır yüksekliği 40 piksel, hücre iki satır."
+  }
+}

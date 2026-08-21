@@ -1,0 +1,68 @@
+[
+  {
+    "registration_number": "34-2019-004512",
+    "name": "Sol asansör",
+    "building": "Çamlıca Konakları A Blok",
+    "brand": "Schindler",
+    "model": "3300",
+    "status": "active",
+    "inspection_label": "green",
+    "next_inspection_date": "2027-03-14T00:00:00Z",
+    "capacity_kg": 630
+  },
+  {
+    "registration_number": "34-2018-001187",
+    "name": "Yük asansörü",
+    "building": "Çamlıca Konakları B Blok",
+    "brand": "Otis",
+    "model": "GeN2",
+    "status": "active",
+    "inspection_label": "yellow",
+    "next_inspection_date": "2026-11-02T00:00:00Z",
+    "capacity_kg": 1600
+  },
+  {
+    "registration_number": "34-2021-009043",
+    "name": "A1",
+    "building": "Ofis Kule 1",
+    "brand": "Kone",
+    "model": "MonoSpace 500",
+    "status": "sealed",
+    "inspection_label": "red",
+    "next_inspection_date": "2026-09-30T00:00:00Z",
+    "capacity_kg": 1000
+  },
+  {
+    "registration_number": "34-2016-000774",
+    "name": "Servis asansörü",
+    "building": "Yıldız Apartmanı",
+    "brand": "Merih Asansör",
+    "model": "MR-200",
+    "status": "uncontracted",
+    "inspection_label": "none",
+    "next_inspection_date": null,
+    "capacity_kg": 320
+  },
+  {
+    "registration_number": "34-2020-006201",
+    "name": "Sağ asansör",
+    "building": "Nurtepe Sitesi C Blok",
+    "brand": "ThyssenKrupp",
+    "model": "Evolution 200",
+    "status": "suspended",
+    "inspection_label": "blue",
+    "next_inspection_date": "2026-12-18T00:00:00Z",
+    "capacity_kg": 630
+  },
+  {
+    "registration_number": "34-2015-000312",
+    "name": "Otopark asansörü",
+    "building": "Ofis Kule 1",
+    "brand": "Akış Asansör",
+    "model": "AK-1200",
+    "status": "out_of_service",
+    "inspection_label": "none",
+    "next_inspection_date": null,
+    "capacity_kg": 1275
+  }
+]

@@ -1,0 +1,253 @@
+@import "tailwindcss";
+
+/* Dark theme is class-driven so the user's explicit choice always wins over the OS. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   Design tokens — ShiftLush Design System
+   Values are transcribed verbatim from the design; contrast ratios in the
+   comments are the measured values documented alongside each token.
+   Do not introduce a colour that is not defined here.
+--------------------------------------------------------------------------- */
+
+:root {
+  /* Surfaces -------------------------------------------------------------- */
+  --background: #f4f5f7; /* 16.4 */
+  --card: #ffffff; /* 17.9 */
+  --muted: #edeef2; /* 15.4 */
+  --accent: #f2f3f6; /* 16.1 */
+  --sl-selected: #f1ecfe; /* 15.5 */
+
+  /* Text ------------------------------------------------------------------ */
+  --foreground: #16171c; /* 17.9 */
+  --muted-foreground: #5a5f6b; /* 6.4 */
+  --sl-subtle: #6e7381; /* 4.7 — floor for readable text */
+
+  /* Borders --------------------------------------------------------------- */
+  --sl-border-subtle: #e4e6eb; /* 1.3 */
+  --border: #d2d5dd; /* 1.5 */
+  --input: #d2d5dd;
+  --sl-border-strong: #a9aeba; /* 2.2 */
+
+  /* Primary action -------------------------------------------------------- */
+  --primary: #5a3bd4; /* 7.0 */
+  --primary-foreground: #ffffff;
+  --sl-primary-hover: #4a2cbe; /* 8.8 */
+  --sl-primary-soft: #f1ecfe; /* 8.2 against primary ink */
+  --ring: #5a3bd4; /* 6.4 */
+
+  /* System status --------------------------------------------------------- */
+  /* Rule: pale surface + dark ink + icon. Never a saturated fill inside a
+     data cell — that visual weight belongs exclusively to inspection labels. */
+  --sl-success-fg: #0a6b3d;
+  --sl-success-bg: #e6f5ec; /* 5.9 */
+  --sl-info-fg: #0b5cad;
+  --sl-info-bg: #e6f0fb; /* 5.8 */
+  --sl-warning-fg: #7a4a00;
+  --sl-warning-bg: #fdf2dc; /* 6.7 */
+  --destructive: #c0271f;
+  --destructive-foreground: #ffffff;
+  --sl-destructive-bg: #fdebea; /* 6.0 */
+
+  /* Inspection label palette (data, not status) --------------------------- */
+  --sl-label-green: #2a8449; /* 4.7 */
+  --sl-label-blue: #2c6bd1; /* 5.1 */
+  --sl-label-yellow: #af7d00; /* 3.7 — swatch only, never text */
+  --sl-label-red: #c8352f; /* 5.2 */
+
+  /* Type ------------------------------------------------------------------ */
+  --font-sans: "Source Sans 3", system-ui, sans-serif;
+  --font-mono: "Source Code Pro", ui-monospace, monospace;
+
+  --radius: 0.375rem; /* 6px base */
+}
+
+.dark {
+  --background: #101116; /* 15.7 */
+  --card: #16181f; /* 14.7 */
+  --muted: #1d2029; /* 13.5 */
+  --accent: #21242e; /* 12.9 */
+  --sl-selected: #221a44; /* 13.4 */
+
+  --foreground: #e8eaf0; /* 14.7 */
+  --muted-foreground: #a0a6b4; /* 7.3 */
+  --sl-subtle: #7e8494; /* 4.7 */
+
+  --sl-border-subtle: #24272f; /* 1.2 */
+  --border: #333846; /* 1.5 */
+  --input: #333846;
+  --sl-border-strong: #4d5464; /* 2.3 */
+
+  --primary: #6c4bf5; /* 5.3 */
+  --primary-foreground: #ffffff;
+  --sl-primary-hover: #7c5cff; /* 4.5 */
+  --sl-primary-soft: #221a44; /* 8.6 */
+  --ring: #a78bfa; /* 6.9 */
+
+  --sl-success-fg: #5fd39a;
+  --sl-success-bg: #11251b; /* 8.6 */
+  --sl-info-fg: #6fb2f5;
+  --sl-info-bg: #0e1e30; /* 7.5 */
+  --sl-warning-fg: #e8b84b;
+  --sl-warning-bg: #251c08; /* 9.1 */
+  --destructive: #f2867f;
+  --destructive-foreground: #16171c;
+  --sl-destructive-bg: #2a1414; /* 7.0 */
+
+  --sl-label-green: #3fa862; /* 5.9 */
+  --sl-label-blue: #4a86e8; /* 5.0 */
+  --sl-label-yellow: #e0ae1c; /* 8.7 */
+  --sl-label-red: #e86a63; /* 5.6 */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-selected: var(--sl-selected);
+  --color-subtle: var(--sl-subtle);
+
+  --color-border: var(--border);
+  --color-border-subtle: var(--sl-border-subtle);
+  --color-border-strong: var(--sl-border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--sl-primary-hover);
+  --color-primary-soft: var(--sl-primary-soft);
+
+  --color-success: var(--sl-success-fg);
+  --color-success-bg: var(--sl-success-bg);
+  --color-info: var(--sl-info-fg);
+  --color-info-bg: var(--sl-info-bg);
+  --color-warning: var(--sl-warning-fg);
+  --color-warning-bg: var(--sl-warning-bg);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-bg: var(--sl-destructive-bg);
+
+  --color-label-green: var(--sl-label-green);
+  --color-label-blue: var(--sl-label-blue);
+  --color-label-yellow: var(--sl-label-yellow);
+  --color-label-red: var(--sl-label-red);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  /* Radii carry meaning: the scale grows with the element, it never softens.  */
+  --radius-xs: 3px; /* label square, checkbox */
+  --radius-sm: 5px; /* status chip, small button */
+  --radius-md: 6px; /* button, input, select */
+  --radius-lg: 8px; /* card, panel, dropdown */
+  --radius-xl: 12px; /* dialog, sheet */
+
+  /* Elevation is only for things that float. Tables and rows stay flat. */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.06);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.08), 0 1px 3px rgb(0 0 0 / 0.06);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08);
+
+  /* Five control heights. `pointer: coarse` bumps every control one step up
+     — the technician will be wearing gloves. */
+  --spacing-control-xs: 28px; /* in-row action */
+  --spacing-control-sm: 34px; /* desktop default */
+  --spacing-control-md: 40px; /* dense field, search, table row */
+  --spacing-control-lg: 44px; /* mobile floor, WCAG 2.5.5 */
+  --spacing-control-xl: 52px; /* gloved primary action, phase 2 */
+
+  /* Type scale. Nothing readable drops below 12.5px; the 13.5px table cell is
+     deliberate — 14px would not fit 8 columns at 1440px, 13px tires the eye. */
+  --text-title: 28px;
+  --text-title--line-height: 34px;
+  --text-title--letter-spacing: -0.02em;
+  --text-title--font-weight: 600;
+
+  --text-section: 20px;
+  --text-section--line-height: 28px;
+  --text-section--letter-spacing: -0.015em;
+  --text-section--font-weight: 600;
+
+  --text-cardtitle: 16px;
+  --text-cardtitle--line-height: 22px;
+  --text-cardtitle--font-weight: 600;
+
+  --text-body: 14px;
+  --text-body--line-height: 20px;
+
+  --text-label: 13px;
+  --text-label--line-height: 16px;
+  --text-label--font-weight: 500;
+
+  --text-cell: 13.5px;
+  --text-cell--line-height: 18px;
+
+  --text-help: 12.5px;
+  --text-help--line-height: 17px;
+
+  --text-colhead: 11.5px;
+  --text-colhead--line-height: 14px;
+  --text-colhead--letter-spacing: 0.06em;
+  --text-colhead--font-weight: 600;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    /* Lining figures with a slashed zero: registration numbers and elevator
+       codes get misread without it. Tabular figures are opt-in per element so
+       prose keeps its proportional spacing. */
+    font-feature-settings:
+      "tnum" 0,
+      "zero" 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Every number that sits in a column must align on the decimal. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: var(--sl-selected);
+    color: var(--foreground);
+  }
+}
+
+@layer components {
+  /* 2px ring at a 2px offset — the single focus treatment for the whole app. */
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Enlarges the hit area of a visually small control to 40x40 without
+     changing its rendered size. Used by the 28px in-row action buttons. */
+  .hit-40 {
+    @apply relative;
+  }
+
+  .hit-40::after {
+    content: "";
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+  }
+}
