@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { MapPin, Search, TriangleAlert, Map as MapIcon } from "lucide-react";
+import { MapPin, Search, TriangleAlert, Map as MapIcon, ChevronLeft, Check } from "lucide-react";
 import address from "@fixtures/demo-address.json";
 import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/i18n";
@@ -39,6 +39,137 @@ function Select({
   );
 }
 
+/**
+ * The mobile flow.
+ *
+ * The map and the form do not fit on a phone together, and squeezing them
+ * would make both bad. So the map stops being a field and becomes a step: the
+ * form stays one column, location is a single row, and touching it opens the
+ * map full screen with the suggestion in a sheet. Saving returns to the form.
+ */
+function AddressPickerMobile() {
+  const { t } = useTranslation();
+  const [onMap, setOnMap] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  if (onMap) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-background">
+        <header className="flex items-center gap-2 border-b border-border bg-card px-2 py-2">
+          <Button size="icon" variant="ghost" onClick={() => setOnMap(false)} aria-label={t("common.back")}>
+            <ChevronLeft />
+          </Button>
+          <span className="min-w-0 flex-1 truncate text-body">
+            {address.street} {address.buildingNumber}, {address.districts[0]}
+          </span>
+        </header>
+
+        <div className="relative flex flex-1 items-center justify-center bg-muted">
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+            <MapIcon className="size-8" aria-hidden="true" />
+            <span className="text-help">{t("addressPicker.mapUnavailable")}</span>
+          </div>
+          <span className="absolute top-3 left-1/2 -translate-x-1/2 rounded-md bg-card px-2.5 py-1.5 text-help text-muted-foreground shadow-sm">
+            {t("addressPicker.dragPin")}
+          </span>
+        </div>
+
+        {/* The sheet carries the suggestion and the coordinates; the two exits
+            stay equal weight here too. */}
+        <div className="flex flex-col gap-3 border-t border-border bg-card p-4">
+          <div className="flex flex-col gap-1.5 rounded-md border-l-[3px] border-warning bg-warning-bg px-3 py-2.5">
+            <span className="text-label text-warning">{t("addressPicker.suggestionShort")}</span>
+            <span className="text-help text-warning">
+              {t("addressPicker.writtenNotLocked", { name: address.suggestion.first })}
+            </span>
+          </div>
+          <div className="flex flex-col leading-tight">
+            <span className="text-cell">{address.neighborhoodResults[0].name}</span>
+            <span className="text-help text-muted-foreground">
+              {address.neighborhoodResults[0].context}
+            </span>
+          </div>
+          <span className="font-mono tnum text-help text-muted-foreground">
+            {address.suggestion.latitude} · {address.suggestion.longitude}
+          </span>
+          <div className="flex gap-2">
+            <Button size="lg" variant="secondary" className="flex-1">
+              {t("addressPicker.fix")}
+            </Button>
+            <Button
+              size="lg"
+              className="flex-1"
+              onClick={() => {
+                setSaved(true);
+                setOnMap(false);
+              }}
+            >
+              {t("addressPicker.saveLocation")}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-full flex-col">
+      <div className="flex items-baseline justify-between gap-2 px-4 pt-4">
+        <h2 className="text-section">{t("addressPicker.title")}</h2>
+        <span className="tnum text-help text-muted-foreground">3 / 4</span>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-4 p-4">
+        <Field label={t("address.fields.province")} htmlFor="apm-province">
+          <Input defaultValue={address.provinces[0]} readOnly />
+        </Field>
+        <Field label={t("address.fields.district")} htmlFor="apm-district">
+          <Input defaultValue={address.districts[0]} readOnly />
+        </Field>
+        <Field label={t("address.fields.neighborhood")} htmlFor="apm-neighborhood">
+          <Input defaultValue={address.neighborhoodResults[0].name} readOnly />
+        </Field>
+        <Field label={t("address.fields.street")} htmlFor="apm-street">
+          <Input defaultValue={address.street} />
+        </Field>
+        <Field label={t("addressPicker.doorNumber")} htmlFor="apm-door">
+          <Input defaultValue={address.buildingNumber} className="tnum" />
+        </Field>
+        <Field label={t("building.fields.addressNote")} htmlFor="apm-note" required>
+          <Textarea rows={3} defaultValue={address.addressNote} />
+        </Field>
+
+        {/* Location is a row, not a field. Touching it opens the step. */}
+        <button
+          type="button"
+          onClick={() => setOnMap(true)}
+          className="flex h-14 items-center gap-3 rounded-md border border-dashed border-border-strong px-3 text-left focus-ring"
+        >
+          <MapPin className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="text-cell">{t("addressPicker.markOnMap")}</span>
+            <span className="text-help text-subtle">
+              {saved
+                ? `${address.suggestion.latitude} · ${address.suggestion.longitude}`
+                : t("addressPicker.notEnteredOptional")}
+            </span>
+          </span>
+          {saved && <Check className="ml-auto size-4 shrink-0 text-success" aria-hidden="true" />}
+        </button>
+      </div>
+
+      <div className="sticky bottom-0 flex gap-2 border-t border-border bg-card p-3">
+        <Button size="lg" variant="secondary" className="flex-1">
+          {t("common.back")}
+        </Button>
+        <Button size="lg" className="flex-1">
+          {t("common.continue")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function AddressPicker({ mode = "suggestion" }: { mode?: Mode }) {
   const { t } = useTranslation();
   const noteRef = useRef<HTMLTextAreaElement>(null);
@@ -53,7 +184,12 @@ export function AddressPicker({ mode = "suggestion" }: { mode?: Mode }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row">
+    <>
+      <div className="lg:hidden">
+        <AddressPickerMobile />
+      </div>
+
+      <div className="hidden flex-col gap-4 lg:flex lg:flex-row">
       {/* Data entry is the real work; the map is a verification tool. Hence the
           fixed form column and the map taking whatever is left. */}
       <div className="flex w-full shrink-0 flex-col gap-4 lg:w-[528px]">
@@ -234,5 +370,6 @@ export function AddressPicker({ mode = "suggestion" }: { mode?: Mode }) {
         )}
       </div>
     </div>
+    </>
   );
 }

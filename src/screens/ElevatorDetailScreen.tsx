@@ -19,6 +19,7 @@ import { useSession } from "@/lib/session";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
+import { ElevatorDetailMobile } from "./ElevatorDetailMobile";
 import { InspectionLabel } from "@/components/ui/inspection-label";
 
 type Value = string | number | null | undefined;
@@ -99,7 +100,15 @@ export function ElevatorDetailScreen() {
   const canSeeFinancials = role === "owner" || role === "admin" || role === "accountant";
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <>
+      {/* Narrow screens get the field view, not a squeezed desktop record —
+          arriving here from a QR scan is a different task from reading the
+          register at a desk. */}
+      <div className="md:hidden">
+        <ElevatorDetailMobile viaQr={role === "technician"} />
+      </div>
+
+      <div className="hidden flex-col gap-4 p-6 md:flex">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1.5">
           <nav className="flex flex-wrap items-center gap-1.5 text-help text-muted-foreground">
@@ -413,5 +422,6 @@ export function ElevatorDetailScreen() {
         </div>
       </div>
     </div>
+    </>
   );
 }

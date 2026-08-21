@@ -509,7 +509,10 @@
     "notSaved": "Kaydedilmedi",
     "uniqueWithinCompany": "Firma içinde benzersiz olmalı",
     "optionalSuffix": "(opsiyonel)",
-    "internalCodeExample": "Örn. CK-A-01"
+    "internalCodeExample": "Örn. CK-A-01",
+    "sessionRestoreNote": "Oturum düşerse aynı sekmede, aynı alanda devam edersiniz.",
+    "changedTo": "{{from}} → {{to}}",
+    "changed": "değiştirildi"
   },
   "boot": {
     "refreshingSession": "Oturum tazeleniyor…"
@@ -539,9 +542,13 @@
     "weakConnection": "Zayıf bağlantı",
     "yourRole": "Rolünüz",
     "scanAnother": "Başka asansör okut",
-    "readOnlyNotice": "Bu kayıt sizde salt okunurdur",
+    "readOnlyNotice": "Faz 1'de kayıtlar salt okunurdur.",
     "labelSuffix": "etiket",
-    "notMeasured": "Ölçülmedi"
+    "notMeasured": "Ölçülmedi",
+    "capacity": "Kapasite",
+    "capacityValue": "{{kg}} kg · {{persons}} kişi",
+    "brandModel": "Marka / Model",
+    "moreAttachments": "+{{count}}"
   },
   "addressPicker": {
     "title": "Adres",
@@ -568,7 +575,10 @@
     "noteIsSoleSource": "Mahalle boş bırakıldığında adres tarifi tek adres kaynağıdır",
     "addressNoteHint": "Zorunlu — yeni siteler ve TOKİ bölgeleri adres veri setinde yoktur",
     "locationHint": "Zorunlu değil, ama teknisyen sahada haritadan yön alır",
-    "mapUnavailable": "Harita katmanı henüz bağlanmadı"
+    "mapUnavailable": "Harita katmanı henüz bağlanmadı",
+    "suggestionShort": "Öneri kesin değil",
+    "writtenNotLocked": "{{name}} olarak yazıldı, kilitlenmedi.",
+    "doorNumber": "Kapı no"
   },
   "contractDetail": {
     "info": "Sözleşme bilgileri",

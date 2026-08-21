@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, CircleAlert, Check } from "lucide-react";
 import buildings from "@fixtures/demo-buildings.json";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -317,9 +316,20 @@ export function ElevatorFormScreen() {
           teach the user to save six times and produce half-written records. */}
       <div className="flex flex-wrap items-center gap-3 border-t border-border bg-card px-6 py-3">
         {dirtyCount > 0 && (
-          <span className="text-help text-muted-foreground">
-            {t("form.unsavedChangesBody", { count: dirtyCount })}
-          </span>
+          <>
+            <span className="hidden text-help text-muted-foreground sm:inline">
+              {t("form.unsavedChangesBody", { count: dirtyCount })}
+            </span>
+            {/* A dropped session returns to this tab and this field, so the
+                phone says the draft is held rather than leaving the user to
+                guess whether leaving costs them the entry. */}
+            <span className="flex flex-col leading-tight sm:hidden">
+              <span className="inline-flex w-fit items-center gap-1 rounded-sm border border-dashed border-border-strong px-1.5 text-help text-muted-foreground">
+                {t("form.notSaved")}
+              </span>
+              <span className="text-help text-subtle">{t("form.draftKeptLocally")}</span>
+            </span>
+          </>
         )}
         <div className="ml-auto flex items-center gap-2">
           <Button
@@ -338,19 +348,51 @@ export function ElevatorFormScreen() {
 
       {/* Leaving with unsaved edits is the one place this form can lose work,
           so the dialog names what would be lost instead of asking in general. */}
-      <ConfirmDialog
-        open={confirmingExit}
-        weight="heavy"
-        title={t("form.unsavedChangesTitle")}
-        body={t("form.unsavedChangesBody", { count: dirtyCount })}
-        consequences={[
-          `${t("elevator.fields.maintenanceIntervalDays")}: 15 → 30`,
-          `${t("elevator.fields.stopCount")}: 8`,
-        ]}
-        confirmLabel={t("form.discardChanges")}
-        onConfirm={() => setConfirmingExit(false)}
-        onCancel={() => setConfirmingExit(false)}
-      />
+      {confirmingExit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-foreground/40"
+            onClick={() => setConfirmingExit(false)}
+            aria-label={t("common.close")}
+          />
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-label={t("form.unsavedChangesTitle")}
+            className="relative flex w-full max-w-md flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-lg"
+          >
+            <h2 className="text-cardtitle">{t("form.unsavedChangesTitle")}</h2>
+
+            {/* Naming each edit is what makes the choice possible: "you have
+                unsaved changes" tells the user nothing they can act on. */}
+            <ul className="flex flex-col gap-1.5 rounded-md bg-muted px-3 py-2.5">
+              <li className="flex items-baseline justify-between gap-3 text-help">
+                <span className="text-muted-foreground">
+                  {t("elevator.fields.maintenanceIntervalDays")}
+                </span>
+                <span className="tnum">{t("form.changedTo", { from: 15, to: 30 })}</span>
+              </li>
+              <li className="flex items-baseline justify-between gap-3 text-help">
+                <span className="text-muted-foreground">{t("elevator.fields.stopCount")}</span>
+                <span className="tnum">8 · {t("form.changed")}</span>
+              </li>
+            </ul>
+
+            <div className="flex flex-col gap-2">
+              <Button size="sm" onClick={() => setConfirmingExit(false)}>
+                {t("form.saveAndExit")}
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => setConfirmingExit(false)}>
+                {t("form.backToEditing")}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setConfirmingExit(false)}>
+                {t("form.discardChanges")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
