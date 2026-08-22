@@ -674,6 +674,38 @@
     "removeFilter": "Filtreyi kaldır",
     "searchTerm": "Arama"
   },
+  "bulk": {
+    "apply": "Uygula",
+    "appliesToRows": "Yalnızca işaretlediğiniz {{count}} kayda uygulanır — filtreye uyan {{total}} kaydın tümüne değil.",
+    "appliesToFilter": "Filtreye uyan {{count}} kaydın tümüne uygulanır.",
+    "tooManyToEnumerate": "Filtreye uyan {{count}} kayıt buradan toplu işlenemez: sunucu tek istekte en fazla {{max}} kayıt döndürür ve toplu işlem uç noktası yoktur. Filtreyi daraltın ya da satırları işaretleyerek ilerleyin.",
+    "grewWhileReading": "Filtreye uyan kayıtlar okunurken çoğaldı ve tek istekte alınabilecek {{max}} kaydı aştı. Hiçbir kayıt değiştirilmedi. Filtreyi daraltıp tekrar deneyin.",
+    "running": "{{done}} / {{total}} kayıt işlendi…",
+    "started": "{{count}} kayıt işleniyor",
+    "sheetDropped": "Sayfa hazırlanırken seçim değişti, bu yüzden kullanılmadı. Yeni seçim için tekrar oluşturun.",
+    "listRefreshesAfter": "Aşağıdaki liste henüz yenilenmedi; bu sonuç ekranda kalsın diye bekletiliyor. Seçimi kaldırdığınızda liste güncellenir.",
+    "oneRequestEach": "Sunucuda toplu güncelleme uç noktası yok: {{count}} kayıt için {{count}} ayrı istek gönderilir ve her biri tek tek yanıtlanır.",
+    "allSucceeded": "{{count}} kayıt güncellendi",
+    "partial": "{{count}} kayıt güncellendi, {{failed}} kayıt reddedildi",
+    "noneSucceeded": "Hiçbir kayıt güncellenmedi; {{count}} kaydın tümü reddedildi",
+    "staleResult": "Bu sonuç, işlem sırasında seçili olan {{count}} kayda aittir. Seçim o zamandan beri değişti.",
+    "labels": {
+      "title": "Seçilenlerin etiketini yazdır",
+      "plan": "{{count}} etiket · {{sheets}} A4 sayfa · {{blanks}} göz boş kalacak"
+    },
+    "status": {
+      "title": "Seçilenlerin durumunu değiştir",
+      "newStatus": "Yeni durum",
+      "sealedExcluded": "\"Mühürlü\" toplu olarak verilmez: her mühür bir denetim kararıdır ve rapor numarasıyla birlikte asansörün kendi kaydına işlenir.",
+      "uncontractedExcluded": "\"Sözleşmesiz\" elle seçilemez; sözleşme kaydından türetilir ve yalnızca sunucu yazar."
+    },
+    "contract": {
+      "title": "Seçilenleri sözleşmeye ekle",
+      "searchHint": "Sözleşme no veya müşteri adı",
+      "oneContractOnly": "Bir asansör aynı anda yalnızca tek bir açık sözleşmede olabilir. Hâlihazırda sözleşmeli olanlar reddedilir ve aşağıda tek tek listelenir.",
+      "noPrice": "Satırlar fiyatsız eklenir; birim fiyat sözleşme ekranından girilir."
+    }
+  },
   "form": {
     "unsavedChanges": "Kaydedilmemiş değişiklikler",
     "unsavedChangesTitle": "Kaydedilmemiş değişiklikler var",
