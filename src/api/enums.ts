@@ -4,6 +4,7 @@ type Schemas = components["schemas"];
 
 export type BuildingType = Schemas["BuildingType"];
 export type CustomerType = Schemas["CustomerType"];
+export type ContactRole = Schemas["ContactRole"];
 export type ContractScope = Schemas["ContractScope"];
 export type PricingType = Schemas["PricingTypeEnum"];
 export type BillingPeriod = Schemas["BillingPeriodEnum"];

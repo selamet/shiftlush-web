@@ -203,30 +203,47 @@ export function updateCustomer(id: string, body: Partial<CustomerWrite>) {
   return api.patch<Customer>(`/customers/${id}/`, body);
 }
 
-export type CustomerContactWrite = Schemas["CustomerContactNestedWriteRequest"];
+export type CustomerContactWrite = Schemas["CustomerContactWriteRequest"];
 
 /**
  * Adding a contact to a customer.
  *
- * Through the customer's own path rather than the flat `/customer-contacts`,
- * so the customer is in the URL and cannot be got wrong: the server refuses a
- * body that names one, because two sources for the same value is how they come
- * to disagree.
+ * The customer travels in the body, because that is the only create the server
+ * routes. This posted to `/customers/{id}/contacts/` until SL-67, and the
+ * contract still declares such a path — but the backend never registered one:
+ * `apps/customers/api/v1/urls.py` registers `customers` and `customer-contacts`
+ * and nothing else, so every create answered 404.
+ *
+ * The phantom path is still in `openapi/v1.yaml`, which is why the path linter
+ * never objected — it validates calls against that file. The file is
+ * checksummed against the backend and can only be corrected by `make sync-spec`
+ * in shiftlush-api, so removing it is that repo's task, not a local edit.
  */
 export function createCustomerContact(
   customerId: string,
-  body: CustomerContactWrite,
+  body: Omit<CustomerContactWrite, "customer">,
   idempotencyKey: string,
 ) {
-  return api.post<CustomerContact>(`/customers/${customerId}/contacts/`, body, {
-    idempotencyKey,
-  });
+  return api.post<CustomerContact>(
+    "/customer-contacts/",
+    { ...body, customer: customerId },
+    { idempotencyKey },
+  );
 }
 
 export function updateCustomerContact(id: string, body: Partial<CustomerContactWrite>) {
-  // The flat path, because an existing contact is addressed by its own id and
-  // the customer it belongs to does not change.
+  // An existing contact is addressed by its own id; the customer it belongs to
+  // does not change.
   return api.patch<CustomerContact>(`/customer-contacts/${id}/`, body);
+}
+
+/**
+ * Soft delete, like every delete here: the server marks the row and keeps it,
+ * so a contact who signed something last year does not disappear from the
+ * record along with the reason anyone can explain it.
+ */
+export function deleteCustomerContact(id: string) {
+  return api.delete<void>(`/customer-contacts/${id}/`);
 }
 
 // --------------------------------------------------------------------------
