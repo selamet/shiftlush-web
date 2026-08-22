@@ -289,6 +289,50 @@ try {
     equal(date.monthGrid("2026-03-17")[0][0], "2026-02-23", `${zone}: the grid does not shift`);
   }
 
+  /* --------------------------------------------------------------------
+   * Contract dates. Same trap, one layer up.
+   * ------------------------------------------------------------------ */
+
+  const contract = await server.ssrLoadModule("/src/lib/contract.ts");
+
+  for (const zone of ZONES) {
+    process.env.TZ = zone;
+
+    // A notice period counted back from the end date. The old implementation
+    // returned the 30th here in Istanbul: a reminder a day early every time,
+    // which nobody would report because it still looks like a plausible date.
+    equal(
+      contract.reminderDate({ end_date: "2026-06-30", renewal_notice_days: 30 }),
+      "2026-05-31",
+      `reminderDate counts back whole days (${zone})`,
+    );
+
+    // The worse one. The old implementation proposed a renewal starting on
+    // 2025-12-31 — the closing day of the term being renewed — so both terms
+    // would bill for it.
+    const renewal = contract.proposedRenewal({
+      start_date: "2025-01-01",
+      end_date: "2025-12-31",
+    });
+    equal(renewal.start, "2026-01-01", `a renewal starts the day after the old term (${zone})`);
+    equal(renewal.end, "2026-12-31", `a renewal runs as long as the term it replaces (${zone})`);
+
+    // Across a daylight-saving boundary, where the span is not a whole number
+    // of twenty-four-hour days in local time.
+    equal(
+      contract.reminderDate({ end_date: "2026-04-15", renewal_notice_days: 30 }),
+      "2026-03-16",
+      `a notice period spanning a clock change still lands on the right day (${zone})`,
+    );
+
+    equal(contract.daysUntil("2026-03-05", new Date(2026, 2, 5, 23, 30)), 0, `today is 0 (${zone})`);
+    equal(contract.daysUntil("2026-03-06", new Date(2026, 2, 5, 0, 30)), 1, `tomorrow is 1 (${zone})`);
+    equal(contract.daysUntil("2026-03-04", new Date(2026, 2, 5, 23, 30)), -1, `yesterday is -1 (${zone})`);
+    equal(contract.daysUntil(null), null, `a missing date has no countdown (${zone})`);
+  }
+
+  process.env.TZ = "Europe/Istanbul";
+
   // The trap these guard against is real rather than theoretical: the obvious
   // implementation is wrong in Istanbul, which is where this product runs.
   process.env.TZ = "Europe/Istanbul";

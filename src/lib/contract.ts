@@ -8,16 +8,30 @@
  * Istanbul and rendered in Berlin should say what the reader's calendar says.
  */
 import type { Contract } from "@/api/queries";
+import { addDays, isIsoDate, toIso } from "@/lib/date";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+/**
+ * Whole days between two calendar days, counted in UTC.
+ *
+ * Not because these are UTC dates — they are not, they are days on a wall
+ * calendar. UTC is simply the one axis on which every day is exactly twenty-four
+ * hours long, so the subtraction cannot pick up the spare hour a daylight-saving
+ * change puts in the middle of a span.
+ */
+function daysBetween(from: string, to: string): number {
+  const [fy, fm, fd] = from.split("-").map(Number);
+  const [ty, tm, td] = to.split("-").map(Number);
+  return (Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / MS_PER_DAY;
+}
+
 /** Whole days from today until the date, negative once it has passed. */
 export function daysUntil(date: string | null | undefined, today = new Date()): number | null {
-  if (!date) return null;
-  const target = new Date(`${date}T00:00:00`);
-  if (Number.isNaN(target.getTime())) return null;
-  const midnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  return Math.round((target.getTime() - midnight.getTime()) / MS_PER_DAY);
+  if (!isIsoDate(date)) return null;
+  // The reader's calendar day, not the server's: "expires in 3 days" should
+  // agree with the calendar on the wall next to whoever is reading it.
+  return daysBetween(toIso(today), date);
 }
 
 /**
@@ -29,10 +43,8 @@ export function daysUntil(date: string | null | undefined, today = new Date()): 
  * that exists nowhere else.
  */
 export function reminderDate(contract: Pick<Contract, "end_date" | "renewal_notice_days">) {
-  if (!contract.end_date || !contract.renewal_notice_days) return null;
-  const end = new Date(`${contract.end_date}T00:00:00`);
-  end.setDate(end.getDate() - contract.renewal_notice_days);
-  return end.toISOString().slice(0, 10);
+  if (!isIsoDate(contract.end_date) || !contract.renewal_notice_days) return null;
+  return addDays(contract.end_date, -contract.renewal_notice_days);
 }
 
 /**
@@ -43,20 +55,12 @@ export function reminderDate(contract: Pick<Contract, "end_date" | "renewal_noti
  * takes both dates and the user can change either.
  */
 export function proposedRenewal(contract: Pick<Contract, "start_date" | "end_date">) {
-  if (!contract.start_date || !contract.end_date) return null;
-  const start = new Date(`${contract.end_date}T00:00:00`);
-  start.setDate(start.getDate() + 1);
-
-  const previousStart = new Date(`${contract.start_date}T00:00:00`);
-  const previousEnd = new Date(`${contract.end_date}T00:00:00`);
-  const lengthInDays = Math.round(
-    (previousEnd.getTime() - previousStart.getTime()) / MS_PER_DAY,
-  );
-
-  const end = new Date(start);
-  end.setDate(end.getDate() + lengthInDays);
-
-  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+  if (!isIsoDate(contract.start_date) || !isIsoDate(contract.end_date)) return null;
+  // The day *after* the old term ends. A renewal starting on the closing day
+  // would bill both terms for it.
+  const start = addDays(contract.end_date, 1);
+  const lengthInDays = daysBetween(contract.start_date, contract.end_date);
+  return { start, end: addDays(start, lengthInDays) };
 }
 
 /** How many distinct buildings the contract covers, from its lines. */
