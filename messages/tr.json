@@ -404,6 +404,20 @@
       "inspection_report": "Kontrol raporu",
       "logo": "Logo",
       "other": "Diğer"
+    },
+    "categoryLabel": "Belge türü",
+    "choose": "Dosya seç",
+    "dropHere": "Dosyaları buraya sürükleyin",
+    "limits": "PDF, JPEG, PNG veya WebP · en fazla 10 MB",
+    "empty": "Bu kayda henüz belge eklenmemiş",
+    "retry": "Tekrar dene",
+    "deleteTitle": "Bu belge silinsin mi?",
+    "errors": {
+      "type": "Bu dosya türü kabul edilmiyor. PDF, JPEG, PNG veya WebP yükleyebilirsiniz",
+      "tooLarge": "Dosya çok büyük. En fazla {{max}} yükleyebilirsiniz",
+      "expired": "Yükleme izni doldu. Tekrar deneyin, yeni bir izin alınacak",
+      "network": "Bağlantı koptu, dosya yüklenemedi",
+      "rejected": "Dosya depolamaya yüklenemedi"
     }
   },
   "qr": {
