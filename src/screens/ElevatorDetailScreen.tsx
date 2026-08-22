@@ -8,24 +8,23 @@ import {
   QrCode,
   RefreshCw,
   TriangleAlert,
-  FileText,
-  Image as ImageIcon,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   elevatorAttachmentsQuery,
   elevatorHistoryQuery,
+  elevatorKeys,
   elevatorQuery,
 } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { describeAuditEntry } from "@/lib/audit";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
 import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/i18n";
 import {
   formatDate,
   formatDateTime,
-  formatFileSize,
   formatMoney,
   formatNumber,
 } from "@/lib/format";
@@ -98,10 +97,6 @@ function RailCard({ title, children }: { title: string; children: React.ReactNod
   );
 }
 
-const ATTACHMENT_ICON = {
-  photo: ImageIcon,
-} as const;
-
 export function ElevatorDetailScreen() {
   const { t } = useTranslation();
   const { id } = useParams({ strict: false }) as { id?: string };
@@ -118,6 +113,10 @@ export function ElevatorDetailScreen() {
   // anyone else — asking and swallowing a 403 on every visit would put a red
   // line in the console of every technician's browser.
   const canSeeHistory = role === "owner" || role === "admin";
+  // Reading a file is wider than adding one: a technician needs the inspection
+  // report on site and cannot upload it, which mirrors the server's matrix
+  // rather than inventing a second rule here.
+  const canEditAttachments = role === "owner" || role === "admin" || role === "operations";
   const historyQuery = useQuery({
     ...elevatorHistoryQuery(elevatorId),
     enabled: Boolean(elevatorId) && canSeeHistory,
@@ -346,25 +345,13 @@ export function ElevatorDetailScreen() {
 
           {tab === "attachments" && (
             <Group title={t("detail.tabs.attachments")}>
-              {attachments.map((file) => {
-                const Icon =
-                  ATTACHMENT_ICON[file.category as keyof typeof ATTACHMENT_ICON] ?? FileText;
-                return (
-                  <div
-                    key={file.id}
-                    className="flex items-center gap-3 border-b border-border-subtle py-2.5 last:border-0"
-                  >
-                    <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    <div className="flex min-w-0 flex-col leading-tight">
-                      <span className="text-cell">{file.original_filename}</span>
-                      <span className="text-help text-muted-foreground">
-                        {enumLabel("attachment.category", file.category)}
-                      </span>
-                    </div>
-                    <span className="ml-auto text-help text-subtle">{formatFileSize(file.size_bytes)}</span>
-                  </div>
-                );
-              })}
+              <AttachmentsPanel
+                objectType="elevator"
+                objectId={elevatorId}
+                attachments={attachments}
+                invalidateKey={elevatorKeys.attachments(elevatorId)}
+                canWrite={canEditAttachments}
+              />
             </Group>
           )}
 

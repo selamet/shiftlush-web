@@ -418,3 +418,52 @@ export function linesByBuilding(contract: Pick<Contract, "lines">): Map<string, 
   }
   return grouped;
 }
+
+// ---------------------------------------------------------------------------
+// Attachments
+// ---------------------------------------------------------------------------
+
+export type AttachmentCategory = Schemas["AttachmentCategory"];
+export type AttachmentObjectType = Schemas["AttachmentObjectType"];
+export type UploadTicket = Schemas["UploadUrlResponse"];
+
+/**
+ * Permission to upload one specific file.
+ *
+ * The ticket is signed for this record, this category, this type and this size.
+ * The server reads all of them back off the key when the upload is confirmed,
+ * so the two calls cannot be made to disagree — an earlier version took the
+ * category from the client twice and could be pointed at the wrong one.
+ */
+export function requestUploadTicket(body: Schemas["UploadUrlRequestRequest"]) {
+  return api.post<UploadTicket>("/attachments/upload-url/", body);
+}
+
+/**
+ * Telling the server the bytes arrived.
+ *
+ * Only the key and the name the person will see: everything else is read back
+ * from the key and from storage. Carries an idempotency key because a retry
+ * after a dropped connection must not produce a second row for one file.
+ */
+export function confirmUpload(
+  body: Schemas["AttachmentConfirmRequest"],
+  idempotencyKey: string,
+) {
+  return api.post<Attachment>("/attachments/", body, { idempotencyKey });
+}
+
+/**
+ * A URL that works for a few minutes.
+ *
+ * Fetched at the moment of the click and never stored: the bucket is not
+ * public, every read is a fresh signature, and a URL kept in state is a link
+ * that works until it quietly does not.
+ */
+export function attachmentDownloadUrl(id: string) {
+  return api.get<Schemas["DownloadUrl"]>(`/attachments/${id}/download-url/`);
+}
+
+export function deleteAttachment(id: string) {
+  return api.delete<void>(`/attachments/${id}/`);
+}

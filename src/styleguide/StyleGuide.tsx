@@ -6,6 +6,8 @@ import { formatDate, formatNumber } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
+import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
+import type { Attachment } from "@/api/queries";
 import { InspectionLabel } from "@/components/ui/inspection-label";
 import {
   ElevatorStatusChip,
@@ -28,6 +30,35 @@ const ELEVATOR_STATUSES = ["active", "suspended", "sealed", "out_of_service", "u
 const CONTRACT_STATUSES = ["draft", "active", "expired", "terminated", "renewed"];
 const ROLES = ["owner", "admin", "operations", "technician", "accountant"];
 const LABELS = ["green", "blue", "yellow", "red", "none"];
+
+/** Two rows: one document and one photo, which are the two icons the list has. */
+const SAMPLE_ELEVATOR_ID = "00000000-0000-4000-8000-000000000001";
+const SAMPLE_ATTACHMENTS: Attachment[] = [
+  {
+    id: "00000000-0000-4000-8000-0000000000a1",
+    object_type: "elevator",
+    object_id: SAMPLE_ELEVATOR_ID,
+    category: "inspection_report",
+    original_filename: "kontrol-raporu-2026.pdf",
+    mime_type: "application/pdf",
+    size_bytes: 428_112,
+    uploaded_by: null,
+    uploaded_by_name: "",
+    created_at: "2026-03-04T09:12:00Z",
+  },
+  {
+    id: "00000000-0000-4000-8000-0000000000a2",
+    object_type: "elevator",
+    object_id: SAMPLE_ELEVATOR_ID,
+    category: "photo",
+    original_filename: "makine-dairesi.jpg",
+    mime_type: "image/jpeg",
+    size_bytes: 1_204_338,
+    uploaded_by: null,
+    uploaded_by_name: "",
+    created_at: "2026-03-04T09:14:00Z",
+  },
+];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -154,6 +185,21 @@ export function StyleGuide() {
           <p className="max-w-3xl text-help text-muted-foreground">
             {t("styleguide.labelRule")}
           </p>
+        </Section>
+
+        {/* Here as well as on the elevator, because on the elevator it lives
+            behind a tab click and the render check only visits routes — which
+            would leave the whole uploader unrendered by anything in CI. */}
+        <Section title={t("attachment.title")}>
+          <div className="max-w-3xl">
+            <AttachmentsPanel
+              objectType="elevator"
+              objectId={SAMPLE_ELEVATOR_ID}
+              attachments={SAMPLE_ATTACHMENTS}
+              invalidateKey={["styleguide", "attachments"]}
+              canWrite
+            />
+          </div>
         </Section>
 
         <Section title={t("styleguide.sections.chips")}>
