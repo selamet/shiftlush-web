@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import type { ListParams } from "@/api/queries";
+import { isIsoDate, toDisplay } from "@/lib/date";
 
 /**
  * The filter, search and paging state of a list screen, carried in the URL.
@@ -22,7 +23,29 @@ import type { ListParams } from "@/api/queries";
 export interface ListFilterOption {
   value: string;
   labelKey: string;
+  /**
+   * A label that is already text, for options that come from data rather than
+   * from an enum — a colleague's name, say.
+   *
+   * Preferred over `labelKey` when set. Putting a person's name through `t()`
+   * happens to work, because i18next echoes a key it cannot find, but only
+   * until the name contains a `.` or a `:` — which i18next reads as a key
+   * separator and a namespace separator. Then the label silently becomes a
+   * fragment of the name, for exactly the colleagues whose names are unusual.
+   */
+  label?: string;
 }
+
+/**
+ * How a filter is drawn in the bar.
+ *
+ * `menu`   — a closed set of values, picked from a dropdown. The default.
+ * `date`   — a calendar day, typed or picked.
+ * `scope`  — carried in the URL and shown as a removable chip, with no control
+ *            of its own. For a value nobody types: an id that a link arrives
+ *            with, narrowing the list to one record.
+ */
+export type ListFilterKind = "menu" | "date" | "scope";
 
 export interface ListFilter {
   /** Query-string key, and the API query parameter of the same name. */
@@ -32,8 +55,24 @@ export interface ListFilter {
    * Everything the API accepts for this parameter. Also the whitelist: a value
    * outside this set is dropped from the URL rather than forwarded, so a
    * hand-edited address shows an unfiltered list instead of a 400.
+   *
+   * Empty when the accepted values cannot be listed — a date, an id — in which
+   * case `accepts` is what does the narrowing instead.
    */
   options: readonly ListFilterOption[];
+  kind?: ListFilterKind;
+  /**
+   * Whether a value belongs in the URL, for parameters whose accepted values
+   * are a shape rather than a list.
+   *
+   * Checked in place of `options`, never as well: a filter that declares this
+   * is one whose options could not be enumerated in the first place. The
+   * purpose is the same either way — a value that fails is dropped from the
+   * URL rather than forwarded to an endpoint that would answer 400.
+   */
+  accepts?: (value: string) => boolean;
+  /** How the value reads on its chip, when the raw value is not for people. */
+  formatValue?: (value: string) => string;
 }
 
 /**
@@ -98,6 +137,76 @@ export function booleanFilter({
   };
 }
 
+/**
+ * A filter over a calendar day.
+ *
+ * The URL holds the stored form, `YYYY-MM-DD`, because that is what the API
+ * takes and the address bar is not translated. The chip shows the Turkish
+ * reading, because the chip is for a person. `toDisplay` and `fromDisplay`
+ * are the only two functions that cross between them, and neither of them
+ * builds a `Date` — see lib/date.
+ */
+export function dateFilter({ param, labelKey }: { param: string; labelKey: string }): ListFilter {
+  return {
+    param,
+    labelKey,
+    options: [],
+    kind: "date",
+    accepts: isIsoDate,
+    formatValue: toDisplay,
+  };
+}
+
+/**
+ * The shape of an id in a URL: what a uuid and a demo fixture id have in
+ * common, and narrow enough that nothing which could confuse the endpoint
+ * survives being typed into the address bar.
+ */
+const ID_SHAPE = /^[A-Za-z0-9-]{1,64}$/;
+
+/**
+ * A filter carrying an id that arrived on a link rather than being chosen.
+ *
+ * It gets a chip so the list never silently shows a slice while looking like
+ * it shows everything, and the chip's cross is how you get back to everything.
+ */
+export function scopeFilter({ param, labelKey }: { param: string; labelKey: string }): ListFilter {
+  return {
+    param,
+    labelKey,
+    options: [],
+    kind: "scope",
+    accepts: (value) => ID_SHAPE.test(value),
+  };
+}
+
+/**
+ * A menu whose options are not known until the data behind them has loaded —
+ * the firm's colleagues, say.
+ *
+ * The route's schema is built at module load, long before any of that has been
+ * fetched, so the schema takes this with an empty `options` and narrows on the
+ * id's shape. The screen passes the same filter to `ListPage` with the options
+ * filled in. Both agree on the parameter and on what may be in the URL; only
+ * the labels differ, and only the bar needs those.
+ */
+export function idMenuFilter({
+  param,
+  labelKey,
+  options = [],
+}: {
+  param: string;
+  labelKey: string;
+  options?: readonly ListFilterOption[];
+}): ListFilter {
+  return {
+    param,
+    labelKey,
+    options,
+    accepts: (value) => ID_SHAPE.test(value),
+  };
+}
+
 function positiveInt(value: unknown): number | undefined {
   const parsed = typeof value === "number" ? value : Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
@@ -133,9 +242,13 @@ function narrow(raw: Record<string, unknown>, filters: readonly ListFilter[]): L
 
   for (const filter of filters) {
     const value = text(raw[filter.param]);
-    if (value && filter.options.some((option) => option.value === value)) {
-      search[filter.param] = value;
-    }
+    if (!value) continue;
+    // `accepts` replaces the options check rather than adding to it: a filter
+    // that declares one is a filter whose accepted values could not be listed.
+    const accepted = filter.accepts
+      ? filter.accepts(value)
+      : filter.options.some((option) => option.value === value);
+    if (accepted) search[filter.param] = value;
   }
 
   return search;

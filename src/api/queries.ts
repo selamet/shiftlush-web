@@ -207,6 +207,31 @@ export function elevatorHistoryQuery(id: string) {
   });
 }
 
+export const auditLogKeys = {
+  all: ["audit-logs"] as const,
+  list: (params: ListParams) => ["audit-logs", "list", params] as const,
+} as const;
+
+/**
+ * The whole trail, narrowed by whatever the URL is asking for.
+ *
+ * Readable by owners and admins alone (spec 6.2), so every caller gates the
+ * request on the role rather than issuing it and swallowing a 403 — the same
+ * arrangement `elevatorHistoryQuery` above is under, and for the same reason.
+ *
+ * `placeholderData` keeps the rows on screen while the next page is fetched.
+ * A trail is read by someone comparing one page against the next, and blanking
+ * the table on every step makes that harder than it needs to be.
+ */
+export function auditLogListQuery(params: ListParams = {}) {
+  return queryOptions({
+    queryKey: auditLogKeys.list(params),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<AuditEntry>>("/audit-logs/", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
 export function elevatorAttachmentsQuery(id: string) {
   return queryOptions({
     queryKey: elevatorKeys.attachments(id),
