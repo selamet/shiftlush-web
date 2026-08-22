@@ -102,6 +102,38 @@ function resolve(path, search, method, body) {
 
   if (path === "/api/v1/customers/") return page(customers);
 
+  // A scanned label. Exactly one token resolves and every other one falls
+  // through to the 404 below — which is what the server does for a token that
+  // does not exist and for one belonging to another firm alike, and is the
+  // branch the resolve screen exists for. A mock that answered every token
+  // would leave the only interesting half of that screen unrendered.
+  const byQr = /^\/api\/v1\/elevators\/by-qr\/([^/]+)\/$/.exec(path);
+  if (byQr) {
+    if (byQr[1] !== "qr-demo-token") return null;
+    const detail = fixture("demo-elevator-detail");
+    // Narrowed to the contract's `ElevatorByQr`, not the whole record. The
+    // point of that endpoint is that it is small; handing back the detail
+    // response here would hide a screen reading a field it will not be sent.
+    return {
+      id: detail.id,
+      registration_number: detail.registration_number,
+      name: detail.name,
+      building_name: detail.building_name,
+      customer_name: detail.customer_name,
+      status: detail.status,
+      inspection_label: detail.inspection_label,
+      has_car_door: detail.has_car_door,
+      brand: detail.brand,
+      model: detail.model,
+      capacity_kg: detail.capacity_kg,
+      capacity_persons: detail.capacity_persons,
+      stop_count: detail.stop_count,
+      speed_mps: detail.speed_mps,
+      last_inspection_date: detail.last_inspection_date,
+      next_inspection_date: detail.next_inspection_date,
+    };
+  }
+
   const elevator = /^\/api\/v1\/elevators\/([^/]+)\/$/.exec(path);
   if (elevator) {
     const detail = fixture("demo-elevator-detail");

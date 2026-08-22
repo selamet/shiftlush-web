@@ -18,6 +18,7 @@ import {
   customerListQuery,
   customerQuery,
   elevatorAttachmentsQuery,
+  elevatorByQrQuery,
   elevatorListQuery,
   elevatorQuery,
   invitationPreviewQuery,
@@ -54,6 +55,8 @@ import { UserDetailScreen } from "@/screens/UserDetailScreen";
 import { AuditLogListScreen, auditLogListSearch } from "@/screens/AuditLogListScreen";
 import { SettingsScreen } from "@/screens/SettingsScreen";
 import { QrLabelScreen } from "@/screens/QrLabelScreen";
+import { ScanScreen } from "@/screens/ScanScreen";
+import { QrResolveScreen } from "@/screens/QrResolveScreen";
 import { StyleGuide } from "@/styleguide/StyleGuide";
 import { RegisterScreen } from "@/screens/RegisterScreen";
 import {
@@ -306,6 +309,18 @@ export const routeTree = rootRoute.addChildren([
       queryClient.ensureQueryData(contractQuery(params.id)),
     ),
     shellChild("/qr-labels", QrLabelScreen),
+    shellChild("/scan", ScanScreen),
+    // The URL printed on every sticker (spec 11.2). It lives inside the shell
+    // because resolving a token needs a session — the endpoint is scoped to the
+    // signed-in user's firm, which is the whole reason another firm's token
+    // answers 404 instead of handing over a record.
+    //
+    // Prefetched so the screen names the lift on its first paint. The response
+    // is small by design, and it arriving ahead of the thirty-one-field record
+    // is what makes the wait a confirmation rather than a spinner.
+    shellChild("/q/$token", QrResolveScreen, ({ params }) =>
+      queryClient.ensureQueryData(elevatorByQrQuery(params.token)),
+    ),
     shellChild(
       "/users",
       UserListScreen,

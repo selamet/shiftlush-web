@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
 import type { Elevator } from "@/api/queries";
 import { QrCode, WifiOff, TriangleAlert, Paperclip, MapPin } from "lucide-react";
 import { enumLabel } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { formatDate, formatNumber } from "@/lib/format";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
 import { InspectionLabel } from "@/components/ui/inspection-label";
 
@@ -130,12 +132,17 @@ export function ElevatorDetailMobile({
         </p>
       </div>
 
-      {/* One action, at the gloved-hand height. */}
+      {/* One action, at the gloved-hand height.
+
+          A link rather than a button: this is a navigation, and made a button
+          it would lose the things a link gives for free on a phone — long-press
+          to open the scanner in a second tab, and a destination the browser
+          restores if the page is reloaded mid-round. */}
       <div className="sticky bottom-0 border-t border-border bg-card p-3">
-        <Button size="xl" className="w-full">
+        <Link to="/scan" className={cn(buttonVariants({ size: "xl" }), "w-full")}>
           <QrCode />
           {t("detail.scanAnother")}
-        </Button>
+        </Link>
       </div>
     </div>
   );

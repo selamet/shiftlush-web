@@ -80,6 +80,13 @@ const PATHS = [
   "/contracts/k1",
   "/contracts/k1/edit",
   "/qr-labels",
+  "/scan",
+  // Both halves of the scanned-label route, because they are different screens
+  // and only one of them is the happy one. Under Node there is no decoder and
+  // no camera, so `/scan` renders the branch a phone without either would get —
+  // which is the branch worth asserting: it must still offer a way through.
+  "/q/qr-demo-token",
+  "/q/qr-unknown-token",
   "/users",
   "/users/invite",
   // Three colleagues on purpose. Each one puts a different set of controls on
@@ -135,6 +142,20 @@ const EXPECT = {
   // The invitation must name who is inviting; a link asking for a password
   // without saying who sent it is indistinguishable from phishing.
   "/invitation/some-token": "Yükseliş",
+  // Node has no BarcodeDetector and no camera, so this renders exactly what a
+  // phone without either would get. Both halves are asserted: the screen must
+  // say why there is no camera *and* still put a way through on the page. A
+  // scanner that renders only an apology is the dead end this replaced.
+  "/scan": ["Bu telefon QR okuyamıyor", "Kimlik numarasıyla bul"],
+  // A resolved label names the lift before the thirty-one-field record lands.
+  // Asserting the number as well as the name catches the narrowed `by-qr`
+  // response being read as though it were the full one.
+  "/q/qr-demo-token": ["Sol asansör", "34-2019-004512"],
+  // The half that matters. Every token but one is a 404 from the mock, which is
+  // what the server answers for an unknown label and for another firm's alike —
+  // and the screen has to turn that into something a person can act on rather
+  // than into a raw error.
+  "/q/qr-unknown-token": ["Bu QR bir asansöre çözümlenmedi", "Kimlik numarasıyla bul"],
   "/buildings": "Blok",
   "/complexes": "Çamlıca Konakları",
   // The blocks inside the estate, not the estate's own name: this asserts the

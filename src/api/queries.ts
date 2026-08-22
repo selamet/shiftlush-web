@@ -126,6 +126,7 @@ export function contractListQuery(params: ListParams = {}) {
 
 export type ElevatorRow = Schemas["ElevatorList"];
 export type Elevator = Schemas["ElevatorDetail"];
+export type ElevatorByQr = Schemas["ElevatorByQr"];
 export type AuditEntry = Schemas["AuditLog"];
 export type Attachment = Schemas["Attachment"];
 
@@ -135,6 +136,7 @@ export const elevatorKeys = {
   detail: (id: string) => ["elevators", "detail", id] as const,
   history: (id: string) => ["elevators", "history", id] as const,
   attachments: (id: string) => ["elevators", "attachments", id] as const,
+  byQr: (token: string) => ["elevators", "by-qr", token] as const,
 } as const;
 
 export function elevatorListQuery(params: ListParams = {}) {
@@ -150,6 +152,39 @@ export function elevatorQuery(id: string) {
   return queryOptions({
     queryKey: elevatorKeys.detail(id),
     queryFn: ({ signal }) => api.get<Elevator>(`/elevators/${id}/`, { signal }),
+  });
+}
+
+/**
+ * The elevator behind a scanned label.
+ *
+ * Seven values, not thirty-one. This is the first thing that comes back after a
+ * scan, on a phone, on whatever signal a machine room has — so it is deliberately
+ * small enough to name the lift before the full record has finished arriving.
+ *
+ * A token belonging to another firm answers 404, not 403 (spec 11.2). That is a
+ * decision the server makes on purpose — a 403 would confirm the sticker is real
+ * and let someone map a competitor's estate by trying tokens — and it means the
+ * client cannot tell "no such label" from "not your label". Neither can the
+ * screen, so it says both.
+ */
+export function elevatorByQrQuery(token: string) {
+  return queryOptions({
+    queryKey: elevatorKeys.byQr(token),
+    queryFn: ({ signal }) => api.get<ElevatorByQr>(`/elevators/by-qr/${token}/`, { signal }),
+    /**
+     * The route's loader has already awaited this exact request before the
+     * screen mounts, so the default on-mount retry would be a second call for
+     * an answer that arrived microseconds ago. Worse than wasteful: while that
+     * duplicate is in flight the observer reports `pending` rather than the
+     * error it is holding, and the screen shows a spinner instead of the reason
+     * the label did not resolve.
+     *
+     * Nothing goes stale by this. Navigating here again re-runs the loader,
+     * which refetches an errored query — so a technician who walks into signal
+     * and rescans the same sticker gets a fresh answer, not the cached refusal.
+     */
+    retryOnMount: false,
   });
 }
 

@@ -944,5 +944,58 @@
     "invalidFormat": "Tarihi gg.aa.yyyy biçiminde yazın",
     "required": "Bir tarih seçin",
     "unavailableDay": "{{date}}, seçilebilir aralığın dışında"
+  },
+  "scan": {
+    "or": "veya",
+    "labelHint": "Asansör kimlik no, QR'ın hemen yanında etikete basılıdır.",
+    "camera": {
+      "starting": "Kamera açılıyor…",
+      "aim": "QR'ı çerçevenin içine alın; okunduğunda kayıt kendiliğinden açılır.",
+      "unsupported": {
+        "title": "Bu telefon QR okuyamıyor",
+        "body": "Bu cihazın tarayıcısında QR çözücü yok. Asansörü, etikette QR'ın yanında yazan kimlik numarasıyla bulun."
+      },
+      "denied": {
+        "title": "Kamera izni verilmedi",
+        "body": "Adres çubuğundaki kilit simgesinden bu siteye kamera izni verip tekrar deneyin. İzin vermeden de aşağıdan kimlik numarasıyla bulabilirsiniz."
+      },
+      "missing": {
+        "title": "Kamera bulunamadı",
+        "body": "Bu cihazda kullanılabilir bir kamera yok. Asansörü kimlik numarasıyla bulun."
+      },
+      "busy": {
+        "title": "Kamera başka bir uygulamada",
+        "body": "Kamerayı kullanan diğer uygulamayı kapatıp tekrar deneyin."
+      },
+      "failed": {
+        "title": "Kamera açılamadı",
+        "body": "Kamera açılmadı. Tekrar deneyebilir ya da kimlik numarasıyla arayabilirsiniz."
+      }
+    },
+    "foreign": {
+      "title": "Bu bir ShiftLush etiketi değil",
+      "body": "Okunan kod bu uygulamaya ait değil. Asansörün kendi QR etiketini okutun."
+    },
+    "lookup": {
+      "title": "Kimlik numarasıyla bul",
+      "hint": "Asansör kimlik no, asansör adı ya da bina adının bir kısmı yeter.",
+      "placeholder": "34-2019-004512",
+      "noMatch": "“{{term}}” ile eşleşen asansör bulunamadı.",
+      "tooMany": "{{count}} kayıt eşleşti, ilk 10'u listelendi. Numaranın daha fazlasını yazın."
+    },
+    "resolve": {
+      "reading": "Etiket okunuyor",
+      "checking": "Etiket kontrol ediliyor…",
+      "opening": "Asansör kaydı açılıyor…",
+      "scanAgain": "Yeniden okut",
+      "notFound": {
+        "title": "Bu QR bir asansöre çözümlenmedi",
+        "body": "Etiket bu firmaya ait olmayabilir ya da sistemde böyle bir kayıt olmayabilir; ikisi dışarıdan ayırt edilemez.",
+        "stale": "Etiket yenilendiyse eski çıktı geçersizdir — asansörün üzerindeki güncel etiketi okutun."
+      },
+      "failed": {
+        "title": "Etiket okunamadı"
+      }
+    }
   }
 }
