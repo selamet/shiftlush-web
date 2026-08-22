@@ -8,7 +8,7 @@ import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useSession } from "@/lib/session";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { StatusChip, ContractStatusChip } from "@/components/ui/status-chip";
 
 function Card({
@@ -29,6 +29,24 @@ function Card({
       {children}
     </section>
   );
+}
+
+function billingAddress(customer: {
+  street: string;
+  building_number: string;
+  unit_number: string;
+  neighborhood_name: string | null;
+  district_name: string | null;
+  province_name: string | null;
+}): string | null {
+  const line = [customer.street, customer.building_number, customer.unit_number && `/ ${customer.unit_number}`]
+    .filter(Boolean)
+    .join(" ");
+  const area = [customer.neighborhood_name, customer.district_name, customer.province_name]
+    .filter(Boolean)
+    .join(" · ");
+  const address = [line, area].filter(Boolean).join(", ");
+  return address || null;
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -124,6 +142,11 @@ export function CustomerDetailScreen() {
                 }
               />
               <Row label={t("customer.fields.phone")} value={customer.phone} />
+              <Row label={t("customer.fields.email")} value={customer.email} />
+              <Row
+                label={t("customerDetail.billingAddress")}
+                value={billingAddress(customer) ?? t("customerDetail.noAddress")}
+              />
             </div>
           </Card>
 
@@ -171,9 +194,14 @@ export function CustomerDetailScreen() {
             title={t("customerDetail.contacts")}
             action={
               canWrite && (
-                <Button size="iconXs" variant="ghost" aria-label={t("customerDetail.addContact")}>
+                <Link
+                  to="/customers/$id/contacts/new"
+                  params={{ id: customer.id }}
+                  aria-label={t("customerDetail.addContact")}
+                  className={buttonVariants({ size: "iconXs", variant: "ghost" })}
+                >
                   <Plus />
-                </Button>
+                </Link>
               )
             }
           >
@@ -182,7 +210,18 @@ export function CustomerDetailScreen() {
                 {customer.contacts.map((contact) => (
                   <div key={contact.id} className="flex flex-col gap-1.5">
                     <span className="flex flex-wrap items-center gap-2 text-cell">
-                      {contact.full_name}
+                      {canWrite ? (
+                        <Link
+                          to="/customers/$id/contacts/$contactId"
+                          params={{ id: customer.id, contactId: contact.id }}
+                          className="hover:underline"
+                          aria-label={t("customerDetail.editContact")}
+                        >
+                          {contact.full_name}
+                        </Link>
+                      ) : (
+                        contact.full_name
+                      )}
                       <span className="text-help text-muted-foreground">
                         {enumLabel("customer.contactRole", contact.role)}
                       </span>

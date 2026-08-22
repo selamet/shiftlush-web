@@ -64,6 +64,9 @@ const PATHS = [
   "/customers/new",
   "/customers/c1",
   "/customers/c1/edit",
+  "/customers/c1/contacts/new",
+  "/customers/c1/contacts/c1-contact-1",
+  "/customers/c6/edit",
   "/complexes",
   "/buildings",
   "/buildings/new",
@@ -109,6 +112,14 @@ const EXPECT = {
   // The edit form must arrive with the record already in its inputs; an empty
   // form here would mean the loader or the defaultValue wiring is broken.
   "/customers/c1/edit": "Çamlıca",
+  // The contact form is reached through the customer, so it has to name the
+  // customer; and the edit form has to arrive with the contact in its inputs.
+  "/customers/c1/contacts/new": "Çamlıca",
+  "/customers/c1/contacts/c1-contact-1": "Ayşe Demir",
+  // An individual customer, so the half of the form only they see is actually
+  // rendered rather than only type-checked. The label is the tell: a TC field
+  // where an organisation would show a tax office.
+  "/customers/c6/edit": "TC kimlik no",
   // The invitation must name who is inviting; a link asking for a password
   // without saying who sent it is indistinguishable from phishing.
   "/invitation/some-token": "Yükseliş",

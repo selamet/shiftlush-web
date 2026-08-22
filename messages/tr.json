@@ -240,7 +240,25 @@
     "add": "Müşteri ekle",
     "buildingCount": "Bina",
     "elevatorCount": "Asansör",
-    "primaryContact": "Birincil iletişim"
+    "primaryContact": "Birincil iletişim",
+    "billingAddress": "Fatura adresi",
+    "identity": "Kimlik bilgileri",
+    "individualHint": "Şahıs müşteride TC kimlik no zorunludur; vergi bilgisi girilmez.",
+    "organisationHint": "Kurumsal müşteride vergi numarası zorunludur; TC kimlik no girilmez.",
+    "isActiveHint": "Pasif müşteri listelerde görünmeye devam eder, yeni sözleşme açılmaz."
+  },
+  "contact": {
+    "singular": "İletişim kişisi",
+    "add": "İletişim kişisi ekle",
+    "fields": {
+      "fullName": "Ad soyad",
+      "role": "Görev",
+      "phone": "Telefon",
+      "email": "E-posta",
+      "isPrimary": "Birincil iletişim kişisi",
+      "notes": "Notlar"
+    },
+    "isPrimaryHint": "Müşteri başına bir kişi birincil olabilir; işaretlerseniz önceki kişiden alınır."
   },
   "customerContact": {
     "title": "İletişim kişileri",
@@ -525,6 +543,11 @@
     "FILE_TOO_LARGE": "Dosya 10 MB sınırını aşıyor",
     "UNSUPPORTED_MIME_TYPE": "Bu dosya türü kabul edilmiyor (JPEG, PNG, WebP, PDF)",
     "UPLOAD_NOT_COMPLETED": "Yükleme tamamlanmamış, tekrar deneyin",
+    "DUPLICATE_TAX_NUMBER": "Bu vergi numarası başka bir müşteride kayıtlı. Mevcut kaydı açın ya da numarayı düzeltin.",
+    "DUPLICATE_NATIONAL_ID": "Bu TC kimlik numarası başka bir müşteride kayıtlı. Mevcut kaydı açın ya da numarayı düzeltin.",
+    "FIELD_REQUIRED_FOR_CUSTOMER_TYPE": "Bu alan seçtiğiniz müşteri tipi için zorunlu.",
+    "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE": "Bu alan seçtiğiniz müşteri tipinde kullanılmaz.",
+    "CONSTRAINT_VIOLATION": "Kayıt saklanamadı: bir veri kuralına takıldı. Tekrar denemeden önce alanları gözden geçirin.",
     "ATTACHMENT_TARGET_MISMATCH": "Dosya bu kayda ait değil",
     "NETWORK_ERROR": "Sunucuya ulaşılamıyor",
     "UNKNOWN_ERROR": "Beklenmeyen bir hata oluştu",
@@ -779,7 +802,10 @@
     "contracts": "Sözleşmeleri",
     "addContact": "İletişim kişisi ekle",
     "noContacts": "Henüz iletişim kişisi yok",
-    "primaryBadge": "Birincil"
+    "primaryBadge": "Birincil",
+    "editContact": "İletişim kişisini düzenle",
+    "billingAddress": "Fatura adresi",
+    "noAddress": "Fatura adresi girilmemiş"
   },
   "audit": {
     "actions": {
