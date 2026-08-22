@@ -17,14 +17,12 @@ import { enumLabel } from "@/lib/i18n";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 
 const SCOPES = ["maintenance_only", "maintenance_and_repair", "full_coverage"] as const;
 const PRICING = ["per_elevator", "flat"] as const;
 const BILLING = ["monthly", "quarterly", "semiannual", "annual"] as const;
-
-const selectClass =
-  "h-control-md w-full rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg";
 
 export function ContractFormScreen() {
   const { t } = useTranslation();
@@ -105,21 +103,19 @@ export function ContractFormScreen() {
           error={state.fields.customer}
           bindChild={false}
         >
-          <select
+          <SearchableSelect
             id="kf-customer"
             name="customer"
             required
-            className={selectClass}
-            defaultValue={record?.customer_id ?? search.customer ?? ""}
+            defaultValue={String(record?.customer_id ?? search.customer ?? "")}
             disabled={customers.isPending}
-          >
-            <option value="">{t("building.selectCustomer")}</option>
-            {(customers.data?.results ?? []).map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.legal_name}
-              </option>
-            ))}
-          </select>
+            invalid={Boolean(state.fields.customer)}
+            placeholder={t("building.selectCustomer")}
+            options={(customers.data?.results ?? []).map((customer) => ({
+              value: String(customer.id),
+              label: customer.legal_name,
+            }))}
+          />
         </Field>
 
         <Field
@@ -129,19 +125,17 @@ export function ContractFormScreen() {
           error={state.fields.scope}
           bindChild={false}
         >
-          <select
+          <SearchableSelect
             id="kf-scope"
             name="scope"
             required
-            className={selectClass}
             defaultValue={record?.scope ?? "maintenance_only"}
-          >
-            {SCOPES.map((value) => (
-              <option key={value} value={value}>
-                {enumLabel("contract.scope", value)}
-              </option>
-            ))}
-          </select>
+            invalid={Boolean(state.fields.scope)}
+            options={SCOPES.map((value) => ({
+              value,
+              label: enumLabel("contract.scope", value),
+            }))}
+          />
         </Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -175,19 +169,17 @@ export function ContractFormScreen() {
                 error={state.fields.pricing_type}
                 bindChild={false}
               >
-                <select
+                <SearchableSelect
                   id="kf-pricing"
                   name="pricing_type"
                   required
-                  className={selectClass}
                   defaultValue={record?.pricing_type ?? "per_elevator"}
-                >
-                  {PRICING.map((value) => (
-                    <option key={value} value={value}>
-                      {enumLabel("contract.pricingType", value)}
-                    </option>
-                  ))}
-                </select>
+                  invalid={Boolean(state.fields.pricing_type)}
+                  options={PRICING.map((value) => ({
+                    value,
+                    label: enumLabel("contract.pricingType", value),
+                  }))}
+                />
               </Field>
 
               <Field
@@ -223,18 +215,16 @@ export function ContractFormScreen() {
                 error={state.fields.billing_period}
                 bindChild={false}
               >
-                <select
+                <SearchableSelect
                   id="kf-billing"
                   name="billing_period"
-                  className={selectClass}
                   defaultValue={record?.billing_period ?? "monthly"}
-                >
-                  {BILLING.map((value) => (
-                    <option key={value} value={value}>
-                      {enumLabel("contract.billingPeriod", value)}
-                    </option>
-                  ))}
-                </select>
+                  invalid={Boolean(state.fields.billing_period)}
+                  options={BILLING.map((value) => ({
+                    value,
+                    label: enumLabel("contract.billingPeriod", value),
+                  }))}
+                />
               </Field>
             </div>
           </>

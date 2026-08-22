@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
 import { districtQuery, neighborhoodQuery, provinceQuery } from "@/api/queries";
-import { Field, Input } from "@/components/ui/field";
-import { cn } from "@/lib/utils";
+import { Field } from "@/components/ui/field";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const MIN_SEARCH_LENGTH = 2;
-
-const selectClass =
-  "h-control-md w-full rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg disabled:cursor-not-allowed disabled:opacity-60";
 
 /**
  * Province, then district, then neighbourhood.
@@ -20,6 +16,10 @@ const selectClass =
  * is never served, so there is no shortcut available to the client and no
  * reason to pretend otherwise in the interface — each control is disabled until
  * the one above it has an answer.
+ *
+ * All three are the same picker. Only the neighbourhood searches remotely,
+ * which is one prop rather than the separate hand-written input, result list
+ * and chosen-state chip this component used to carry.
  *
  * Reports only the neighbourhood id, because that is the only part of the chain
  * a building record stores; province and district hang off it.
@@ -40,16 +40,6 @@ export function AddressSelect({
   const [provinceId, setProvinceId] = useState<number | null>(null);
   const [districtId, setDistrictId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
-  const [chosen, setChosen] = useState<{ id: number; label: string } | null>(
-    initial?.neighborhoodId
-      ? {
-          id: initial.neighborhoodId,
-          // Shown until the user starts again. The record carries the names, so
-          // there is no request to make just to render what is already known.
-          label: [initial.provinceName, initial.districtName].filter(Boolean).join(" · "),
-        }
-      : null,
-  );
 
   const districts = useQuery(districtQuery(provinceId));
   const neighborhoods = useQuery(neighborhoodQuery(districtId, search));
@@ -64,127 +54,67 @@ export function AddressSelect({
 
   return (
     <div className="flex flex-col gap-4">
-      <input type="hidden" name={name} value={chosen?.id ?? ""} />
-
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t("address.province")} htmlFor="addr-province" bindChild={false}>
-          <select
+        <Field label={t("address.province")} htmlFor="addr-province">
+          <SearchableSelect
             id="addr-province"
-            className={selectClass}
-            value={provinceId ?? ""}
+            value={provinceId === null ? "" : String(provinceId)}
+            onChange={(value) => setProvinceId(Number(value) || null)}
             disabled={provinces.isPending}
-            onChange={(event) => setProvinceId(Number(event.target.value) || null)}
-          >
-            <option value="">{t("address.selectProvince")}</option>
-            {(provinces.data ?? []).map((province) => (
-              <option key={province.id} value={province.id}>
-                {province.name}
-              </option>
-            ))}
-          </select>
+            placeholder={t("address.selectProvince")}
+            options={(provinces.data ?? []).map((province) => ({
+              value: String(province.id),
+              label: province.name,
+            }))}
+          />
         </Field>
 
-        <Field label={t("address.district")} htmlFor="addr-district" bindChild={false}>
-          <select
+        <Field label={t("address.district")} htmlFor="addr-district">
+          <SearchableSelect
             id="addr-district"
-            className={selectClass}
-            value={districtId ?? ""}
+            value={districtId === null ? "" : String(districtId)}
+            onChange={(value) => {
+              setDistrictId(Number(value) || null);
+              setSearch("");
+            }}
             // Not merely empty — unusable. The server would return nothing, and
             // an enabled control that yields nothing reads as a fault.
             disabled={provinceId === null || districts.isPending}
-            onChange={(event) => {
-              setDistrictId(Number(event.target.value) || null);
-              setSearch("");
-            }}
-          >
-            <option value="">
-              {provinceId === null ? t("address.selectProvinceFirst") : t("address.selectDistrict")}
-            </option>
-            {(districts.data ?? []).map((district) => (
-              <option key={district.id} value={district.id}>
-                {district.name}
-              </option>
-            ))}
-          </select>
+            placeholder={
+              provinceId === null ? t("address.selectProvinceFirst") : t("address.selectDistrict")
+            }
+            options={(districts.data ?? []).map((district) => ({
+              value: String(district.id),
+              label: district.name,
+            }))}
+          />
         </Field>
       </div>
 
-      <Field
-        label={t("address.neighborhood")}
-        htmlFor="addr-neighborhood"
-        required
-        hint={chosen ? undefined : t("address.neighborhoodHint", { count: MIN_SEARCH_LENGTH })}
-        error={error}
-        bindChild={false}
-      >
-        {chosen ? (
-          <div className="flex items-center justify-between gap-3 rounded-md border border-input bg-muted px-3 py-2">
-            <span className="text-body">{chosen.label}</span>
-            <button
-              type="button"
-              className="text-help text-primary hover:underline"
-              onClick={() => {
-                setChosen(null);
-                setSearch("");
-              }}
-            >
-              {t("common.change")}
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            <label className="relative flex items-center">
-              <Search
-                className="pointer-events-none absolute left-3 size-4 text-subtle"
-                aria-hidden="true"
-              />
-              <Input
-                id="addr-neighborhood"
-                type="search"
-                autoComplete="off"
-                className="pl-9"
-                placeholder={t("address.neighborhoodPlaceholder")}
-                disabled={districtId === null}
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </label>
-
-            {districtId !== null && search.trim().length >= MIN_SEARCH_LENGTH && (
-              <div
-                className={cn(
-                  "max-h-56 overflow-y-auto rounded-md border border-border-subtle bg-card",
-                  neighborhoods.isPending && "opacity-60",
-                )}
-              >
-                {(neighborhoods.data ?? []).length === 0 ? (
-                  <p className="px-3 py-2 text-help text-muted-foreground">
-                    {neighborhoods.isPending ? t("common.loading") : t("address.noMatch")}
-                  </p>
-                ) : (
-                  (neighborhoods.data ?? []).map((neighborhood) => (
-                    <button
-                      key={neighborhood.id}
-                      type="button"
-                      className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-muted"
-                      onClick={() =>
-                        setChosen({
-                          id: neighborhood.id,
-                          label: `${neighborhood.name} · ${neighborhood.district_name} · ${neighborhood.province_name}`,
-                        })
-                      }
-                    >
-                      <span className="text-body">{neighborhood.name}</span>
-                      <span className="text-help text-muted-foreground">
-                        {neighborhood.district_name} · {neighborhood.province_name}
-                      </span>
-                    </button>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-        )}
+      <Field label={t("address.neighborhood")} htmlFor="addr-neighborhood" required error={error}>
+        <SearchableSelect
+          id="addr-neighborhood"
+          name={name}
+          required
+          defaultValue={initial?.neighborhoodId ? String(initial.neighborhoodId) : ""}
+          // The record carries the names, so there is no request to make just
+          // to render a value that is already known.
+          selectedLabel={[initial?.provinceName, initial?.districtName]
+            .filter(Boolean)
+            .join(" · ")}
+          disabled={districtId === null}
+          invalid={Boolean(error)}
+          placeholder={t("address.neighborhoodPlaceholder")}
+          onSearchChange={setSearch}
+          loading={neighborhoods.isFetching}
+          minSearchLength={MIN_SEARCH_LENGTH}
+          emptyLabel={t("address.noMatch")}
+          options={(neighborhoods.data ?? []).map((neighborhood) => ({
+            value: String(neighborhood.id),
+            label: neighborhood.name,
+            hint: `${neighborhood.district_name} · ${neighborhood.province_name}`,
+          }))}
+        />
       </Field>
     </div>
   );

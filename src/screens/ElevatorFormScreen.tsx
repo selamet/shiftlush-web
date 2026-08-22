@@ -19,11 +19,9 @@ import { cn } from "@/lib/utils";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { ALL_FIELDS, TABS, TAB_OF_FIELD, type FieldSpec } from "@/screens/elevator-form-fields";
-
-const selectClass =
-  "h-control-md w-full rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg";
 
 function initialValue(record: Elevator | undefined, field: FieldSpec): string | boolean {
   if (!record) return field.kind === "checkbox" ? true : "";
@@ -212,21 +210,20 @@ export function ElevatorFormScreen() {
             className="mb-5 max-w-md"
             bindChild={false}
           >
-            <select
+            <SearchableSelect
               id="ef-building"
               name="building"
               required
-              className={selectClass}
-              defaultValue={record?.building_id ?? search.building ?? ""}
+              defaultValue={String(record?.building_id ?? search.building ?? "")}
               disabled={buildings.isPending}
-            >
-              <option value="">{t("elevator.selectBuilding")}</option>
-              {(buildings.data?.results ?? []).map((building) => (
-                <option key={building.id} value={building.id}>
-                  {building.name} — {building.customer_name}
-                </option>
-              ))}
-            </select>
+              invalid={Boolean(state.fields.building)}
+              placeholder={t("elevator.selectBuilding")}
+              options={(buildings.data?.results ?? []).map((building) => ({
+                value: String(building.id),
+                label: building.name,
+                hint: building.customer_name,
+              }))}
+            />
           </Field>
 
           {/* Hidden, not unmounted: an uncontrolled input that leaves the tree
@@ -317,22 +314,23 @@ function FormField({
       bindChild={field.kind !== "select"}
     >
       {field.kind === "select" ? (
-        <select
+        <SearchableSelect
           id={id}
           name={field.name}
           required={field.required}
-          className={selectClass}
           defaultValue={String(value)}
-        >
-          {/* Optional selects can be left unanswered. A required one has no
-              blank option, so it cannot be submitted empty by accident. */}
-          {!field.required && <option value="">—</option>}
-          {(field.options ?? []).map((option) => (
-            <option key={option} value={option}>
-              {enumLabel(field.enumKey ?? "", option)}
-            </option>
-          ))}
-        </select>
+          invalid={Boolean(error)}
+          /* Optional selects can be left unanswered, so they carry a row that
+             clears the field. A required one has none, and cannot be emptied
+             once answered. */
+          options={[
+            ...(field.required ? [] : [{ value: "", label: "—" }]),
+            ...(field.options ?? []).map((option) => ({
+              value: option,
+              label: enumLabel(field.enumKey ?? "", option),
+            })),
+          ]}
+        />
       ) : (
         <Input
           name={field.name}

@@ -16,6 +16,7 @@ import { enumLabel } from "@/lib/i18n";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 
 const TYPES = [
@@ -111,19 +112,17 @@ export function CustomerFormScreen() {
           required
           error={state.fields.type}
         >
-          <select
+          <SearchableSelect
             id="cf-type"
             name="type"
             required
             defaultValue={record?.type ?? "corporate"}
-            className="h-control-md rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg"
-          >
-            {TYPES.map((value) => (
-              <option key={value} value={value}>
-                {enumLabel("customer.type", value)}
-              </option>
-            ))}
-          </select>
+            invalid={Boolean(state.fields.type)}
+            options={TYPES.map((value) => ({
+              value,
+              label: enumLabel("customer.type", value),
+            }))}
+          />
         </Field>
 
         <Field
