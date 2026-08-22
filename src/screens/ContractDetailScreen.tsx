@@ -47,6 +47,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Field, Input } from "@/components/ui/field";
+import { Modal } from "@/components/ui/modal";
 import {
   SearchableSelect,
   type SearchableOption,
@@ -1052,186 +1053,163 @@ export function ContractDetailScreen() {
           types the contract number, which forces them to look at the record.
           The phrase "are you sure" appears nowhere. */}
       {dialog === "terminate" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button
-            type="button"
-            className="absolute inset-0 bg-foreground/40"
-            onClick={() => setDialog(null)}
-            aria-label={t("common.close")}
-          />
-          <div
-            role="alertdialog"
-            aria-modal="true"
-            aria-label={t("contractDetail.terminateTitle")}
-            className="relative flex max-h-[90vh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-lg"
-          >
-            <div className="flex flex-col gap-1">
-              <h2 className="text-cardtitle">{t("contractDetail.terminateTitle")}</h2>
-              <span className="text-help text-destructive">
-                {t("contractDetail.terminateIrreversible")}
-              </span>
-            </div>
+        <Modal
+          open
+          onClose={() => setDialog(null)}
+          role="alertdialog"
+          label={t("contractDetail.terminateTitle")}
+          className="max-w-lg"
+        >
+          <div className="flex flex-col gap-1">
+            <h2 className="text-cardtitle">{t("contractDetail.terminateTitle")}</h2>
+            <span className="text-help text-destructive">
+              {t("contractDetail.terminateIrreversible")}
+            </span>
+          </div>
 
-            <div className="flex flex-col gap-2 rounded-md border-l-[3px] border-destructive bg-destructive-bg px-3 py-3">
-              <span className="text-label text-destructive">
-                {t("contractDetail.terminateHeading")}
-              </span>
-              <ul className="flex flex-col gap-1.5 text-help text-destructive">
-                <li>{t("contractDetail.terminateEffectElevators", { count: lines.length })}</li>
-                <li>
-                  {t("contractDetail.terminateEffectBuildings", { count: buildings.length })}{" "}
-                  ({buildings.join(", ")})
-                </li>
-                <li>
-                  {t("contractDetail.terminateEffectRevenue", {
-                    amount: formatMoney(contract.monthly_subtotal),
-                  })}
-                </li>
-                <li>{t("contractDetail.terminateEffectReminder")}</li>
-                <li>{t("contractDetail.terminateEffectHistory")}</li>
-              </ul>
-            </div>
+          <div className="flex flex-col gap-2 rounded-md border-l-[3px] border-destructive bg-destructive-bg px-3 py-3">
+            <span className="text-label text-destructive">
+              {t("contractDetail.terminateHeading")}
+            </span>
+            <ul className="flex flex-col gap-1.5 text-help text-destructive">
+              <li>{t("contractDetail.terminateEffectElevators", { count: lines.length })}</li>
+              <li>
+                {t("contractDetail.terminateEffectBuildings", { count: buildings.length })}{" "}
+                ({buildings.join(", ")})
+              </li>
+              <li>
+                {t("contractDetail.terminateEffectRevenue", {
+                  amount: formatMoney(contract.monthly_subtotal),
+                })}
+              </li>
+              <li>{t("contractDetail.terminateEffectReminder")}</li>
+              <li>{t("contractDetail.terminateEffectHistory")}</li>
+            </ul>
+          </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={t("contractDetail.terminationDate")} htmlFor="tr-date">
-                {/* Today, read from the reader's own clock. The date it used to
-                    open on was the day this dialogue was written. */}
-                <DatePicker defaultValue={todayIso()} />
-              </Field>
-              <Field
-                label={t("contractDetail.terminationReason")}
-                htmlFor="tr-reason"
-                required
-                hint={t("contractDetail.terminationReasonRequired")}
-                bindChild={false}
-              >
-                {/* Free text rather than a list. This is what the audit trail
-                    is read for a year later, and five canned options cannot say
-                    why this particular contract ended. */}
-                <Input
-                  id="tr-reason"
-                  value={reason}
-                  onChange={(event) => setReason(event.target.value)}
-                  placeholder={t("contractDetail.terminationReasonPlaceholder")}
-                />
-              </Field>
-            </div>
-
-            <Field label={t("contractDetail.typeNumberToConfirm")} htmlFor="tr-confirm">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t("contractDetail.terminationDate")} htmlFor="tr-date">
+              {/* Today, read from the reader's own clock. The date it used to
+                  open on was the day this dialogue was written. */}
+              <DatePicker defaultValue={todayIso()} />
+            </Field>
+            <Field
+              label={t("contractDetail.terminationReason")}
+              htmlFor="tr-reason"
+              required
+              hint={t("contractDetail.terminationReasonRequired")}
+              bindChild={false}
+            >
+              {/* Free text rather than a list. This is what the audit trail
+                  is read for a year later, and five canned options cannot say
+                  why this particular contract ended. */}
               <Input
-                value={typed}
-                onChange={(event) => setTyped(event.target.value)}
-                placeholder={contract.contract_number}
-                className="font-mono tnum"
+                id="tr-reason"
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder={t("contractDetail.terminationReasonPlaceholder")}
               />
             </Field>
-
-            {terminate.state.message && (
-              <p className="text-help text-destructive">{terminate.state.message}</p>
-            )}
-
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setDialog(null)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={
-                  typed.trim() !== contract.contract_number ||
-                  !reason.trim() ||
-                  terminate.state.pending
-                }
-                onClick={() => terminate.submit({ reason: reason.trim() })}
-              >
-                {terminate.state.pending
-                  ? t("common.saving")
-                  : t("contract.actions.terminate")}
-              </Button>
-            </div>
           </div>
-        </div>
+
+          <Field label={t("contractDetail.typeNumberToConfirm")} htmlFor="tr-confirm">
+            <Input
+              value={typed}
+              onChange={(event) => setTyped(event.target.value)}
+              placeholder={contract.contract_number}
+              className="font-mono tnum"
+            />
+          </Field>
+
+          {terminate.state.message && (
+            <p className="text-help text-destructive">{terminate.state.message}</p>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setDialog(null)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={
+                typed.trim() !== contract.contract_number ||
+                !reason.trim() ||
+                terminate.state.pending
+              }
+              onClick={() => terminate.submit({ reason: reason.trim() })}
+            >
+              {terminate.state.pending ? t("common.saving") : t("contract.actions.terminate")}
+            </Button>
+          </div>
+        </Modal>
       )}
 
       {/* Renewal uses none of that: no red, no counted consequences, no
           type-to-confirm. Its result is a draft, so it is reversible. */}
       {dialog === "renew" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button
-            type="button"
-            className="absolute inset-0 bg-foreground/40"
-            onClick={() => setDialog(null)}
-            aria-label={t("common.close")}
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={t("contractDetail.renewTitle")}
-            className="relative flex w-full max-w-md flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-lg"
-          >
-            <div className="flex flex-col gap-1">
-              <h2 className="text-cardtitle">{t("contractDetail.renewTitle")}</h2>
-              <p className="text-help text-muted-foreground">
-                {t("contractDetail.renewBody", { number: contract.contract_number })}
-              </p>
-            </div>
-
-            <div className="flex flex-col">
-              <Row
-                label={t("contractDetail.renewNewNumber")}
-                value={
-                  <span className="inline-flex items-center gap-2">
-                    <span className="font-mono tnum">{t("contractDetail.numberOnRenewal")}</span>
-                    <ContractStatusChip value="draft" />
-                  </span>
-                }
-              />
-              <Row
-                label={t("contractDetail.renewNewStart")}
-                value={formatDate(proposal?.start ?? "")}
-              />
-              <Row
-                label={t("contractDetail.renewNewEnd")}
-                value={formatDate(proposal?.end ?? "")}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="flex items-center gap-2 text-body">
-                <input type="checkbox" defaultChecked className="size-4 rounded-xs accent-primary" />
-                {t("contractDetail.renewCarryElevators", { count: lines.length })}
-              </label>
-              <label className="flex items-center gap-2 text-body">
-                <input type="checkbox" defaultChecked className="size-4 rounded-xs accent-primary" />
-                {t("contractDetail.renewCopyTerms")}
-              </label>
-            </div>
-
-            <p className="text-help text-muted-foreground">{t("contractDetail.renewReversible")}</p>
-
-            {renew.state.message && (
-              <p className="text-help text-destructive">{renew.state.message}</p>
-            )}
-
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setDialog(null)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                size="sm"
-                disabled={!proposal || renew.state.pending}
-                onClick={() =>
-                  proposal &&
-                  renew.submit({ start_date: proposal.start, end_date: proposal.end })
-                }
-              >
-                {renew.state.pending
-                  ? t("common.saving")
-                  : t("contractDetail.renewCreateDraft")}
-              </Button>
-            </div>
+        <Modal
+          open
+          onClose={() => setDialog(null)}
+          label={t("contractDetail.renewTitle")}
+          className="max-w-md"
+        >
+          <div className="flex flex-col gap-1">
+            <h2 className="text-cardtitle">{t("contractDetail.renewTitle")}</h2>
+            <p className="text-help text-muted-foreground">
+              {t("contractDetail.renewBody", { number: contract.contract_number })}
+            </p>
           </div>
-        </div>
+
+          <div className="flex flex-col">
+            <Row
+              label={t("contractDetail.renewNewNumber")}
+              value={
+                <span className="inline-flex items-center gap-2">
+                  <span className="font-mono tnum">{t("contractDetail.numberOnRenewal")}</span>
+                  <ContractStatusChip value="draft" />
+                </span>
+              }
+            />
+            <Row
+              label={t("contractDetail.renewNewStart")}
+              value={formatDate(proposal?.start ?? "")}
+            />
+            <Row label={t("contractDetail.renewNewEnd")} value={formatDate(proposal?.end ?? "")} />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-2 text-body">
+              <input type="checkbox" defaultChecked className="size-4 rounded-xs accent-primary" />
+              {t("contractDetail.renewCarryElevators", { count: lines.length })}
+            </label>
+            <label className="flex items-center gap-2 text-body">
+              <input type="checkbox" defaultChecked className="size-4 rounded-xs accent-primary" />
+              {t("contractDetail.renewCopyTerms")}
+            </label>
+          </div>
+
+          <p className="text-help text-muted-foreground">{t("contractDetail.renewReversible")}</p>
+
+          {renew.state.message && (
+            <p className="text-help text-destructive">{renew.state.message}</p>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setDialog(null)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              size="sm"
+              disabled={!proposal || renew.state.pending}
+              onClick={() =>
+                proposal && renew.submit({ start_date: proposal.start, end_date: proposal.end })
+              }
+            >
+              {renew.state.pending ? t("common.saving") : t("contractDetail.renewCreateDraft")}
+            </Button>
+          </div>
+        </Modal>
       )}
     </div>
   );
