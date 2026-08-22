@@ -68,6 +68,9 @@ const PATHS = [
   "/customers/c1/contacts/c1-contact-1",
   "/customers/c6/edit",
   "/complexes",
+  "/complexes/new",
+  "/complexes/s1",
+  "/complexes/s1/edit",
   "/buildings",
   "/buildings/new",
   "/buildings/b1/edit",
@@ -124,6 +127,12 @@ const EXPECT = {
   // without saying who sent it is indistinguishable from phishing.
   "/invitation/some-token": "Yükseliş",
   "/buildings": "Blok",
+  "/complexes": "Çamlıca Konakları",
+  // The blocks inside the estate, not the estate's own name: this asserts the
+  // related list came back from the server's `complex` filter rather than the
+  // card falling through to its empty state.
+  "/complexes/s1": "Blok",
+  "/complexes/s1/edit": "Çamlıca Konakları",
   // The edit form must arrive with the record in its inputs, on the tab that
   // is showing and on the ones that are not.
   "/elevators/e1/edit": "34-2019",

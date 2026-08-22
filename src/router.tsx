@@ -12,6 +12,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { createQueryClient } from "@/api/query-client";
 import {
   buildingListQuery,
+  complexListQuery,
+  complexQuery,
   contractListQuery,
   customerListQuery,
   customerQuery,
@@ -33,6 +35,8 @@ import { CustomerFormScreen } from "@/screens/CustomerFormScreen";
 import { CustomerDetailScreen } from "@/screens/CustomerDetailScreen";
 import { ContactFormScreen } from "@/screens/ContactFormScreen";
 import { ComplexListScreen } from "@/screens/ComplexListScreen";
+import { ComplexFormScreen } from "@/screens/ComplexFormScreen";
+import { ComplexDetailScreen } from "@/screens/ComplexDetailScreen";
 import { BuildingListScreen } from "@/screens/BuildingListScreen";
 import { BuildingFormScreen } from "@/screens/BuildingFormScreen";
 import { ContractListScreen } from "@/screens/ContractListScreen";
@@ -217,7 +221,22 @@ export const routeTree = rootRoute.addChildren([
         queryClient.ensureQueryData(contractListQuery({ customer: id, page_size: 100 })),
       ]);
     }),
-    shellChild("/complexes", ComplexListScreen),
+    shellChild("/complexes/new", ComplexFormScreen),
+    shellChild("/complexes/$id/edit", ComplexFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(complexQuery(params.id)),
+    ),
+    shellChild("/complexes", ComplexListScreen, () =>
+      queryClient.ensureQueryData(complexListQuery({ page: 1, page_size: 25 })),
+    ),
+    shellChild("/complexes/$id", ComplexDetailScreen, async ({ params }) => {
+      const id = params.id;
+      // The complex and the blocks inside it are one screen; fetching them in
+      // sequence would make the page fill in two visible steps.
+      await Promise.all([
+        queryClient.ensureQueryData(complexQuery(id)),
+        queryClient.ensureQueryData(buildingListQuery({ complex: id, page_size: 100 })),
+      ]);
+    }),
     shellChild("/buildings", BuildingListScreen, () =>
       queryClient.ensureQueryData(buildingListQuery({ page: 1, page_size: 25 })),
     ),
