@@ -59,6 +59,14 @@ jobs:
       - name: Every button does something
         run: npm run lint:buttons
 
+      # Whether a user stays signed in: the refresh cycle, the one retry, the
+      # collapsing that stops ten concurrent requests replaying a rotated
+      # refresh token and getting every session revoked. None of it is visible
+      # on a good connection with a fresh token, so none of it is reachable by
+      # the render check below — it needs a failing network, on purpose.
+      - name: The session logic holds
+        run: npm test
+
       # The same guarantee the backend gives its own schema: the types are
       # generated, so a hand-edited generated.ts would silently disagree with
       # the contract every screen is written against.

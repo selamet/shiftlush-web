@@ -15,6 +15,7 @@
 import { useCallback, useState } from "react";
 import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { ApiError } from "@/api/client";
 import { errorMessage, fieldErrors, supportReference } from "@/api/errors";
 
@@ -27,6 +28,50 @@ export interface SubmitState {
   message: string;
   /** Shown only for faults the user cannot act on. */
   reference: string;
+}
+
+/**
+ * Where a failure gets shown: against a field, at the top of the form, or both.
+ *
+ * The decision is here rather than inline in the mutation below so that it can
+ * be made in one place and read without a renderer around it. The three cases
+ * are short; the reason each is what it is, is not obvious from the code.
+ *
+ * - Nothing belongs to a field. The failure is the form's as a whole — a
+ *   permission, a conflict, a dead connection — and the support reference goes
+ *   with it, for the faults the user cannot act on.
+ * - Everything belongs to a field. The message is already sitting next to the
+ *   input that caused it; repeating it at the top says the same thing twice.
+ * - Some of it belongs to a field and some of it does not. The part that names
+ *   no field has nowhere else to go, so the form has to say it too — otherwise
+ *   a rejection like "this company has no seats left" arrives invisible,
+ *   alongside a field error the user can see and fix without fixing anything.
+ *
+ * `fieldForCode` lets a form claim a top-level code as one of its fields' —
+ * see the option of the same name on `useSubmit` for why a form may know
+ * something about a code that the server correctly refuses to assume.
+ */
+export function submitFailure(
+  error: unknown,
+  t: TFunction,
+  fieldForCode?: Record<string, string>,
+): Omit<SubmitState, "pending"> {
+  const fields = fieldErrors(error, t);
+
+  // Applied before the count below, which is what decides between a field error
+  // and a banner: a code routed to a field must not also be shouted at the top
+  // of the form.
+  const routed = error instanceof ApiError ? fieldForCode?.[error.code] : undefined;
+  // Never over the top of what the server actually said about that field.
+  if (routed && !fields[routed]) fields[routed] = errorMessage(error, t);
+
+  if (Object.keys(fields).length === 0) {
+    return { fields, message: errorMessage(error, t), reference: supportReference(error) };
+  }
+  if (error instanceof ApiError && error.details.some((detail) => !detail.field)) {
+    return { fields, message: errorMessage(error, t), reference: "" };
+  }
+  return { fields, message: "", reference: "" };
 }
 
 interface UseSubmitOptions<TInput, TResult> {
@@ -81,25 +126,12 @@ export function useSubmit<TInput, TResult>({
       onSuccess?.(result);
     },
     onError: (error) => {
-      const byField = fieldErrors(error, t);
-
-      // Placed before the count below, which is what decides between a field
-      // error and a banner: a code routed to a field must not also be shouted
-      // at the top of the form.
-      const routed = error instanceof ApiError ? fieldForCode?.[error.code] : undefined;
-      // Never over the top of what the server actually said about that field.
-      if (routed && !byField[routed]) byField[routed] = errorMessage(error, t);
-
-      setFields(byField);
-      // A field-level failure is already shown against its input; repeating it
-      // at the top of the form says the same thing twice and buries the case
-      // where something went wrong that belongs to no field at all.
-      if (Object.keys(byField).length === 0) {
-        setMessage(errorMessage(error, t));
-        setReference(supportReference(error));
-      } else if (error instanceof ApiError && error.details.some((d) => !d.field)) {
-        setMessage(errorMessage(error, t));
-      }
+      // All three are set every time. `onMutate` has already cleared them, so
+      // writing "" is what the branches that used to skip a setter were saying.
+      const failure = submitFailure(error, t, fieldForCode);
+      setFields(failure.fields);
+      setMessage(failure.message);
+      setReference(failure.reference);
     },
   });
 

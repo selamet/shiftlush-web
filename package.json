@@ -17,7 +17,9 @@
     "lint:password": "node scripts/check-password-length.mjs",
     "lint:buttons": "node scripts/check-dead-buttons.mjs",
     "typecheck": "tsc -b --noEmit",
-    "verify": "npm run lint:contract && npm run lint:tr && npm run lint:i18n && npm run lint:errors && npm run lint:paths && npm run lint:password && npm run lint:buttons && npm run typecheck && npm run test:dates && npm run test:dialogs && npm run test:privacy && npm run build && npm run smoke",
+    "verify": "npm run lint:contract && npm run lint:tr && npm run lint:i18n && npm run lint:errors && npm run lint:paths && npm run lint:password && npm run lint:buttons && npm run typecheck && npm run test && npm run test:dates && npm run test:dialogs && npm run test:privacy && npm run build && npm run smoke",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:dates": "node scripts/check-dates.mjs",
     "test:dialogs": "node scripts/check-dialogs.mjs",
     "test:privacy": "node scripts/check-sentry-privacy.mjs",
@@ -48,6 +50,7 @@
     "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",
-    "vite": "^6.0.0"
+    "vite": "^6.0.0",
+    "vitest": "^4.1.11"
   }
 }
