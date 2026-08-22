@@ -1,22 +1,28 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "@tanstack/react-router";
 import {
   ChevronRight,
+  ExternalLink,
+  FileDown,
+  Loader2,
   Pencil,
   Printer,
   QrCode,
   RefreshCw,
   TriangleAlert,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   elevatorAttachmentsQuery,
   elevatorHistoryQuery,
   elevatorKeys,
   elevatorQuery,
+  fetchLabelPdf,
+  regenerateQr,
 } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { describeAuditEntry } from "@/lib/audit";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
@@ -97,6 +103,92 @@ function RailCard({ title, children }: { title: string; children: React.ReactNod
   );
 }
 
+/**
+ * One button, two places on the page.
+ *
+ * The header and the QR card offer the same action, and the header is the one
+ * a person reaches for while the card is the one they are looking at when they
+ * think about the sticker. Defining the control once is what keeps the second
+ * copy from quietly becoming a different button — a different label, a
+ * different busy state, or nothing at all, which is how it started.
+ */
+function PrintLabelButton({
+  size,
+  busy,
+  onClick,
+}: {
+  size: "xs" | "sm";
+  busy: boolean;
+  onClick: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Button variant="secondary" size={size} disabled={busy} onClick={onClick}>
+      {busy ? <Loader2 className="animate-spin" /> : <Printer />}
+      {busy ? t("qrLabels.generating") : t("qr.printLabels")}
+    </Button>
+  );
+}
+
+/**
+ * The finished sheet, offered rather than forced on the browser.
+ *
+ * Two links, not a click synthesised in code: the request is awaited, so by the
+ * time the PDF exists the gesture that asked for it is over as far as the
+ * browser is concerned — a tab opened then is a popup, and a download started
+ * then is one nobody asked for. A sandboxed viewer may also refuse to render a
+ * blob, which is why the download stands next to the open. `QrLabelScreen`
+ * makes the same offer for the same reason.
+ */
+function LabelSheet({
+  url,
+  filename,
+  error,
+}: {
+  url: string;
+  filename: string;
+  error: unknown;
+}) {
+  const { t } = useTranslation();
+
+  if (error) {
+    return (
+      <Alert tone="error" block>
+        {errorMessage(error, t)}
+      </Alert>
+    );
+  }
+  if (!url) return null;
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-success bg-success-bg/40 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-label text-success">{t("qrLabels.ready")}</span>
+        <a
+          href={url}
+          download={filename}
+          className={buttonVariants({ variant: "secondary", size: "sm" })}
+        >
+          <FileDown />
+          {t("qrLabels.downloadPdf")}
+        </a>
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className={buttonVariants({ variant: "ghost", size: "sm" })}
+        >
+          <ExternalLink />
+          {t("qrLabels.openPdf")}
+        </a>
+      </div>
+      {/* One lift is one label on a sheet of twelve. Said before the paper comes
+          out, because eleven blank cells look like a fault otherwise. */}
+      <p className="text-help text-muted-foreground">{t("qrLabels.singleLabelNote")}</p>
+    </div>
+  );
+}
+
 export function ElevatorDetailScreen() {
   const { t } = useTranslation();
   const { id } = useParams({ strict: false }) as { id?: string };
@@ -122,6 +214,71 @@ export function ElevatorDetailScreen() {
     enabled: Boolean(elevatorId) && canSeeHistory,
   });
 
+  const queryClient = useQueryClient();
+  const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
+  // Which of the two print buttons asked. The sheet appears beside the control
+  // that was pressed: the QR card is a long way down the right rail, and a
+  // notice at the top of the page for a button at the bottom of it is a notice
+  // the user scrolls past looking for the thing that already happened.
+  const [sheetSlot, setSheetSlot] = useState<"header" | "rail">("header");
+
+  // Held in a ref as well as in state, because the unmount cleanup closes over
+  // the state as it was at the last render, and revoking the wrong URL leaks
+  // the right one. Same reasoning as `QrLabelScreen`.
+  const [sheetUrl, setSheetUrl] = useState("");
+  const sheetUrlRef = useRef("");
+
+  const replaceSheet = useCallback((blob: Blob | null) => {
+    if (sheetUrlRef.current) URL.revokeObjectURL(sheetUrlRef.current);
+    const next = blob ? URL.createObjectURL(blob) : "";
+    sheetUrlRef.current = next;
+    setSheetUrl(next);
+  }, []);
+
+  useEffect(() => () => replaceSheet(null), [replaceSheet]);
+
+  /**
+   * The label, as the server renders it.
+   *
+   * `fetchLabelPdf` is the same call the QR label screen makes with a list;
+   * here the list is one lift. Nothing on this screen draws a label — the
+   * artwork lives in the server's template, and a second renderer would be a
+   * second sticker for one lift, drifting, only one of which gets stuck to a
+   * wall.
+   */
+  const labelSheet = useMutation({
+    // A sheet already on screen describes the token as it was when it was made.
+    // Clearing it at the start of the next request means the user is never
+    // looking at a "ready" panel while a newer answer is in flight.
+    onMutate: () => replaceSheet(null),
+    mutationFn: () => fetchLabelPdf([elevatorId]),
+    onSuccess: (blob) => replaceSheet(blob),
+  });
+
+  /**
+   * A new QR token, which kills every label already printed for this lift.
+   *
+   * Guarded by a heavy confirmation rather than run on the click: the sticker
+   * in the machine room stops resolving the moment this returns, and the person
+   * who finds that out is a technician standing in front of the lift with a
+   * phone that no longer opens anything.
+   */
+  const regenerate = useMutation({
+    mutationFn: () => regenerateQr(elevatorId),
+    onSuccess: async () => {
+      // Any sheet made before this carries the previous token, so it would
+      // print a sticker that resolves to nothing.
+      replaceSheet(null);
+      labelSheet.reset();
+      await queryClient.invalidateQueries({ queryKey: elevatorKeys.all });
+    },
+  });
+
+  function printLabel(slot: "header" | "rail") {
+    setSheetSlot(slot);
+    labelSheet.mutate();
+  }
+
   if (query.isPending) return <DetailSkeleton />;
   if (query.isError || !query.data) {
     return (
@@ -136,6 +293,10 @@ export function ElevatorDetailScreen() {
   const elevator = query.data;
   const attachments = attachmentsQuery.data?.results ?? [];
   const history = historyQuery.data?.results ?? [];
+  // Named after the lift rather than "download.pdf": the sheet is printed on
+  // one day and stuck to a wall on another, and in between it sits in a folder
+  // with the other four somebody saved this week.
+  const sheetFilename = `qr-${elevator.registration_number}.pdf`;
   // The record is flat: `classification`, `technical` and the rest were groups
   // in the fixture, invented before the schema existed. The field names were
   // always the contract's.
@@ -203,10 +364,11 @@ export function ElevatorDetailScreen() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm">
-            <Printer />
-            {t("qr.printLabels")}
-          </Button>
+          <PrintLabelButton
+            size="sm"
+            busy={labelSheet.isPending}
+            onClick={() => printLabel("header")}
+          />
           <Link
             to="/elevators/$id/edit"
             params={{ id: id ?? "e1" }}
@@ -217,6 +379,10 @@ export function ElevatorDetailScreen() {
           </Link>
         </div>
       </div>
+
+      {sheetSlot === "header" && (
+        <LabelSheet url={sheetUrl} filename={sheetFilename} error={labelSheet.error} />
+      )}
 
       {/* A missing car door is a serious non-conformity at inspection, so it
           sits above the record as a warning rather than as one row of 31. */}
@@ -436,19 +602,44 @@ export function ElevatorDetailScreen() {
               </span>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button size="xs" variant="secondary">
-                <Printer />
-                {t("qr.printLabels")}
-              </Button>
-              <Button size="xs" variant="ghost">
-                <RefreshCw />
-                {t("qr.regenerate")}
+              <PrintLabelButton
+                size="xs"
+                busy={labelSheet.isPending}
+                onClick={() => printLabel("rail")}
+              />
+              <Button
+                size="xs"
+                variant="ghost"
+                disabled={regenerate.isPending}
+                onClick={() => setConfirmingRegenerate(true)}
+              >
+                <RefreshCw className={cn(regenerate.isPending && "animate-spin")} />
+                {regenerate.isPending ? t("qrLabels.regenerating") : t("qr.regenerate")}
               </Button>
             </div>
             <p className="mt-2 flex items-start gap-1.5 text-help text-muted-foreground">
               <TriangleAlert className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
               {t("elevator.hints.qrRegenerateWarning")}
             </p>
+
+            <div className="mt-3 flex flex-col gap-2 empty:mt-0">
+              {sheetSlot === "rail" && (
+                <LabelSheet url={sheetUrl} filename={sheetFilename} error={labelSheet.error} />
+              )}
+              {/* The instruction, not just the outcome: a token that has been
+                  replaced is only half the job, and the other half is a person
+                  walking to the machine room with a new sticker. */}
+              {regenerate.isSuccess && (
+                <Alert tone="success" block>
+                  {t("qrLabels.regenerateDone", { name: elevator.registration_number })}
+                </Alert>
+              )}
+              {regenerate.isError && (
+                <Alert tone="error" block>
+                  {errorMessage(regenerate.error, t)}
+                </Alert>
+              )}
+            </div>
           </RailCard>
 
           <RailCard title={t("detail.tabs.history")}>
@@ -466,14 +657,50 @@ export function ElevatorDetailScreen() {
                   {canSeeHistory ? t("audit.empty") : t("detail.hiddenForRole")}
                 </p>
               )}
-              <button type="button" className="self-start text-help text-primary hover:underline">
-                {t("detail.viewAllHistory")}
-              </button>
+              {/* The tab on this screen, not the audit log list. The trail is
+                  readable by owner and admin only — the same `canSeeHistory`
+                  the query obeys, rather than a second rule beside it — and
+                  `/audit-logs` cannot yet be opened scoped to one record: it
+                  holds no filter in its URL, so the link would land on every
+                  row the firm has and call it this lift's history. When that
+                  screen takes `table_name` and `record_id` from the URL, this
+                  is the link to move. */}
+              {canSeeHistory && history.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setTab("history")}
+                  className="self-start text-help text-primary hover:underline"
+                >
+                  {t("detail.viewAllHistory")}
+                </button>
+              )}
             </div>
           </RailCard>
         </div>
       </div>
     </div>
+
+      {/* Heavy, because the effect is not on this screen: it is on a sticker in
+          a machine room across town, and the person who meets the consequence
+          is not the person clicking. The three lines below are what actually
+          happens, named before the button that does it is offered. */}
+      <ConfirmDialog
+        open={confirmingRegenerate}
+        weight="heavy"
+        title={t("qrLabels.regenerateFor", { name: elevator.registration_number })}
+        body={t("qrLabels.regenerateBody")}
+        consequences={[
+          t("qrLabels.regenerateConsequenceLabels"),
+          t("qrLabels.regenerateConsequenceWall"),
+          t("qrLabels.regenerateConsequenceReprint"),
+        ]}
+        confirmLabel={regenerate.isPending ? t("qrLabels.regenerating") : t("qr.regenerate")}
+        onConfirm={() => {
+          regenerate.mutate();
+          setConfirmingRegenerate(false);
+        }}
+        onCancel={() => setConfirmingRegenerate(false)}
+      />
     </>
   );
 }
