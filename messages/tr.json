@@ -668,7 +668,11 @@
     "sharableFilters": "Filtreler adres çubuğunda taşınır — bu bağlantıyı ekip arkadaşınıza gönderebilirsiniz",
     "filters": "Filtreler",
     "hideFilters": "Filtreleri gizle",
-    "loadFailed": "Liste yüklenemedi"
+    "loadFailed": "Liste yüklenemedi",
+    "allOption": "Tümü",
+    "pinColumn": "Kolonu sabitle",
+    "removeFilter": "Filtreyi kaldır",
+    "searchTerm": "Arama"
   },
   "form": {
     "unsavedChanges": "Kaydedilmemiş değişiklikler",

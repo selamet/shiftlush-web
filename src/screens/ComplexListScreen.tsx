@@ -1,10 +1,17 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { complexListQuery, type Complex } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
+import { listSearchSchema, useListSearch } from "@/lib/list-search";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
+
+/**
+ * Paging only. `GET /complexes/` declares no `search` and no filter beyond
+ * `customer`, which is a reference rather than a menu — so this list offers
+ * neither, instead of offering both and narrowing nothing.
+ */
+export const complexListSearch = listSearchSchema();
 
 /** Skips the half that is missing rather than rendering a dangling separator. */
 function place(row: Complex): string {
@@ -32,10 +39,9 @@ const columns: ListColumn<Complex>[] = [
 
 export function ComplexListScreen() {
   const { t } = useTranslation();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const list = useListSearch();
 
-  const query = useQuery(complexListQuery({ page, page_size: pageSize }));
+  const query = useQuery(complexListQuery(list.params));
 
   return (
     <ListPage
@@ -43,17 +49,11 @@ export function ComplexListScreen() {
       titleKey="complex.title"
       primaryActionKey="complex.add"
       primaryActionTo="/complexes/new"
+      state={list}
       columns={columns}
       rows={query.data?.results ?? []}
       rowKey={(row) => row.id}
       total={query.data?.pagination.total ?? 0}
-      page={page}
-      pageSize={pageSize}
-      onPageChange={setPage}
-      onPageSizeChange={(size) => {
-        setPageSize(size);
-        setPage(1);
-      }}
       loading={query.isPending}
       error={
         query.isError

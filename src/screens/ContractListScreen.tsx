@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -7,16 +6,33 @@ import { errorMessage, supportReference } from "@/api/errors";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useSession } from "@/lib/session";
+import { enumFilter, listSearchSchema, useListSearch } from "@/lib/list-search";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
 import { ContractStatusChip } from "@/components/ui/status-chip";
+
+const filters = [
+  enumFilter({
+    param: "status",
+    labelKey: "contract.fields.status",
+    namespace: "contract.status",
+    values: ["draft", "active", "expired", "terminated", "renewed"],
+  }),
+  enumFilter({
+    param: "scope",
+    labelKey: "contract.fields.scope",
+    namespace: "contract.scope",
+    values: ["maintenance_only", "maintenance_and_repair", "full_coverage"],
+  }),
+];
+
+export const contractListSearch = listSearchSchema(filters);
 
 export function ContractListScreen() {
   const { t } = useTranslation();
   const { role } = useSession();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const list = useListSearch(filters);
 
-  const query = useQuery(contractListQuery({ page, page_size: pageSize }));
+  const query = useQuery(contractListQuery(list.params));
   const rows = query.data?.results ?? [];
 
   // The server drops the money fields for roles that may not see them, so the
@@ -64,19 +80,13 @@ export function ContractListScreen() {
       titleKey="contract.title"
       primaryActionKey={role === "accountant" ? undefined : "contract.add"}
       primaryActionTo={role === "accountant" ? undefined : "/contracts/new"}
-      exportable
-      filters={[{ labelKey: "contract.fields.status" }, { labelKey: "customer.singular" }]}
+      state={list}
+      searchable
+      filters={filters}
       columns={columns}
       rows={rows}
       rowKey={(row) => row.id}
       total={query.data?.pagination.total ?? 0}
-      page={page}
-      pageSize={pageSize}
-      onPageChange={setPage}
-      onPageSizeChange={(size) => {
-        setPageSize(size);
-        setPage(1);
-      }}
       loading={query.isPending}
       error={
         query.isError

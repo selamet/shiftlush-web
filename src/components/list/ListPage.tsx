@@ -1,41 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "@tanstack/react-router";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Columns3,
-  Download,
-  Plus,
-  Search,
-  SlidersHorizontal,
-  X,
-} from "lucide-react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
+import type { ListParams } from "@/api/queries";
+import { PAGE_SIZES, type ListFilter, type ListState } from "@/lib/list-search";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { ColumnMenu, useColumnPreferences } from "./ColumnMenu";
+import { ListMenu, ListMenuOption } from "./ListMenu";
 import { EmptyState } from "./EmptyState";
 import { ListError, TableSkeleton } from "./ListStates";
 
 export interface ListColumn<T> {
-  /** Translation key for the header. */
+  /** Translation key for the header. Also this column's identity in the column menu. */
   key: string;
   cell: (row: T) => React.ReactNode;
-  /** Pinned on narrow screens while the rest scrolls sideways. */
+  /** The list's default pinned column: stays put while the rest scrolls sideways. */
   sticky?: boolean;
   hideOnMobile?: boolean;
   numeric?: boolean;
 }
 
-export interface ListFilter {
-  labelKey: string;
-  count?: number;
-}
-
-export interface ActiveFilter {
-  labelKey: string;
-  value: string;
-}
+/**
+ * What a bulk action is being asked to act on.
+ *
+ * The two cases are kept apart all the way to the action, because they are not
+ * the same question. `rows` is the handful someone ticked and can see. `filter`
+ * is every record matching the current query — the 4000 behind a page of 25 —
+ * and it is handed over as the query rather than as ids, since those ids were
+ * never fetched, and fetching them to hand them back would be a client
+ * pretending it knows a set only the server can enumerate.
+ */
+export type ListSelection =
+  | { mode: "rows"; ids: string[]; count: number }
+  | { mode: "filter"; params: ListParams; count: number };
 
 interface ListPageProps<T> {
   breadcrumbKey: string;
@@ -43,86 +42,76 @@ interface ListPageProps<T> {
   primaryActionKey?: string;
   /** Where the primary action goes. Renders a plain button when omitted. */
   primaryActionTo?: string;
-  exportable?: boolean;
-  filters?: ListFilter[];
-  activeFilters?: ActiveFilter[];
+  /** Filter, search and paging state, from `useListSearch`. Lives in the URL. */
+  state: ListState;
+  /** Set only where the endpoint declares a `search` parameter. */
+  searchable?: boolean;
+  filters?: readonly ListFilter[];
   columns: ListColumn<T>[];
   rows: T[];
   rowKey: (row: T) => string;
   total: number;
-  pageSize?: number;
   selectable?: boolean;
-  /** Rendered inside the selection strip; receives the selected ids. */
-  bulkActions?: (selected: string[]) => React.ReactNode;
+  /** Rendered inside the selection strip; receives what is selected. */
+  bulkActions?: (selection: ListSelection) => React.ReactNode;
   emptyTitleKey: string;
   prerequisite?: { labelKey: string; to: string };
-  /** 1-based. Omit for a static pager — the design-time behaviour. */
-  page?: number;
-  onPageChange?: (page: number) => void;
-  onPageSizeChange?: (size: number) => void;
   /** True while the first page is in flight. Paging keeps the old rows instead. */
   loading?: boolean;
   /** Set when the request failed. Already translated — this component shows it. */
   error?: { message: string; reference?: string; onRetry?: () => void };
 }
 
-function FilterButton({ label, count }: { label: string; count?: number }) {
-  return (
-    <button
-      type="button"
-      className="inline-flex h-control-sm items-center gap-1.5 rounded-md border border-input bg-card px-3 text-body text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground focus-ring pointer-coarse:h-control-md"
-    >
-      {label}
-      {count != null && (
-        <span className="tnum rounded-sm bg-primary-soft px-1.5 text-help font-medium text-primary">
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}
+/** How long the typing has to stop before the term becomes a request. */
+const SEARCH_DEBOUNCE_MS = 300;
 
 /**
  * The shared shape of every list screen.
  *
- * All five lists behave identically on purpose: same filter bar, same
+ * All the lists behave identically on purpose: same filter bar, same
  * server-side pagination, same selection strip, same mobile behaviour. Someone
  * who has learned the elevator list has learned all of them.
+ *
+ * Every control here reaches the server, and every one of them is in the URL.
+ * A firm with 500 elevators cannot be narrowed in the browser, and a control
+ * that narrows only the 25 rows that happen to be loaded is worse than no
+ * control at all: it answers confidently and wrongly.
  */
 export function ListPage<T>({
   breadcrumbKey,
   titleKey,
   primaryActionKey,
   primaryActionTo,
-  exportable,
+  state,
+  searchable,
   filters,
-  activeFilters,
   columns,
   rows,
   rowKey,
   total,
-  pageSize = 25,
   selectable,
   bulkActions,
   emptyTitleKey,
   prerequisite,
-  page = 1,
-  onPageChange,
-  onPageSizeChange,
   loading,
   error,
 }: ListPageProps<T>) {
   const { t } = useTranslation();
-  const [selected, setSelected] = useState<string[]>([]);
-  // Six controls stacked vertically push the table off a phone screen, so the
-  // filters collapse behind one button below md. Search stays out: it is the
-  // control people reach for first.
+  // Several controls stacked vertically push the table off a phone screen, so
+  // the filters collapse behind one button below md. Search stays out: it is
+  // the control people reach for first.
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const lastPage = Math.max(1, Math.ceil(total / pageSize));
+  const path = useRouterState({ select: (router) => router.location.pathname });
+  const preferences = useColumnPreferences(path, columns);
+  const shown = columns.filter((column) => !preferences.isHidden(column.key));
+
   const ids = rows.map(rowKey);
-  const allSelected = ids.length > 0 && selected.length === ids.length;
-  const hasActiveFilters = Boolean(activeFilters && activeFilters.length > 0);
+  const selected = useSelection(ids, total, state.params);
+
+  const lastPage = Math.max(1, Math.ceil(total / state.pageSize));
+  const activeFilters = describeFilters(state, filters, t);
+  const hasActiveFilters = activeFilters.length > 0;
 
   return (
     <div className="flex flex-col">
@@ -135,15 +124,9 @@ export function ListPage<T>({
           </nav>
           <h1 className="text-title">{t(titleKey)}</h1>
         </div>
-        <div className="flex items-center gap-2">
-          {exportable && (
-            <Button variant="secondary" size="sm">
-              <Download />
-              {t("list.export")}
-            </Button>
-          )}
-          {primaryActionKey &&
-            (primaryActionTo ? (
+        {primaryActionKey && (
+          <div className="flex items-center gap-2">
+            {primaryActionTo ? (
               <Link to={primaryActionTo} className={buttonVariants({ size: "sm" })}>
                 <Plus />
                 {t(primaryActionKey)}
@@ -153,23 +136,14 @@ export function ListPage<T>({
                 <Plus />
                 {t(primaryActionKey)}
               </Button>
-            ))}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {filters && filters.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 px-6 pb-3">
-          <label className="relative flex min-w-56 flex-1 items-center sm:max-w-xs">
-            <Search
-              className="pointer-events-none absolute left-3 size-4 text-subtle"
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              placeholder={t("common.search")}
-              className="h-control-sm w-full rounded-md border border-input bg-card pl-9 pr-3 text-body placeholder:text-subtle focus-ring pointer-coarse:h-control-md"
-            />
-          </label>
+      <div className="flex flex-wrap items-center gap-2 px-6 pb-3">
+        {searchable && <SearchBox state={state} />}
+        {filters && filters.length > 0 && (
           <Button
             variant="secondary"
             size="sm"
@@ -178,66 +152,121 @@ export function ListPage<T>({
           >
             <SlidersHorizontal />
             {filtersOpen ? t("list.hideFilters") : t("list.filters")}
-            {activeFilters && activeFilters.length > 0 && (
+            {activeFilters.length > 0 && (
               <span className="tnum rounded-sm bg-primary-soft px-1.5 text-help font-medium text-primary">
                 {activeFilters.length}
               </span>
             )}
           </Button>
+        )}
 
-          <div
-            className={cn(
-              "w-full flex-wrap items-center gap-2 md:flex md:w-auto md:flex-1",
-              filtersOpen ? "flex" : "hidden",
-            )}
-          >
-            {filters.map((filter) => (
-              <FilterButton key={filter.labelKey} label={t(filter.labelKey)} count={filter.count} />
-            ))}
-            <div className="md:ml-auto">
-              <Button variant="secondary" size="sm">
-                <Columns3 />
-                {t("list.columns")}
-              </Button>
-            </div>
-          </div>
+        <div
+          className={cn(
+            "w-full flex-wrap items-center gap-2 md:flex md:w-auto md:flex-1",
+            filtersOpen ? "flex" : "hidden",
+          )}
+        >
+          {filters?.map((filter) => {
+            const value = state.filters[filter.param];
+            const chosen = filter.options.find((option) => option.value === value);
+            return (
+              <ListMenu
+                key={filter.param}
+                label={t(filter.labelKey)}
+                active={Boolean(value)}
+                value={chosen ? t(chosen.labelKey) : undefined}
+                panel={(close) => (
+                  <>
+                    <ListMenuOption
+                      role="menuitemradio"
+                      checked={!value}
+                      onSelect={() => {
+                        state.setFilter(filter.param, null);
+                        close();
+                      }}
+                    >
+                      {t("list.allOption")}
+                    </ListMenuOption>
+                    {filter.options.map((option) => (
+                      <ListMenuOption
+                        key={option.value}
+                        role="menuitemradio"
+                        checked={option.value === value}
+                        onSelect={() => {
+                          state.setFilter(filter.param, option.value);
+                          close();
+                        }}
+                      >
+                        {t(option.labelKey)}
+                      </ListMenuOption>
+                    ))}
+                  </>
+                )}
+              >
+                {t(filter.labelKey)}
+              </ListMenu>
+            );
+          })}
         </div>
-      )}
+
+        {/* Outside the collapsing block: a column is not a filter, and a list
+            with no filters has no button to open that block with — which left
+            this one unreachable on a phone. */}
+        <ColumnMenu columns={columns} preferences={preferences} className="ml-auto" />
+      </div>
 
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2 px-6 pb-4">
           <span className="text-help text-muted-foreground">{t("list.activeFilters")}</span>
-          {activeFilters!.map((filter) => (
+          {activeFilters.map((filter) => (
             <span
-              key={`${filter.labelKey}-${filter.value}`}
-              className="inline-flex items-center gap-1.5 rounded-sm border-[1.5px] border-primary bg-primary-soft px-2 py-0.5 text-help text-primary"
+              key={filter.param}
+              className="inline-flex items-center gap-1.5 rounded-sm border-[1.5px] border-primary bg-primary-soft py-0.5 pl-2 text-help text-primary"
             >
               <span className="text-muted-foreground">{t(filter.labelKey)}:</span>
               {filter.value}
-              <X className="size-3 cursor-pointer" aria-hidden="true" />
+              <button
+                type="button"
+                aria-label={t("list.removeFilter")}
+                onClick={filter.remove}
+                className="hit-40 rounded-sm px-1.5 py-0.5 transition-colors hover:bg-primary hover:text-primary-foreground focus-ring"
+              >
+                <X className="size-3" aria-hidden="true" />
+              </button>
             </span>
           ))}
-          <button type="button" className="text-help text-primary hover:underline">
+          <button
+            type="button"
+            onClick={state.clearAll}
+            className="text-help text-primary hover:underline focus-ring"
+          >
             {t("list.clearAll")}
           </button>
         </div>
       )}
 
-      {selectable && selected.length > 0 && (
+      {selectable && selected.value.count > 0 && (
         <div className="mx-6 mb-2 flex flex-wrap items-center gap-3 rounded-md bg-primary-soft px-3 py-2">
           <span className="text-body font-medium text-primary">
-            {t("common.selectedCount", { count: selected.length })}
+            {t("common.selectedCount", { count: selected.value.count })}
           </span>
-          {bulkActions?.(selected)}
+          {bulkActions?.(selected.value)}
           {/* Kept distinct from "everything on this page": the gap between 25
-              and the full filtered set is where bulk actions go wrong. */}
-          <button type="button" className="text-help text-primary hover:underline">
-            {t("list.selectAllInFilter", { count: total })}
-          </button>
+              and the full filtered set is where bulk actions go wrong. Offered
+              only while there is a gap, and only until it has been taken. */}
+          {selected.value.mode === "rows" && total > ids.length && (
+            <button
+              type="button"
+              onClick={selected.selectFilter}
+              className="text-help text-primary hover:underline focus-ring"
+            >
+              {t("list.selectAllInFilter", { count: total })}
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => setSelected([])}
-            className="ml-auto text-help text-muted-foreground hover:underline"
+            onClick={selected.clear}
+            className="ml-auto text-help text-muted-foreground hover:underline focus-ring"
           >
             {t("list.clearSelection")}
           </button>
@@ -248,7 +277,7 @@ export function ListPage<T>({
         {error ? (
           <ListError {...error} />
         ) : loading ? (
-          <TableSkeleton columns={columns.length + (selectable ? 1 : 0)} />
+          <TableSkeleton columns={shown.length + (selectable ? 1 : 0)} />
         ) : rows.length === 0 ? (
           <EmptyState
             filtered={hasActiveFilters}
@@ -267,36 +296,40 @@ export function ListPage<T>({
                         <input
                           type="checkbox"
                           aria-label={t("common.actions")}
-                          checked={allSelected}
-                          onChange={() => setSelected(allSelected ? [] : ids)}
+                          checked={selected.allOnPage}
+                          onChange={selected.toggleAll}
                           className="size-4 rounded-xs accent-primary"
                         />
                       </th>
                     )}
-                    {columns.map((column) => (
-                      <th
-                        key={column.key}
-                        scope="col"
-                        className={cn(
-                          "h-8 px-3 text-colhead uppercase text-muted-foreground whitespace-nowrap",
-                          column.numeric ? "text-right" : "text-left",
-                          column.sticky && "sticky z-10 bg-background",
-                          column.sticky && (selectable ? "left-10" : "left-0"),
-                          column.hideOnMobile && "hidden md:table-cell",
-                        )}
-                      >
-                        {t(column.key)}
-                      </th>
-                    ))}
+                    {shown.map((column) => {
+                      const pinned = preferences.pinnedKey === column.key;
+                      return (
+                        <th
+                          key={column.key}
+                          scope="col"
+                          className={cn(
+                            "h-8 px-3 text-colhead uppercase text-muted-foreground whitespace-nowrap",
+                            column.numeric ? "text-right" : "text-left",
+                            pinned && "sticky z-10 bg-background",
+                            pinned && (selectable ? "left-10" : "left-0"),
+                            column.hideOnMobile && "hidden md:table-cell",
+                          )}
+                        >
+                          {t(column.key)}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row) => {
                     const id = rowKey(row);
+                    const checked = selected.includes(id);
                     return (
                       <tr
                         key={id}
-                        data-selected={selected.includes(id) || undefined}
+                        data-selected={checked || undefined}
                         className="group h-14 border-b border-border-subtle transition-colors last:border-0 hover:bg-muted data-[selected]:bg-selected md:h-control-md"
                       >
                         {selectable && (
@@ -304,33 +337,30 @@ export function ListPage<T>({
                             <input
                               type="checkbox"
                               aria-label={id}
-                              checked={selected.includes(id)}
-                              onChange={() =>
-                                setSelected((current) =>
-                                  current.includes(id)
-                                    ? current.filter((x) => x !== id)
-                                    : [...current, id],
-                                )
-                              }
+                              checked={checked}
+                              onChange={() => selected.toggleRow(id)}
                               className="size-4 rounded-xs accent-primary"
                             />
                           </td>
                         )}
-                        {columns.map((column) => (
-                          <td
-                            key={column.key}
-                            className={cn(
-                              "px-3",
-                              column.numeric && "tnum text-right",
-                              column.sticky &&
-                                "sticky z-10 bg-card group-hover:bg-muted md:static md:bg-transparent",
-                              column.sticky && (selectable ? "left-10" : "left-0"),
-                              column.hideOnMobile && "hidden md:table-cell",
-                            )}
-                          >
-                            {column.cell(row)}
-                          </td>
-                        ))}
+                        {shown.map((column) => {
+                          const pinned = preferences.pinnedKey === column.key;
+                          return (
+                            <td
+                              key={column.key}
+                              className={cn(
+                                "px-3",
+                                column.numeric && "tnum text-right",
+                                pinned &&
+                                  "sticky z-10 bg-card group-hover:bg-muted md:static md:bg-transparent",
+                                pinned && (selectable ? "left-10" : "left-0"),
+                                column.hideOnMobile && "hidden md:table-cell",
+                              )}
+                            >
+                              {column.cell(row)}
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })}
@@ -343,8 +373,8 @@ export function ListPage<T>({
                 {t("common.resultRange", {
                   // Empty pages read as "0 – 0", which looks like a fault; the
                   // range starts at 1 only when there is something on it.
-                  from: total === 0 ? 0 : (page - 1) * pageSize + 1,
-                  to: Math.min(page * pageSize, total),
+                  from: total === 0 ? 0 : (state.page - 1) * state.pageSize + 1,
+                  to: Math.min(state.page * state.pageSize, total),
                   total: formatNumber(total),
                 })}
               </span>
@@ -352,14 +382,15 @@ export function ListPage<T>({
                 <label className="flex items-center gap-2 text-help text-muted-foreground">
                   {t("list.perPage")}
                   <select
-                    value={pageSize}
-                    onChange={(event) => onPageSizeChange?.(Number(event.target.value))}
-                    disabled={!onPageSizeChange}
+                    value={state.pageSize}
+                    onChange={(event) => state.setPageSize(Number(event.target.value))}
                     className="h-control-xs rounded-sm border border-input bg-card px-1.5 text-help focus-ring"
                   >
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
+                    {PAGE_SIZES.map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <div className="flex items-center gap-1">
@@ -367,20 +398,20 @@ export function ListPage<T>({
                     size="iconXs"
                     variant="secondary"
                     aria-label={t("common.back")}
-                    disabled={!onPageChange || page <= 1}
-                    onClick={() => onPageChange?.(page - 1)}
+                    disabled={state.page <= 1}
+                    onClick={() => state.setPage(state.page - 1)}
                   >
                     <ChevronLeft />
                   </Button>
                   <span className="tnum px-2 text-help text-muted-foreground">
-                    {page} / {lastPage}
+                    {state.page} / {lastPage}
                   </span>
                   <Button
                     size="iconXs"
                     variant="secondary"
                     aria-label={t("common.next")}
-                    disabled={!onPageChange || page >= lastPage}
-                    onClick={() => onPageChange?.(page + 1)}
+                    disabled={state.page >= lastPage}
+                    onClick={() => state.setPage(state.page + 1)}
                   >
                     <ChevronRight />
                   </Button>
@@ -399,6 +430,146 @@ export function ListPage<T>({
       </p>
     </div>
   );
+}
+
+/**
+ * The search box, held locally and pushed to the URL once the typing stops.
+ *
+ * Two reasons it is not driven straight from the URL: a request per keystroke
+ * against a 4000-row table, and a history entry per keystroke, which would turn
+ * the back button into a way of spelling the word backwards. The local value
+ * still follows the URL when the URL moves on its own — the back button, or
+ * "clear all" — or the box would go on showing a term nothing is filtered by.
+ */
+function SearchBox({ state }: { state: ListState }) {
+  const { t } = useTranslation();
+  const [term, setTerm] = useState(state.search);
+  const [applied, setApplied] = useState(state.search);
+  const { setSearch } = state;
+
+  if (applied !== state.search) {
+    setApplied(state.search);
+    setTerm(state.search);
+  }
+
+  useEffect(() => {
+    if (term === state.search) return;
+    const timer = setTimeout(() => setSearch(term), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [term, state.search, setSearch]);
+
+  return (
+    <label className="relative flex min-w-56 flex-1 items-center sm:max-w-xs">
+      <Search
+        className="pointer-events-none absolute left-3 size-4 text-subtle"
+        aria-hidden="true"
+      />
+      <input
+        type="search"
+        value={term}
+        onChange={(event) => setTerm(event.target.value)}
+        placeholder={t("common.search")}
+        className="h-control-sm w-full rounded-md border border-input bg-card pl-9 pr-3 text-body placeholder:text-subtle focus-ring pointer-coarse:h-control-md"
+      />
+    </label>
+  );
+}
+
+interface ActiveFilter {
+  param: string;
+  labelKey: string;
+  value: string;
+  remove: () => void;
+}
+
+/**
+ * The chips above the table, derived from the URL rather than passed in.
+ *
+ * They used to be a prop, and every screen had stopped passing it — a chip
+ * hardcoded to a filter nothing applied is a claim the table underneath
+ * contradicts. Read from the search parameters, they cannot disagree with what
+ * was actually asked for.
+ */
+function describeFilters(
+  state: ListState,
+  filters: readonly ListFilter[] | undefined,
+  t: (key: string) => string,
+): ActiveFilter[] {
+  const active: ActiveFilter[] = [];
+
+  if (state.search) {
+    active.push({
+      param: "search",
+      labelKey: "list.searchTerm",
+      value: state.search,
+      remove: () => state.setSearch(""),
+    });
+  }
+
+  for (const filter of filters ?? []) {
+    const value = state.filters[filter.param];
+    if (!value) continue;
+    const option = filter.options.find((one) => one.value === value);
+    active.push({
+      param: filter.param,
+      labelKey: filter.labelKey,
+      value: option ? t(option.labelKey) : value,
+      remove: () => state.setFilter(filter.param, null),
+    });
+  }
+
+  return active;
+}
+
+type SelectionState = { mode: "rows"; ids: string[] } | { mode: "filter" };
+
+const NOTHING: SelectionState = { mode: "rows", ids: [] };
+
+function useSelection(ids: string[], total: number, params: ListParams) {
+  const [selection, setSelection] = useState<SelectionState>(NOTHING);
+
+  // A selection outlives neither a filter nor a page. Carrying it would mean a
+  // bulk action reaching rows the person can no longer see and never meant to
+  // include, which is the failure the two selection modes exist to prevent.
+  const key = JSON.stringify(params);
+  const [appliedKey, setAppliedKey] = useState(key);
+  if (appliedKey !== key) {
+    setAppliedKey(key);
+    setSelection(NOTHING);
+  }
+
+  const inFilter = selection.mode === "filter";
+  const includes = (id: string) => inFilter || selection.ids.includes(id);
+  const allOnPage = ids.length > 0 && ids.every(includes);
+
+  const value: ListSelection = inFilter
+    ? { mode: "filter", params, count: total }
+    : { mode: "rows", ids: selection.ids, count: selection.ids.length };
+
+  return {
+    value,
+    includes,
+    allOnPage,
+    toggleRow: (id: string) =>
+      setSelection((current) => {
+        // Unticking one row out of "all 4000" cannot be expressed as a filter,
+        // so it drops back to this page. The count in the strip falls from 4000
+        // to 24 in front of the person doing it — visibly, rather than a bulk
+        // action quietly keeping 3976 rows nobody ever looked at.
+        if (current.mode === "filter") {
+          return { mode: "rows", ids: ids.filter((one) => one !== id) };
+        }
+        return {
+          mode: "rows",
+          ids: current.ids.includes(id)
+            ? current.ids.filter((one) => one !== id)
+            : [...current.ids, id],
+        };
+      }),
+    toggleAll: () => setSelection(allOnPage ? NOTHING : { mode: "rows", ids }),
+    selectFilter: () => setSelection({ mode: "filter" }),
+    clear: () => setSelection(NOTHING),
+  };
 }
 
 /** Two-line cell: the identifier on top, the context that would otherwise need its own column below. */

@@ -30,27 +30,28 @@ import {
   companyQuery,
 } from "@/api/queries";
 import { SessionProvider, ensureSession, type SessionOverride } from "@/lib/session";
+import type { ListSearch } from "@/lib/list-search";
 import type { Role } from "@/components/layout/nav-config";
 import { LoginScreen } from "@/screens/LoginScreen";
-import { ElevatorListScreen } from "@/screens/ElevatorListScreen";
+import { ElevatorListScreen, elevatorListSearch } from "@/screens/ElevatorListScreen";
 import { ElevatorDetailScreen } from "@/screens/ElevatorDetailScreen";
 import { ElevatorFormScreen } from "@/screens/ElevatorFormScreen";
-import { CustomerListScreen } from "@/screens/CustomerListScreen";
+import { CustomerListScreen, customerListSearch } from "@/screens/CustomerListScreen";
 import { CustomerFormScreen } from "@/screens/CustomerFormScreen";
 import { CustomerDetailScreen } from "@/screens/CustomerDetailScreen";
 import { ContactFormScreen } from "@/screens/ContactFormScreen";
-import { ComplexListScreen } from "@/screens/ComplexListScreen";
+import { ComplexListScreen, complexListSearch } from "@/screens/ComplexListScreen";
 import { ComplexFormScreen } from "@/screens/ComplexFormScreen";
 import { ComplexDetailScreen } from "@/screens/ComplexDetailScreen";
-import { BuildingListScreen } from "@/screens/BuildingListScreen";
+import { BuildingListScreen, buildingListSearch } from "@/screens/BuildingListScreen";
 import { BuildingFormScreen } from "@/screens/BuildingFormScreen";
-import { ContractListScreen } from "@/screens/ContractListScreen";
+import { ContractListScreen, contractListSearch } from "@/screens/ContractListScreen";
 import { ContractDetailScreen } from "@/screens/ContractDetailScreen";
 import { ContractFormScreen } from "@/screens/ContractFormScreen";
-import { UserListScreen } from "@/screens/UserListScreen";
+import { UserListScreen, userListSearch } from "@/screens/UserListScreen";
 import { InviteUserScreen } from "@/screens/InviteUserScreen";
 import { UserDetailScreen } from "@/screens/UserDetailScreen";
-import { AuditLogListScreen } from "@/screens/AuditLogListScreen";
+import { AuditLogListScreen, auditLogListSearch } from "@/screens/AuditLogListScreen";
 import { SettingsScreen } from "@/screens/SettingsScreen";
 import { QrLabelScreen } from "@/screens/QrLabelScreen";
 import { StyleGuide } from "@/styleguide/StyleGuide";
@@ -105,7 +106,13 @@ const shellRoute = createRoute({
   ),
 });
 
-type Loader = (context: { params: Record<string, string> }) => Promise<unknown>;
+interface LoaderContext {
+  params: Record<string, string>;
+  /** The route's validated search, when it declares one. */
+  deps: { search: ListSearch };
+}
+
+type Loader = (context: LoaderContext) => Promise<unknown>;
 
 /**
  * A route inside the application shell, optionally prefetching its data.
@@ -120,13 +127,28 @@ type Loader = (context: { params: Record<string, string> }) => Promise<unknown>;
  * query and owns the error state; letting the loader throw would replace the
  * screen's own error handling with the router's, and the user would lose the
  * retry button along with the rest of the page.
+ *
+ * `validateSearch` is where a list route's filter, search and paging
+ * parameters are typed and narrowed to what its endpoint accepts (spec 13).
+ * The loader is keyed on that search through `loaderDeps`, so a link carrying
+ * a filter prefetches the list it names rather than warming page one and then
+ * fetching what was actually asked for.
  */
-function shellChild(path: string, component: () => React.ReactNode, loader?: Loader) {
+function shellChild(
+  path: string,
+  component: () => React.ReactNode,
+  loader?: Loader,
+  validateSearch?: (raw: Record<string, unknown>) => ListSearch,
+) {
   return createRoute({
     getParentRoute: () => shellRoute,
     path,
     component,
-    loader: loader ? (context) => loader(context).catch(() => undefined) : undefined,
+    validateSearch,
+    loaderDeps: validateSearch ? ({ search }: { search: ListSearch }) => ({ search }) : undefined,
+    loader: loader
+      ? (context) => loader(context as unknown as LoaderContext).catch(() => undefined)
+      : undefined,
   });
 }
 
@@ -156,7 +178,9 @@ function publicRoute(path: string, component: () => React.ReactNode, loader?: Lo
     getParentRoute: () => rootRoute,
     path,
     component,
-    loader: loader ? (context) => loader(context).catch(() => undefined) : undefined,
+    loader: loader
+      ? (context) => loader(context as unknown as LoaderContext).catch(() => undefined)
+      : undefined,
   });
 }
 
@@ -183,8 +207,12 @@ export const routeTree = rootRoute.addChildren([
     queryClient.ensureQueryData(invitationPreviewQuery(params.token)),
   ),
   shellRoute.addChildren([
-    shellChild("/elevators", ElevatorListScreen, () =>
-      queryClient.ensureQueryData(elevatorListQuery({ page: 1, page_size: 25 })),
+    shellChild(
+      "/elevators",
+      ElevatorListScreen,
+      ({ deps }) =>
+        queryClient.ensureQueryData(elevatorListQuery(elevatorListSearch.params(deps.search))),
+      elevatorListSearch,
     ),
     shellChild("/elevators/$id", ElevatorDetailScreen, async ({ params }) => {
       const id = params.id;
@@ -214,8 +242,12 @@ export const routeTree = rootRoute.addChildren([
     shellChild("/customers/$id/contacts/$contactId", ContactFormScreen, ({ params }) =>
       queryClient.ensureQueryData(customerQuery(params.id)),
     ),
-    shellChild("/customers", CustomerListScreen, () =>
-      queryClient.ensureQueryData(customerListQuery({ page: 1, page_size: 25 })),
+    shellChild(
+      "/customers",
+      CustomerListScreen,
+      ({ deps }) =>
+        queryClient.ensureQueryData(customerListQuery(customerListSearch.params(deps.search))),
+      customerListSearch,
     ),
     shellChild("/customers/$id", CustomerDetailScreen, async ({ params }) => {
       const id = params.id;
@@ -232,8 +264,12 @@ export const routeTree = rootRoute.addChildren([
     shellChild("/complexes/$id/edit", ComplexFormScreen, ({ params }) =>
       queryClient.ensureQueryData(complexQuery(params.id)),
     ),
-    shellChild("/complexes", ComplexListScreen, () =>
-      queryClient.ensureQueryData(complexListQuery({ page: 1, page_size: 25 })),
+    shellChild(
+      "/complexes",
+      ComplexListScreen,
+      ({ deps }) =>
+        queryClient.ensureQueryData(complexListQuery(complexListSearch.params(deps.search))),
+      complexListSearch,
     ),
     shellChild("/complexes/$id", ComplexDetailScreen, async ({ params }) => {
       const id = params.id;
@@ -244,15 +280,23 @@ export const routeTree = rootRoute.addChildren([
         queryClient.ensureQueryData(buildingListQuery({ complex: id, page_size: 100 })),
       ]);
     }),
-    shellChild("/buildings", BuildingListScreen, () =>
-      queryClient.ensureQueryData(buildingListQuery({ page: 1, page_size: 25 })),
+    shellChild(
+      "/buildings",
+      BuildingListScreen,
+      ({ deps }) =>
+        queryClient.ensureQueryData(buildingListQuery(buildingListSearch.params(deps.search))),
+      buildingListSearch,
     ),
     shellChild("/buildings/$id/edit", BuildingFormScreen, ({ params }) =>
       queryClient.ensureQueryData(buildingQuery(params.id)),
     ),
     shellChild("/buildings/new", BuildingFormScreen),
-    shellChild("/contracts", ContractListScreen, () =>
-      queryClient.ensureQueryData(contractListQuery({ page: 1, page_size: 25 })),
+    shellChild(
+      "/contracts",
+      ContractListScreen,
+      ({ deps }) =>
+        queryClient.ensureQueryData(contractListQuery(contractListSearch.params(deps.search))),
+      contractListSearch,
     ),
     shellChild("/contracts/new", ContractFormScreen),
     shellChild("/contracts/$id/edit", ContractFormScreen, ({ params }) =>
@@ -262,16 +306,21 @@ export const routeTree = rootRoute.addChildren([
       queryClient.ensureQueryData(contractQuery(params.id)),
     ),
     shellChild("/qr-labels", QrLabelScreen),
-    shellChild("/users", UserListScreen, async () => {
-      // Both halves of the page at once. The pending invitations are part of
-      // this screen, not an afterthought: fetched after the table they would
-      // appear a moment after the user had already decided it had finished
-      // loading, which is how a section gets missed.
-      await Promise.all([
-        queryClient.ensureQueryData(userListQuery({ page: 1, page_size: 25 })),
-        queryClient.ensureQueryData(invitationListQuery()),
-      ]);
-    }),
+    shellChild(
+      "/users",
+      UserListScreen,
+      async ({ deps }) => {
+        // Both halves of the page at once. The pending invitations are part of
+        // this screen, not an afterthought: fetched after the table they would
+        // appear a moment after the user had already decided it had finished
+        // loading, which is how a section gets missed.
+        await Promise.all([
+          queryClient.ensureQueryData(userListQuery(userListSearch.params(deps.search))),
+          queryClient.ensureQueryData(invitationListQuery()),
+        ]);
+      },
+      userListSearch,
+    ),
     // Declared before the dynamic sibling for readability; the router ranks a
     // static segment above a parameter either way.
     shellChild("/users/invite", InviteUserScreen),
@@ -290,7 +339,7 @@ export const routeTree = rootRoute.addChildren([
         await queryClient.ensureQueryData(customerListQuery({ page_size: 100, search: "" }));
       }
     }),
-    shellChild("/audit-logs", AuditLogListScreen),
+    shellChild("/audit-logs", AuditLogListScreen, undefined, auditLogListSearch),
     // The company record only. The signed-in user's own details belong to the
     // profile tab, which most visits never open — prefetching them would mean a
     // request on every visit for a panel behind a second click.

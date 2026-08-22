@@ -1,18 +1,39 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { buildingListQuery, type Building } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { enumLabel } from "@/lib/i18n";
+import { booleanFilter, enumFilter, listSearchSchema, useListSearch } from "@/lib/list-search";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
+
+const filters = [
+  enumFilter({
+    param: "type",
+    labelKey: "building.fields.type",
+    namespace: "building.type",
+    values: [
+      "residential",
+      "commercial",
+      "mixed_use",
+      "public",
+      "hospital",
+      "mall",
+      "hotel",
+      "school",
+      "industrial",
+    ],
+  }),
+  booleanFilter({ param: "is_active", labelKey: "building.fields.isActive" }),
+];
+
+export const buildingListSearch = listSearchSchema(filters);
 
 export function BuildingListScreen() {
   const { t } = useTranslation();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const list = useListSearch(filters);
 
-  const query = useQuery(buildingListQuery({ page, page_size: pageSize }));
+  const query = useQuery(buildingListQuery(list.params));
   const rows = query.data?.results ?? [];
 
   const columns: ListColumn<Building>[] = [
@@ -48,23 +69,13 @@ export function BuildingListScreen() {
       titleKey="building.title"
       primaryActionKey="building.add"
       primaryActionTo="/buildings/new"
-      exportable
-      filters={[
-        { labelKey: "building.fields.type" },
-        { labelKey: "customer.singular" },
-        { labelKey: "complex.singular" },
-      ]}
+      state={list}
+      searchable
+      filters={filters}
       columns={columns}
       rows={rows}
       rowKey={(row) => row.id}
       total={query.data?.pagination.total ?? 0}
-      page={page}
-      pageSize={pageSize}
-      onPageChange={setPage}
-      onPageSizeChange={(size) => {
-        setPageSize(size);
-        setPage(1);
-      }}
       loading={query.isPending}
       error={
         query.isError
