@@ -11,6 +11,8 @@ export type SessionStatus = "restoring" | "authenticated" | "anonymous";
 
 export interface Session {
   status: SessionStatus;
+  /** Who you are, so a screen can tell your own record from a colleague's. */
+  userId: string | null;
   role: Role | null;
   fullName: string | null;
   companyName: string | null;
@@ -74,6 +76,7 @@ export function forgetSession(): void {
 }
 
 export interface SessionOverride {
+  userId?: string;
   role: Role;
   fullName: string;
   companyName: string;
@@ -82,6 +85,7 @@ export interface SessionOverride {
 
 function toSession(user: CurrentUser): Omit<Session, "status"> {
   return {
+    userId: user.id,
     role: user.role as Role,
     fullName: user.full_name,
     // Comes back with the session rather than from a second request: the
@@ -108,7 +112,13 @@ export function SessionProvider({
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<SessionStatus>(override ? "authenticated" : "restoring");
   const [user, setUser] = useState<Omit<Session, "status"> | null>(
-    override ? { ...override, emailVerified: override.emailVerified ?? true } : null,
+    override
+      ? {
+          ...override,
+          userId: override.userId ?? null,
+          emailVerified: override.emailVerified ?? true,
+        }
+      : null,
   );
 
   useEffect(() => {
@@ -191,6 +201,7 @@ export function SessionProvider({
   const value = useMemo<SessionContextValue>(
     () => ({
       status,
+      userId: status === "authenticated" ? (user?.userId ?? null) : null,
       role: status === "authenticated" ? (user?.role ?? null) : null,
       fullName: status === "authenticated" ? (user?.fullName ?? null) : null,
       companyName: status === "authenticated" ? (user?.companyName ?? null) : null,

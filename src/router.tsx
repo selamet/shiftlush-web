@@ -23,6 +23,10 @@ import {
   invitationPreviewQuery,
   buildingQuery,
   contractQuery,
+  userListQuery,
+  userQuery,
+  invitationListQuery,
+  activeOwnerCountQuery,
 } from "@/api/queries";
 import { SessionProvider, ensureSession, type SessionOverride } from "@/lib/session";
 import type { Role } from "@/components/layout/nav-config";
@@ -43,6 +47,8 @@ import { ContractListScreen } from "@/screens/ContractListScreen";
 import { ContractDetailScreen } from "@/screens/ContractDetailScreen";
 import { ContractFormScreen } from "@/screens/ContractFormScreen";
 import { UserListScreen } from "@/screens/UserListScreen";
+import { InviteUserScreen } from "@/screens/InviteUserScreen";
+import { UserDetailScreen } from "@/screens/UserDetailScreen";
 import { AuditLogListScreen } from "@/screens/AuditLogListScreen";
 import { SettingsScreen } from "@/screens/SettingsScreen";
 import { QrLabelScreen } from "@/screens/QrLabelScreen";
@@ -255,7 +261,34 @@ export const routeTree = rootRoute.addChildren([
       queryClient.ensureQueryData(contractQuery(params.id)),
     ),
     shellChild("/qr-labels", QrLabelScreen),
-    shellChild("/users", UserListScreen),
+    shellChild("/users", UserListScreen, async () => {
+      // Both halves of the page at once. The pending invitations are part of
+      // this screen, not an afterthought: fetched after the table they would
+      // appear a moment after the user had already decided it had finished
+      // loading, which is how a section gets missed.
+      await Promise.all([
+        queryClient.ensureQueryData(userListQuery({ page: 1, page_size: 25 })),
+        queryClient.ensureQueryData(invitationListQuery()),
+      ]);
+    }),
+    // Declared before the dynamic sibling for readability; the router ranks a
+    // static segment above a parameter either way.
+    shellChild("/users/invite", InviteUserScreen),
+    shellChild("/users/$id", UserDetailScreen, async ({ params }) => {
+      const [user] = await Promise.all([
+        queryClient.ensureQueryData(userQuery(params.id)),
+        // The guard the screen consults before it offers to deactivate anyone.
+        // Fetched with the record so the control does not appear and then
+        // withdraw itself once the count arrives.
+        queryClient.ensureQueryData(activeOwnerCountQuery()),
+      ]);
+      // Only a technician has assignments, and for them the panel is the point
+      // of the page. The parameters match the ones the panel asks with, or the
+      // prefetch would warm a key nothing reads.
+      if (user.role === "technician") {
+        await queryClient.ensureQueryData(customerListQuery({ page_size: 100, search: "" }));
+      }
+    }),
     shellChild("/audit-logs", AuditLogListScreen),
     shellChild("/settings", SettingsScreen),
   ]),
@@ -276,7 +309,14 @@ export { RouterProvider };
  */
 export function createRouterForPath(path: string, role?: Role) {
   sessionOverride = role
-    ? { role, fullName: "Test User", companyName: "Test Company" }
+    ? {
+        role,
+        fullName: "Test User",
+        companyName: "Test Company",
+        // Matches one fixture user and not the others, so a smoke render covers
+        // both sides of every "is this me?" branch on the user screens.
+        userId: "u2",
+      }
     : undefined;
   return createRouter({
     routeTree,

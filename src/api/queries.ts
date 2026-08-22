@@ -567,3 +567,138 @@ export function createComplex(body: ComplexWrite, idempotencyKey: string) {
 export function updateComplex(id: string, body: Partial<ComplexWrite>) {
   return api.patch<Complex>(`/complexes/${id}/`, body);
 }
+
+// --------------------------------------------------------------------------
+// The team
+//
+// Two resources, not one. A colleague with an account and an invitation nobody
+// has accepted yet live in different tables, and the screens keep them apart
+// for the same reason: an invitation has no last login, no certificate and no
+// assignments, so folding the two into one list would mean a table where half
+// the columns are blank for half the rows — and a result counter that disagrees
+// with the number of rows under it, because the two endpoints page separately.
+// --------------------------------------------------------------------------
+
+export type TeamUser = Schemas["User"];
+export type UserRole = Schemas["UserRole"];
+export type UserWrite = Schemas["PatchedUserUpdateRequest"];
+export type Invitation = Schemas["Invitation"];
+export type InvitationCreate = Schemas["InvitationCreateRequest"];
+
+export const userKeys = {
+  all: ["users"] as const,
+  list: (params: ListParams) => ["users", "list", params] as const,
+  detail: (id: string) => ["users", "detail", id] as const,
+} as const;
+
+export const invitationKeys = {
+  all: ["invitations"] as const,
+  list: (params: ListParams) => ["invitations", "list", params] as const,
+} as const;
+
+export function userListQuery(params: ListParams = {}) {
+  return queryOptions({
+    queryKey: userKeys.list(params),
+    queryFn: ({ signal }) => api.get<Paginated<TeamUser>>("/users/", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function userQuery(id: string) {
+  return queryOptions({
+    queryKey: userKeys.detail(id),
+    queryFn: ({ signal }) => api.get<TeamUser>(`/users/${id}/`, { signal }),
+  });
+}
+
+/**
+ * How many active owners the company has left.
+ *
+ * The server refuses to deactivate the last one and refuses to move them to
+ * another role, because a company with no owner has nobody who can manage users
+ * and no way back short of a database edit. The screen asks for the count so it
+ * can say that *before* the control is pressed rather than after.
+ *
+ * It reads `pagination.total` rather than counting rows: the answer has to be
+ * right on page four of a staff list as well as on page one, and a client that
+ * counts what it received gets that wrong on every page but the last.
+ */
+export function activeOwnerCountQuery() {
+  const params: ListParams = { role: "owner", is_active: true, page_size: 1 };
+  return queryOptions({
+    queryKey: userKeys.list(params),
+    queryFn: ({ signal }) => api.get<Paginated<TeamUser>>("/users/", { query: params, signal }),
+  });
+}
+
+/**
+ * Invitations, newest first.
+ *
+ * The endpoint has no "pending" filter, so the narrowing happens in the client.
+ * That holds as long as the page is large enough, and it is: the ordering is by
+ * creation date descending, so an unaccepted invitation can only fall off the
+ * end once a hundred later ones exist.
+ */
+export function invitationListQuery() {
+  const params: ListParams = { page_size: 100 };
+  return queryOptions({
+    queryKey: invitationKeys.list(params),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<Invitation>>("/invitations/", { query: params, signal }),
+  });
+}
+
+/** The ones still waiting on somebody — an accepted invitation is a colleague. */
+export function pendingInvitations(page: Paginated<Invitation> | undefined): Invitation[] {
+  return (page?.results ?? []).filter((invitation) => invitation.accepted_at === null);
+}
+
+/**
+ * Sending an invitation.
+ *
+ * Carries an Idempotency-Key like every other create, and it matters more here
+ * than most: a retry after a dropped connection would otherwise send a second
+ * e-mail whose token invalidates the first, so the link the invitee had already
+ * opened stops working while they are looking at it.
+ */
+export function inviteUser(body: InvitationCreate, idempotencyKey: string) {
+  return api.post<Invitation>("/invitations/", body, { idempotencyKey });
+}
+
+export function resendInvitation(id: string) {
+  return api.post<Invitation>(`/invitations/${id}/resend/`);
+}
+
+/** Revoking one: the row is soft-deleted and the token stops resolving. */
+export function revokeInvitation(id: string) {
+  return api.delete<void>(`/invitations/${id}/`);
+}
+
+export function updateUser(id: string, body: UserWrite) {
+  return api.patch<TeamUser>(`/users/${id}/`, body);
+}
+
+/**
+ * Ending somebody's access.
+ *
+ * A leaver is deactivated rather than deleted, because their audit trail has to
+ * outlive their employment. There is no endpoint to undo it and PATCH does not
+ * accept `is_active`, so the confirmation says the step is one-way instead of
+ * implying an undo that does not exist.
+ */
+export function deactivateUser(id: string) {
+  return api.post<TeamUser>(`/users/${id}/deactivate/`);
+}
+
+/**
+ * Replacing the set of customers a technician may see.
+ *
+ * A PUT of the whole list, which is the server's own shape: it is the only form
+ * that can remove an assignment without a second endpoint, and it means two
+ * administrators saving at once cannot interleave into a set neither of them
+ * chose. Sending it for anyone but a technician is refused —
+ * `ONLY_TECHNICIANS_ARE_ASSIGNED` — since every other role sees the whole firm.
+ */
+export function setAssignedCustomers(id: string, customerIds: string[]) {
+  return api.put<TeamUser>(`/users/${id}/customers/`, { customer_ids: customerIds });
+}
