@@ -193,6 +193,21 @@ function resolve(path, search, method, body) {
     return page(rows);
   }
 
+  // Taking an elevator off a contract, and putting one on. Matched before the
+  // contract's own detail route, which would otherwise swallow both.
+  //
+  // The DELETE answers 204 with no body, the way the contract declares it — and
+  // note what it is not: the line is closed on the server by filling in
+  // `removed_at`, not removed from the record. A mock that returned a contract
+  // with one fewer line would be modelling a delete that does not happen.
+  const closedLine = /^\/api\/v1\/contracts\/([^/]+)\/elevators\/([^/]+)\/$/.exec(path);
+  if (method === "DELETE" && closedLine) return {};
+
+  const addedLines = /^\/api\/v1\/contracts\/([^/]+)\/elevators\/$/.exec(path);
+  if (method === "POST" && addedLines) {
+    return { ...fixture("demo-contract"), id: addedLines[1] };
+  }
+
   const contract = /^\/api\/v1\/contracts\/([^/]+)\/$/.exec(path);
   if (contract && method === "GET") {
     return { ...fixture("demo-contract"), id: contract[1] };

@@ -76,3 +76,19 @@ export function buildingNames(contract: Pick<Contract, "lines">): string[] {
 export function openLines(contract: Pick<Contract, "lines">) {
   return (contract.lines ?? []).filter((line) => line.removed_at === null);
 }
+
+/**
+ * The other half: lines that have been closed.
+ *
+ * The counterpart to `openLines` and the reason that function is a filter
+ * rather than a deletion. These are periods the contract really covered and
+ * really billed for, and a screen that only ever renders the open lines tells
+ * the user their history was thrown away when an elevator came off.
+ *
+ * Newest first: what was closed most recently is what someone is looking for.
+ */
+export function closedLines(contract: Pick<Contract, "lines">) {
+  return (contract.lines ?? [])
+    .filter((line) => line.removed_at !== null)
+    .sort((a, b) => (b.removed_at ?? "").localeCompare(a.removed_at ?? ""));
+}

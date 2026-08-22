@@ -426,6 +426,44 @@ export function renewContract(id: string, body: { start_date: string; end_date: 
   return api.post<Contract>(`/contracts/${id}/renew/`, body);
 }
 
+export type AddElevatorsBody = Schemas["AddElevatorsRequest"];
+
+/**
+ * Puts elevators on the contract.
+ *
+ * A create — it opens a `contract_elevator` row per elevator — so it carries an
+ * Idempotency-Key. `unit_price` is a string the whole way: it is money, and the
+ * moment it becomes a Number the last two decimal places stop being reliable.
+ *
+ * Answers with the whole contract rather than the new lines, because adding a
+ * line moves the totals too.
+ */
+export function addContractElevators(
+  id: string,
+  body: AddElevatorsBody,
+  idempotencyKey: string,
+) {
+  return api.post<Contract>(`/contracts/${id}/elevators/`, body, { idempotencyKey });
+}
+
+/**
+ * Takes an elevator off the contract. This is not a delete.
+ *
+ * DELETE is the verb the API chose, but what it does is fill in `removed_at`.
+ * Spec 5.12 is explicit that the relation is not deleted when it ends: the date
+ * is filled in and the history is kept. The line stays on the contract, because
+ * that elevator really was covered until that date and really was invoiced for
+ * it — and the partial unique index that allows one active contract per
+ * elevator is keyed on `removed_at IS NULL` precisely so that a closed line
+ * stops holding the elevator hostage.
+ *
+ * Named for what it does rather than for its verb, so no caller reads the call
+ * site as erasing history.
+ */
+export function closeContractLine(contractId: string, elevatorId: string) {
+  return api.delete<void>(`/contracts/${contractId}/elevators/${elevatorId}/`);
+}
+
 /** Lines grouped by the building they are in, which is how the screen reads them. */
 export function linesByBuilding(contract: Pick<Contract, "lines">): Map<string, ContractLine[]> {
   const grouped = new Map<string, ContractLine[]>();
