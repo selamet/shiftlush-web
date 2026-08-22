@@ -63,6 +63,39 @@ export class ApiError extends Error {
 
 const BASE_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
 
+/**
+ * The header the API puts on every response, honouring one the client sent if
+ * there was one. See `RequestIdMiddleware` in the API repository.
+ */
+const REQUEST_ID_HEADER = "X-Request-ID";
+
+/**
+ * The id of the most recent response the server tagged.
+ *
+ * Kept so that an error with no server involvement — a render error in a
+ * component, a bug three clicks after the last request — still has a number
+ * against it. The backend tags its own error reports with the same id, so this
+ * is what makes a frontend report and its backend cause one search rather than
+ * two, and it is the number the user reads off their own screen.
+ *
+ * Two sources, because only one of them works today. The header is on every
+ * response, including the successful ones, but a browser hides a response
+ * header the server has not named in `Access-Control-Expose-Headers` and
+ * `X-Request-ID` is not yet on that list — so cross-origin, `headers.get`
+ * returns null and this stays empty. The error envelope carries the same id in
+ * its body, which is not subject to that rule, so failures are covered either
+ * way and successes start being covered the day the backend exposes the header.
+ */
+let lastRequestId = "";
+
+export function lastSeenRequestId(): string {
+  return lastRequestId;
+}
+
+function noteRequestId(id: string | null | undefined): void {
+  if (id) lastRequestId = id;
+}
+
 let accessToken: string | null = null;
 
 /** Called when the session ends for a reason the user did not choose. */
@@ -128,6 +161,7 @@ async function toApiError(response: Response): Promise<ApiError> {
     if (body.error?.code) code = body.error.code as ErrorCode;
     requestId = body.error?.request_id ?? "";
     details = body.error?.details ?? [];
+    noteRequestId(requestId);
   } catch {
     // A response that is not the documented envelope — a proxy error page, a
     // gateway timeout. Falling through to UNKNOWN_ERROR is correct: the user
@@ -164,7 +198,7 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
   if (options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
   if (!options.anonymous && accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
-  return fetch(buildUrl(path, options.query), {
+  const response = await fetch(buildUrl(path, options.query), {
     method: options.method ?? "GET",
     headers,
     // Always included: the refresh cookie has to reach /auth/refresh, and
@@ -173,6 +207,8 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
     signal: options.signal,
   });
+  noteRequestId(response.headers.get(REQUEST_ID_HEADER));
+  return response;
 }
 
 /**
@@ -257,4 +293,5 @@ export function __resetClient(): void {
   accessToken = null;
   refreshInFlight = null;
   onSessionLost = null;
+  lastRequestId = "";
 }

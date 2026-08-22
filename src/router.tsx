@@ -8,6 +8,7 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
+import { ScreenBoundary } from "@/components/ErrorBoundary";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createQueryClient } from "@/api/query-client";
 import {
@@ -104,9 +105,15 @@ const shellRoute = createRoute({
     if (await ensureSession()) return;
     throw redirect({ to: "/login" });
   },
+  // The boundary is inside the shell rather than around it, so a screen that
+  // throws takes the screen down and nothing else: the sidebar and the topbar
+  // are still on the page and the person can go somewhere that works. See
+  // ErrorBoundary.tsx for why there is a second one above the whole router.
   component: () => (
     <AppShell>
-      <Outlet />
+      <ScreenBoundary>
+        <Outlet />
+      </ScreenBoundary>
     </AppShell>
   ),
 });

@@ -16,6 +16,18 @@ npm run dev      # http://localhost:5173
 The backend is expected at `http://localhost:8000/api/v1`
 (`VITE_API_URL` in `.env.local`).
 
+## Environment
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `VITE_API_URL` | no | Where the API is. Defaults to `http://localhost:8000` |
+| `VITE_SENTRY_DSN` | deploys only | Where errors are reported. **Absent means Sentry never initialises** — no client, no requests — which is what local development and the render check run with |
+| `VITE_SENTRY_ENVIRONMENT` | no | Names the deploy in Sentry. Defaults to the build mode, so a staging deploy needs it to keep its errors out of the production project |
+| `VITE_SENTRY_RELEASE` | no | Ties an error to a build. A commit SHA is the usual value |
+
+All four are read at **build** time, not at run time: they are baked into the
+bundle, so changing one means rebuilding, and none of them may hold a secret.
+
 ## Scripts
 
 | Command | Purpose |
@@ -25,6 +37,7 @@ The backend is expected at `http://localhost:8000/api/v1`
 | `npm run typecheck` | Types only |
 | `npm run lint:tr` | Fails if any Turkish character appears under `src/` |
 | `npm run lint:i18n` | Fails on a translation key with no entry in `messages/tr.json` |
+| `npm run test:privacy` | Plants a national identity number, a password and two live tokens in the channels the Sentry SDK collects through, and fails if any of them reaches the transport |
 | `npm run smoke` | Renders every screen for every role and fails on any render error |
 | `npm run verify` | All of the above, plus the build |
 
