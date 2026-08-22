@@ -183,6 +183,54 @@ function resolve(path, search, method, body) {
     return page(customer ? rows.filter((row) => row.customer_id === customer) : rows);
   }
 
+  // The team. Two resources: colleagues who can sign in, and invitations that
+  // have not become colleagues yet.
+  const users = fixture("demo-users");
+
+  const deactivated = /^\/api\/v1\/users\/([^/]+)\/deactivate\/$/.exec(path);
+  if (method === "POST" && deactivated) {
+    const row = users.find((one) => one.id === deactivated[1]) ?? users[0];
+    return { ...row, is_active: false };
+  }
+
+  const assigned = /^\/api\/v1\/users\/([^/]+)\/customers\/$/.exec(path);
+  if (method === "PUT" && assigned) {
+    const row = users.find((one) => one.id === assigned[1]) ?? users[0];
+    return { ...row, assigned_customer_ids: body?.customer_ids ?? [] };
+  }
+
+  const colleague = /^\/api\/v1\/users\/([^/]+)\/$/.exec(path);
+  if (colleague) {
+    const row = users.find((one) => one.id === colleague[1]) ?? users[0];
+    return method === "PATCH" ? { ...row, ...body } : row;
+  }
+
+  if (path === "/api/v1/users/") {
+    // Filtered the way the server filters it. The screens ask this endpoint how
+    // many active owners are left before they offer to deactivate one, and a
+    // mock that ignored the query would answer with the whole staff — turning
+    // the last-owner guard off in exactly the test meant to exercise it.
+    const role = search.get("role");
+    const isActive = search.get("is_active");
+    let rows = users;
+    if (role) rows = rows.filter((one) => one.role === role);
+    if (isActive) rows = rows.filter((one) => String(one.is_active) === isActive);
+    return page(rows);
+  }
+
+  const invitations = fixture("demo-invitations");
+
+  const resent = /^\/api\/v1\/invitations\/([^/]+)\/resend\/$/.exec(path);
+  if (method === "POST" && resent) {
+    return invitations.find((one) => one.id === resent[1]) ?? invitations[0];
+  }
+  if (method === "POST" && path === "/api/v1/invitations/") {
+    return { ...invitations[0], ...body, id: "i-new" };
+  }
+  const revoked = /^\/api\/v1\/invitations\/([^/]+)\/$/.exec(path);
+  if (method === "DELETE" && revoked) return {};
+  if (path === "/api/v1/invitations/") return page(invitations);
+
   return null;
 }
 

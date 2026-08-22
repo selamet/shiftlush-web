@@ -80,6 +80,14 @@ const PATHS = [
   "/contracts/k1/edit",
   "/qr-labels",
   "/users",
+  "/users/invite",
+  // Three colleagues on purpose. Each one puts a different set of controls on
+  // the page: u1 is the last active owner, u2 is whoever is signed in, and u3
+  // is a technician, whose assignment panel is the page every other role does
+  // not get. Rendering one of them would leave two branches untested.
+  "/users/u1",
+  "/users/u2",
+  "/users/u3",
   "/audit-logs",
   "/settings",
 ];
@@ -138,6 +146,30 @@ const EXPECT = {
   "/elevators/e1/edit": "34-2019",
   "/elevators": "34-2018",
   "/elevators/e1": "34-2019",
+  // Two independent sections on one screen: the colleagues table, and the
+  // pending invitations underneath it.
+  "/users": ["Hakan Çelik", "nur.aydin@yukselisasansor.com", "Süresi doldu"],
+  // The reason takes the place of the control it replaces, so asserting the
+  // sentence is asserting that the screen explained itself rather than simply
+  // rendering nothing where a button used to be.
+  "/users/u1": ["Mehmet Yılmaz", "Firmanın tek aktif sahibi pasifleştirilemez."],
+  "/users/u2": ["Ayşe Demir", "Kendinizi pasifleştiremezsiniz."],
+  // The assignment panel is the reason a technician has a page at all, and a
+  // customer name proves it rendered its list rather than a loading line.
+  "/users/u3": ["Hakan Çelik", "Çamlıca", "Atanmış müşteriler", "Pasifleştir"],
+};
+
+/**
+ * Text that must NOT appear.
+ *
+ * The user screens withhold the controls the server would refuse: nobody may
+ * deactivate themselves, and nobody may deactivate the last active owner. A
+ * render check cannot catch a regression that puts either button back — only
+ * its absence can, and the absence is the whole safety property.
+ */
+const EXPECT_ABSENT = {
+  "/users/u1": "Pasifleştir",
+  "/users/u2": "Pasifleştir",
 };
 
 const server = await createServer({
@@ -165,9 +197,22 @@ try {
         const html = renderToString(React.createElement(RouterProvider, { router }));
         if (!html || html.length < 40) throw new Error(`rendered ${html.length} characters`);
 
-        const expected = EXPECT[path];
-        if (expected && !html.includes(expected)) {
-          throw new Error(`data never reached the page — no "${expected}" in the markup`);
+        // One string or several. A screen assembled from two independent
+        // sections needs an assertion per section, or half of it can stop
+        // rendering without the check noticing.
+        for (const needle of [EXPECT[path] ?? []].flat()) {
+          if (!html.includes(needle)) {
+            throw new Error(`data never reached the page — no "${needle}" in the markup`);
+          }
+        }
+
+        for (const needle of [EXPECT_ABSENT[path] ?? []].flat()) {
+          if (html.includes(needle)) {
+            throw new Error(
+              `"${needle}" is on a page that must not offer it — the server refuses ` +
+                `this action, so the interface must not present it.`,
+            );
+          }
         }
 
         const hidden = EXPECT_HIDDEN[path];
