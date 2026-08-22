@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search, Menu, X, Moon, Sun, FlaskConical } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,7 @@ import { useSession } from "@/lib/session";
 import { useTheme } from "@/lib/theme";
 import { enumLabel } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
 import { UserMenu } from "./UserMenu";
 import { Sidebar, SidebarNav, SidebarSkeleton } from "./Sidebar";
 import { ROLES, type Role } from "./nav-config";
@@ -101,6 +102,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { status, role } = useSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // A drawer left open while the window grows into the desktop layout is
+  // hidden by `lg:hidden` — but a hidden modal still holds the keyboard and
+  // still inerts the page behind it, which locks the window with nothing on
+  // screen to explain why. At that width the sidebar is already there, so the
+  // drawer has nothing left to show.
+  useEffect(() => {
+    if (!drawerOpen) return;
+
+    const desktop = window.matchMedia("(min-width: 64rem)");
+    const close = () => {
+      if (desktop.matches) setDrawerOpen(false);
+    };
+
+    close();
+    desktop.addEventListener("change", close);
+    return () => desktop.removeEventListener("change", close);
+  }, [drawerOpen]);
+
   // Someone who has just signed out, or whose session expired on a screen the
   // guard cannot re-check, is on their way to /login. Rendering the skeletons
   // in the meantime puts `boot.refreshingSession` on screen, which tells them
@@ -115,28 +134,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {restoring ? <SidebarSkeleton /> : <Sidebar role={role} />}
       </div>
 
+      {/* A drawer is a dialog: it covers the page, and the page underneath has
+          to be out of reach while it does. Closing hands focus back to the
+          menu button in the topbar — the close control lives inside the thing
+          it unmounts, so without that, focus lands on `<body>` and the next Tab
+          starts again from the top of the page. */}
       {drawerOpen && !restoring && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
-          <button
-            type="button"
-            className="absolute inset-0 bg-foreground/40"
-            onClick={() => setDrawerOpen(false)}
-            aria-label={t("nav.closeMenu")}
-          />
-          <div className="relative flex w-64 flex-col bg-card shadow-lg">
-            <div className="flex justify-end p-2">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setDrawerOpen(false)}
-                aria-label={t("nav.closeMenu")}
-              >
-                <X />
-              </Button>
-            </div>
-            <SidebarNav role={role} />
+        <Modal
+          open
+          onClose={() => setDrawerOpen(false)}
+          label={t("nav.menu")}
+          placement="inline-start"
+          overlayClassName="lg:hidden"
+          className="w-64"
+        >
+          <div className="flex justify-end p-2">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setDrawerOpen(false)}
+              aria-label={t("nav.closeMenu")}
+            >
+              <X />
+            </Button>
           </div>
-        </div>
+          <SidebarNav role={role} />
+        </Modal>
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">

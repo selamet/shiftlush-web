@@ -15,8 +15,9 @@
     "lint:password": "node scripts/check-password-length.mjs",
     "lint:buttons": "node scripts/check-dead-buttons.mjs",
     "typecheck": "tsc -b --noEmit",
-    "verify": "npm run lint:tr && npm run lint:i18n && npm run lint:errors && npm run lint:paths && npm run lint:password && npm run lint:buttons && npm run typecheck && npm run test:dates && npm run build && npm run smoke",
+    "verify": "npm run lint:tr && npm run lint:i18n && npm run lint:errors && npm run lint:paths && npm run lint:password && npm run lint:buttons && npm run typecheck && npm run test:dates && npm run test:dialogs && npm run build && npm run smoke",
     "test:dates": "node scripts/check-dates.mjs",
+    "test:dialogs": "node scripts/check-dialogs.mjs",
     "smoke": "node scripts/smoke-render.mjs"
   },
   "dependencies": {
@@ -39,6 +40,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^30.0.1",
     "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",
