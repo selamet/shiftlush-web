@@ -142,6 +142,14 @@ export function reverseGeocodeQuery(coords: Coordinates | null) {
     // A point does not move, and the server caches the answer anyway.
     // Refetching spends somebody's Nominatim quota to be told the same thing.
     staleTime: Infinity,
+    // `staleTime` alone did not deliver that promise. It stops a refetch while
+    // the answer is held; `gcTime` decides how long it is held once the form
+    // closes, and its default drops it after five minutes — so re-pinning the
+    // same building after a coffee spent the quota again to be told the same
+    // thing. The key is a point the user deliberately asked about, not every
+    // pixel a drag passes over, so a session accumulates a handful of small
+    // entries rather than a walk of the coordinate space.
+    gcTime: Infinity,
     // One attempt. The interesting failure here is the throttle, and retrying
     // into a rate limit is how a client earns a longer one.
     retry: false,

@@ -125,6 +125,12 @@ export function buildingListQuery(params: ListParams = {}) {
     queryKey: relatedKeys.buildings.list(params),
     queryFn: ({ signal }) =>
       api.get<Paginated<Building>>("/buildings/", { query: params, signal }),
+    // Same reason as every other list here: the page number is part of the key,
+    // so paging is a cache miss, and without this the rows are replaced by a
+    // skeleton for the length of a round trip. These two were the only lists
+    // missing it, which is why paging buildings and contracts flickered and
+    // paging elevators and customers did not.
+    placeholderData: (previous) => previous,
   });
 }
 
@@ -133,6 +139,7 @@ export function contractListQuery(params: ListParams = {}) {
     queryKey: relatedKeys.contracts.list(params),
     queryFn: ({ signal }) =>
       api.get<Paginated<Contract>>("/contracts/", { query: params, signal }),
+    placeholderData: (previous) => previous,
   });
 }
 
@@ -382,6 +389,18 @@ export type Province = Schemas["Province"];
 export type District = Schemas["District"];
 export type Neighborhood = Schemas["Neighborhood"];
 
+/**
+ * `staleTime` and `gcTime` are two different promises, and the cascade needs
+ * both.
+ *
+ * `staleTime: Infinity` says the answer never goes off. `gcTime` says how long
+ * an answer nobody is looking at is kept, and its default is five minutes — so
+ * closing a building form, spending six minutes on something else, and opening
+ * another form drops the eighty-one provinces on the floor and asks for them
+ * again. The data is immutable for the life of the session and the key space is
+ * bounded (one list of provinces, one list of districts per province), so the
+ * right answer is to keep it until the tab closes.
+ */
 export function provinceQuery() {
   return queryOptions({
     queryKey: ["provinces"] as const,
@@ -389,6 +408,7 @@ export function provinceQuery() {
     // Eighty-one rows that change when a law does. Refetching them per visit
     // is a request that can never return anything new.
     staleTime: Infinity,
+    gcTime: Infinity,
   });
 }
 
@@ -399,6 +419,8 @@ export function districtQuery(provinceId: number | null) {
       api.get<District[]>("/districts/", { query: { province: provinceId }, signal }),
     enabled: provinceId !== null,
     staleTime: Infinity,
+    // Eighty-one possible keys, each a short list. Bounded, so it can be kept.
+    gcTime: Infinity,
   });
 }
 
@@ -413,6 +435,15 @@ export function neighborhoodQuery(districtId: number | null, search: string) {
     // The server wants two characters; asking with fewer returns nothing and
     // spends a request to find that out.
     enabled: districtId !== null && search.trim().length >= 2,
+    // The third link of the same immutable cascade, so an answer already held
+    // is never worth asking for twice — backspacing over a search term and
+    // retyping it should cost nothing.
+    staleTime: Infinity,
+    // No `gcTime` here, unlike the two above, and the difference is the point:
+    // the key includes the search string, so the key space is every prefix
+    // anyone types. Keeping those for the life of the session would be a slow
+    // leak rather than a cache. The default five minutes is the right ceiling
+    // for a set that grows with keystrokes.
   });
 }
 
