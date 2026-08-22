@@ -27,6 +27,7 @@ import {
   userQuery,
   invitationListQuery,
   activeOwnerCountQuery,
+  companyQuery,
 } from "@/api/queries";
 import { SessionProvider, ensureSession, type SessionOverride } from "@/lib/session";
 import type { Role } from "@/components/layout/nav-config";
@@ -290,7 +291,10 @@ export const routeTree = rootRoute.addChildren([
       }
     }),
     shellChild("/audit-logs", AuditLogListScreen),
-    shellChild("/settings", SettingsScreen),
+    // The company record only. The signed-in user's own details belong to the
+    // profile tab, which most visits never open — prefetching them would mean a
+    // request on every visit for a panel behind a second click.
+    shellChild("/settings", SettingsScreen, () => queryClient.ensureQueryData(companyQuery())),
   ]),
 ]);
 

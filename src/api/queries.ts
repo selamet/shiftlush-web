@@ -713,3 +713,86 @@ export function setAssignedCustomers(id: string, customerIds: string[]) {
 export function deleteComplex(id: string) {
   return api.delete<void>(`/complexes/${id}/`);
 }
+
+// ---------------------------------------------------------------------------
+// The firm itself, and the person signed in
+// ---------------------------------------------------------------------------
+
+export type Company = Schemas["Company"];
+export type CompanyWrite = Schemas["PatchedCompanyRequest"];
+export type CurrentUser = Schemas["CurrentUser"];
+
+export const companyKeys = {
+  all: ["company"] as const,
+  record: ["company", "record"] as const,
+  logos: ["company", "logos"] as const,
+} as const;
+
+/**
+ * The one company this session belongs to.
+ *
+ * There is no id in the path, and that is the point: the tenant comes from the
+ * token. An endpoint that took an id would be an endpoint that could be pointed
+ * at somebody else's firm, and the server would then have to prove on every
+ * call that it was not.
+ *
+ * No trailing slash either. This is not a router resource and the contract
+ * spells it without one — see the note at the top of this file for why that
+ * distinction is load-bearing rather than cosmetic.
+ */
+export function companyQuery() {
+  return queryOptions({
+    queryKey: companyKeys.record,
+    queryFn: ({ signal }) => api.get<Company>("/company", { signal }),
+  });
+}
+
+/**
+ * PATCH, and no create: a company is made once, by registration.
+ *
+ * Carries no Idempotency-Key. The header is for calls that create a record,
+ * where a retry after a dropped connection would make a second one; this one
+ * updates a row that already exists, so replaying it lands on the same values.
+ */
+export function updateCompany(body: CompanyWrite) {
+  return api.patch<Company>("/company", body);
+}
+
+/**
+ * Every logo the firm has uploaded, not just the current one.
+ *
+ * `company.logo` is a foreign key to one of these — see spec 5.13: the
+ * polymorphic link says a file belongs to this company, the key says which of
+ * them is in force today. Keeping the others means replacing a logo is an
+ * upload rather than an overwrite, and the one it replaced is still there when
+ * somebody wants it back.
+ */
+export function companyLogoQuery(companyId: string) {
+  return queryOptions({
+    queryKey: companyKeys.logos,
+    queryFn: ({ signal }) =>
+      api.get<Paginated<Attachment>>("/attachments/", {
+        query: {
+          object_type: "company",
+          object_id: companyId,
+          category: "logo",
+          page_size: 20,
+        },
+        signal,
+      }),
+  });
+}
+
+/**
+ * Who is signed in, from the server rather than from the session context.
+ *
+ * The context carries what every screen needs on every page — name, role,
+ * company — and deliberately not the address or the phone number. This screen
+ * shows both, so it asks the endpoint that owns them.
+ */
+export function currentUserQuery() {
+  return queryOptions({
+    queryKey: ["auth", "me"] as const,
+    queryFn: ({ signal }) => api.get<CurrentUser>("/auth/me", { signal }),
+  });
+}

@@ -55,6 +55,20 @@ function resolve(path, search, method, body) {
   }
   if (method === "POST" && path === "/api/v1/auth/email/verify") return {};
 
+  // The firm, and the person signed in. Note the missing trailing slash on
+  // both: the contract spells the auth endpoints and `/company` without one,
+  // and a mock lenient about that would hide the redirect this file exists to
+  // catch.
+  if (path === "/api/v1/company") {
+    const company = fixture("demo-company");
+    return method === "PATCH" ? { ...company, ...body } : company;
+  }
+  if (path === "/api/v1/auth/me") {
+    // u2 is whoever is signed in, the same colleague the user screens assume.
+    const me = fixture("demo-users").find((one) => one.id === "u2");
+    return { ...me, company_id: "co-1", company_name: fixture("demo-company").display_name };
+  }
+
   if (method === "POST" && path === "/api/v1/customers/") {
     return { ...fixture("demo-customers")[0], ...body, id: "c-new" };
   }
@@ -99,7 +113,17 @@ function resolve(path, search, method, body) {
   }
   if (path === "/api/v1/elevators/") return page(fixture("demo-elevators"));
 
-  if (path === "/api/v1/attachments/") return page(fixture("demo-attachments"));
+  if (path === "/api/v1/attachments/") {
+    // Filtered the way the server filters it. The settings screen asks for the
+    // company's logos; a mock that ignored the query would hand it back the
+    // elevator's inspection reports and the panel would look like it worked.
+    const objectType = search.get("object_type");
+    const category = search.get("category");
+    let rows = fixture("demo-attachments");
+    if (objectType) rows = rows.filter((row) => row.object_type === objectType);
+    if (category) rows = rows.filter((row) => row.category === category);
+    return page(rows);
+  }
 
   if (path === "/api/v1/audit-logs/") return page(fixture("demo-audit-logs-elevator"));
 
