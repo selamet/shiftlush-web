@@ -18,6 +18,7 @@ import { enumLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Field, Input } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
@@ -313,7 +314,14 @@ function FormField({
       className={field.wide ? "sm:col-span-2" : undefined}
       bindChild={field.kind !== "select"}
     >
-      {field.kind === "select" ? (
+      {field.kind === "date" ? (
+        <DatePicker
+          name={field.name}
+          required={field.required}
+          defaultValue={String(value)}
+          invalid={Boolean(error)}
+        />
+      ) : field.kind === "select" ? (
         <SearchableSelect
           id={id}
           name={field.name}
@@ -334,7 +342,7 @@ function FormField({
       ) : (
         <Input
           name={field.name}
-          type={field.kind === "number" ? "number" : field.kind === "date" ? "date" : "text"}
+          type={field.kind === "number" ? "number" : "text"}
           maxLength={field.maxLength}
           defaultValue={String(value)}
           invalid={Boolean(error)}

@@ -895,7 +895,8 @@
       "chips": "Rozet ve durum çipi",
       "labels": "Etiket rengi paleti",
       "status": "Sistem durum renkleri",
-      "table": "Liste ekranı"
+      "table": "Liste ekranı",
+      "dates": "Tarih seçici"
     },
     "labelRule": "Doygun dolgu yalnızca etiket verisinde kullanılır. Sistem renkleri soluk zemin ve koyu metinle görünür — ikisi karışmaz.",
     "densityNote": "Satır yüksekliği 40 piksel, hücre iki satır."
@@ -926,5 +927,18 @@
     },
     "system": "Sistem",
     "empty": "Henüz değişiklik yok"
+  },
+  "datePicker": {
+    "placeholder": "gg.aa.yyyy",
+    "formatHint": "gg.aa.yyyy olarak yazın ya da takvimden seçin",
+    "open": "Takvimi aç",
+    "clear": "Tarihi temizle",
+    "today": "Bugün",
+    "previousMonth": "Önceki ay",
+    "nextMonth": "Sonraki ay",
+    "calendar": "Takvim",
+    "invalidFormat": "Tarihi gg.aa.yyyy biçiminde yazın",
+    "required": "Bir tarih seçin",
+    "unavailableDay": "{{date}}, seçilebilir aralığın dışında"
   }
 }

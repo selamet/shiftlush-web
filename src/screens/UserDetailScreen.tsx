@@ -21,6 +21,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Field, Input } from "@/components/ui/field";
 import { RoleChip, StatusChip } from "@/components/ui/status-chip";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
@@ -230,10 +231,9 @@ export function UserDetailScreen() {
                   htmlFor="ud-certificate-valid-until"
                   error={details.state.fields.certificate_valid_until}
                 >
-                  <Input
+                  <DatePicker
                     name="certificate_valid_until"
-                    type="date"
-                    defaultValue={record.certificate_valid_until ?? undefined}
+                    defaultValue={record.certificate_valid_until}
                     invalid={Boolean(details.state.fields.certificate_valid_until)}
                   />
                 </Field>
