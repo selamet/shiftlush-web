@@ -162,6 +162,11 @@ const EXPECT = {
   // The assignment panel is the reason a technician has a page at all, and a
   // customer name proves it rendered its list rather than a loading line.
   "/users/u3": ["Hakan Çelik", "Çamlıca", "Atanmış müşteriler", "Pasifleştir"],
+  // The company record has to arrive in the inputs, and for every role: the
+  // four differ only in whether the fields can be written. A screen that filled
+  // the form for the owner and left it empty for everybody else would pass a
+  // check that only looked at one of them.
+  "/settings": ["Yükseliş Asansör Bakım ve Servis Ltd. Şti.", "Barbaros Bulvarı"],
 };
 
 /**

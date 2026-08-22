@@ -76,6 +76,22 @@ interface AttachmentsPanelProps {
   invalidateKey: readonly unknown[];
   /** Reading is wider than writing: a technician sees files but cannot add one. */
   canWrite: boolean;
+  /**
+   * Fixes the category and drops the picker.
+   *
+   * For a panel that holds one kind of file — the company logo — the question
+   * "which sort of document is this?" has one answer, and a select with one
+   * option is a control that can only be got wrong.
+   */
+  fixedCategory?: AttachmentCategory;
+  /**
+   * The record the server made, for a caller that has to point a field at it.
+   *
+   * `company.logo` is a foreign key to an attachment: the upload has to finish
+   * before anything can reference it, and only this component knows when that
+   * happened. Invalidating the list is not enough — the caller needs the id.
+   */
+  onUploaded?: (attachment: Attachment) => void;
 }
 
 export function AttachmentsPanel({
@@ -84,6 +100,8 @@ export function AttachmentsPanel({
   attachments,
   invalidateKey,
   canWrite,
+  fixedCategory,
+  onUploaded,
 }: AttachmentsPanelProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -138,13 +156,14 @@ export function AttachmentsPanel({
         signal: transfer.controller.signal,
       });
 
-      await confirmUpload(
+      const record = await confirmUpload(
         { storage_key: ticket.storage_key, original_filename: transfer.file.name },
         transfer.idempotencyKey,
       );
 
       await queryClient.invalidateQueries({ queryKey: invalidateKey });
       dropTransfer(transfer.id);
+      onUploaded?.(record);
     } catch (error) {
       if (error instanceof UploadError && error.reason === "cancelled") {
         dropTransfer(transfer.id);
@@ -160,7 +179,7 @@ export function AttachmentsPanel({
       const transfer: Transfer = {
         id: crypto.randomUUID(),
         file,
-        category,
+        category: fixedCategory ?? category,
         fraction: null,
         error: refuse(file),
         controller: new AbortController(),
@@ -200,21 +219,25 @@ export function AttachmentsPanel({
       {canWrite && (
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <label className="sr-only" htmlFor="attachment-category">
-              {t("attachment.categoryLabel")}
-            </label>
-            <select
-              id="attachment-category"
-              value={category}
-              onChange={(event) => setCategory(event.target.value as AttachmentCategory)}
-              className="h-control-sm rounded-md border border-input bg-card px-2 text-body focus-ring pointer-coarse:h-control-md"
-            >
-              {CATEGORIES.map((value) => (
-                <option key={value} value={value}>
-                  {enumLabel("attachment.category", value)}
-                </option>
-              ))}
-            </select>
+            {!fixedCategory && (
+              <>
+                <label className="sr-only" htmlFor="attachment-category">
+                  {t("attachment.categoryLabel")}
+                </label>
+                <select
+                  id="attachment-category"
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value as AttachmentCategory)}
+                  className="h-control-sm rounded-md border border-input bg-card px-2 text-body focus-ring pointer-coarse:h-control-md"
+                >
+                  {CATEGORIES.map((value) => (
+                    <option key={value} value={value}>
+                      {enumLabel("attachment.category", value)}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
             <Button
               type="button"
               size="sm"

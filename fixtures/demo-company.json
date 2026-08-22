@@ -1,12 +1,20 @@
 {
+  "id": "co-1",
   "legal_name": "Yükseliş Asansör Bakım ve Servis Ltd. Şti.",
   "display_name": "Yükseliş Asansör",
   "tax_office": "Ataşehir",
   "tax_number": "6110584219",
   "mersis_number": "0611058421900014",
   "trade_registry_number": "418927-5",
-  "phone": "0216 470 88 24",
+  "neighborhood": 340101,
+  "street": "Barbaros Bulvarı",
+  "building_number": "12",
+  "unit_number": "4",
+  "phone": "+902164708824",
   "email": "info@yukselisasansor.com",
   "website": "yukselisasansor.com",
-  "owner_email": "mehmet.yilmaz@yukselisasansor.com"
+  "logo": null,
+  "logo_url": "",
+  "is_active": true,
+  "created_at": "2019-03-14T09:00:00Z"
 }
