@@ -78,6 +78,33 @@ export function ContractFormScreen() {
   // absence is the answer. A role check here would be a second rule.
   const showsMoney = !record || "monthly_fee" in record;
 
+  /**
+   * The sentence under the VAT rate box.
+   *
+   * It used to be one permanent warning — leave it blank and no VAT is
+   * calculated — which was a guess wearing the clothes of a fact: the client
+   * had no way to know whether a rate had been stated on the record in front of
+   * it. `vat_status` is the answer that was missing, so the hint now describes
+   * this contract rather than every contract at once.
+   *
+   * A new contract has no state to describe and cannot be saved without a rate,
+   * so it is told that instead.
+   */
+  function vatRateHint(): string {
+    if (!editing) return t("contract.vatHint.new");
+    switch (record?.vat_status) {
+      case "applied":
+        return t("contract.vatHint.applied");
+      case "zero_rated":
+        return t("contract.vatHint.zeroRated");
+      default:
+        // `unset`, and the contracts written before a rate was required. The
+        // same fact either way: nobody has stated one, and until somebody does
+        // this contract has no total.
+        return t("contract.vatHint.unset");
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4 p-6">
       <div className="flex flex-col gap-1.5">
@@ -233,13 +260,23 @@ export function ContractFormScreen() {
               <Field
                 label={t("contract.fields.vatRate")}
                 htmlFor="kf-vat"
-                // Nullable on the server, and a contract with no rate totals
-                // without VAT. Saying so beats letting somebody find out from
-                // an invoice.
-                hint={t("contract.vatRateHint")}
+                // Required on create and only on create, which is exactly the
+                // server's rule: PATCH stays partial, so a contract written
+                // before the rate was required can still have its notes edited
+                // without one being invented for it. Marking it required here
+                // as well would be the browser holding a rule the server does
+                // not hold.
+                required={!editing}
+                hint={vatRateHint()}
                 error={state.fields.vat_rate}
               >
-                <Input name="vat_rate" inputMode="decimal" defaultValue={record?.vat_rate ?? ""} />
+                <Input
+                  name="vat_rate"
+                  inputMode="decimal"
+                  required={!editing}
+                  invalid={Boolean(state.fields.vat_rate)}
+                  defaultValue={record?.vat_rate ?? ""}
+                />
               </Field>
 
               <Field

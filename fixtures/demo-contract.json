@@ -21,6 +21,7 @@
   "notes": "",
   "elevator_count": 3,
   "monthly_subtotal": "3750.00",
+  "vat_status": "applied",
   "vat_amount": "750.00",
   "monthly_total": "4500.00",
   "lines": [

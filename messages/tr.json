@@ -163,6 +163,8 @@
       "monthlyFee": "Aylık ücret",
       "currency": "Para birimi",
       "vatRate": "KDV oranı (%)",
+      "vatAmount": "KDV tutarı",
+      "monthlyTotal": "Aylık toplam (KDV dahil)",
       "billingPeriod": "Fatura dönemi",
       "autoRenew": "Otomatik yenilensin",
       "renewalNoticeDays": "Yenileme bildirim süresi (gün)",
@@ -206,7 +208,12 @@
     "financialsHidden": "Mali bilgileri görme yetkiniz yok",
     "add": "Sözleşme ekle",
     "monthlyFeeHint": "Sabit fiyatlandırmada aylık toplam; asansör başında boş bırakın",
-    "vatRateHint": "Boş bırakılırsa KDV hesaplanmaz",
+    "vatHint": {
+      "new": "Zorunlu: 0 ile 100 arasında bir oran girin. KDV uygulanmıyorsa 0 yazın — boş bırakmak aynı şey değildir.",
+      "applied": "Bu sözleşmenin KDV oranı girili; aylık toplam bu oranla hesaplanıyor.",
+      "zeroRated": "Bu sözleşme %0 KDV ile kayıtlı. Aylık toplam, ara toplama eşit.",
+      "unset": "Bu sözleşmede KDV oranı girilmemiş, bu yüzden aylık toplam hesaplanamıyor. Bir oran girip kaydedin; KDV uygulanmıyorsa 0 yazın."
+    },
     "autoRenewHint": "Bitiş tarihinde otomatik yenilenir"
   },
   "customer": {
@@ -612,6 +619,7 @@
     "DUPLICATE_REGISTRATION_NUMBER": "Bu asansör kimlik numarası zaten kayıtlı",
     "DUPLICATE_CONTRACT_NUMBER": "Bu sözleşme numarası zaten kayıtlı",
     "EMAIL_ALREADY_REGISTERED": "Bu e-posta adresi zaten kayıtlı",
+    "INVITATION_ALREADY_PENDING": "Bu adrese gönderilmiş, henüz kabul edilmemiş bir davet var. Yeni davet yerine mevcut daveti tekrar gönderin.",
     "IDEMPOTENCY_KEY_REUSED": "Bu işlem farklı bilgilerle tekrarlandı",
     "ELEVATOR_ALREADY_CONTRACTED": "Bu asansör zaten aktif bir sözleşmede",
     "LAST_OWNER_CANNOT_BE_DEACTIVATED": "Firmada en az bir aktif sahip kalmalı",
@@ -637,6 +645,16 @@
     "ATTACHMENT_TARGET_MISMATCH": "Dosya bu kayda ait değil",
     "NETWORK_ERROR": "Sunucuya ulaşılamıyor",
     "UNKNOWN_ERROR": "Beklenmeyen bir hata oluştu",
+    "required": "Bu alan zorunlu",
+    "blank": "Bu alan boş bırakılamaz",
+    "fields": {
+      "vat_rate": {
+        "required": "KDV oranı zorunlu. KDV uygulanmıyorsa 0 yazın.",
+        "min_value": "KDV oranı 0'dan küçük olamaz",
+        "max_value": "KDV oranı en fazla 100 olabilir. Yüzde 20 için 20 yazın, 200 değil.",
+        "invalid": "KDV oranını sayı olarak girin, örneğin 20"
+      }
+    },
     "requestIdLabel": "Hata kimliği",
     "requestIdHelp": "Destek ekibine bu kimliği iletin"
   },
@@ -834,6 +852,13 @@
     "closed": "Kapatıldı",
     "subtotal": "Ara toplam",
     "vatIncludedMonthly": "KDV dahil {{amount}} / ay",
+    "vatZeroRated": "KDV uygulanmıyor",
+    "vatUnstatedValue": "Girilmemiş",
+    "vatUnstatedAmount": "Hesaplanamıyor (KDV oranı girilmemiş)",
+    "vatUnstatedTotal": "KDV dahil tutar yok — oran girilmemiş",
+    "vatUnstatedTitle": "Aylık toplam hesaplanamıyor",
+    "vatUnstatedBody": "Bu sözleşmede KDV oranı girilmemiş, bu yüzden KDV tutarı ve aylık toplam boş. Sözleşmeyi düzenleyip 0 ile 100 arasında bir oran girin; KDV uygulanmıyorsa 0 yazın.",
+    "vatUnstatedBodyReadOnly": "Bu sözleşmede KDV oranı girilmemiş, bu yüzden KDV tutarı ve aylık toplam boş. Oranı, sözleşmeyi düzenleyebilen bir kullanıcı girmeli.",
     "amountHiddenForRole": "tutar bu rolde görünmüyor",
     "elevatorCount": "{{count}} asansör",
     "monthlyAmount": "{{amount}} / ay",

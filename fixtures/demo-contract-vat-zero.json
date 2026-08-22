@@ -1,0 +1,41 @@
+{
+  "id": "k-zerovat",
+  "contract_number": "2026-0007",
+  "customer_id": "c4",
+  "customer_name": "Nurtepe Sitesi Yönetimi",
+  "status": "active",
+  "scope": "maintenance_only",
+  "start_date": "2026-01-01",
+  "end_date": "2026-12-31",
+  "pricing_type": "flat",
+  "monthly_fee": "1800.00",
+  "currency": "TRY",
+  "vat_rate": "0.00",
+  "billing_period": "monthly",
+  "auto_renew": true,
+  "renewal_notice_days": 30,
+  "previous_contract_id": null,
+  "previous_contract_number": "",
+  "terminated_at": null,
+  "termination_reason": "",
+  "notes": "",
+  "elevator_count": 1,
+  "monthly_subtotal": "1800.00",
+  "vat_status": "zero_rated",
+  "vat_amount": "0.00",
+  "monthly_total": "1800.00",
+  "lines": [
+    {
+      "id": "line-zv-1",
+      "elevator_id": "e3",
+      "registration_number": "34-2019-004513",
+      "elevator_name": "Servis",
+      "building_name": "Nurtepe A Blok",
+      "unit_price": "1800.00",
+      "added_at": "2026-01-01",
+      "removed_at": null
+    }
+  ],
+  "created_at": "2026-01-01T09:00:00Z",
+  "updated_at": "2026-01-01T09:00:00Z"
+}

@@ -240,8 +240,21 @@ function resolve(path, search, method, body) {
     return { ...fixture("demo-contract"), id: addedLines[1] };
   }
 
+  /* The three VAT states, because they render differently and only one of them
+     used to exist here. `unset` is the one that matters most: `vat_amount` and
+     `monthly_total` are null, so a screen that renders them with formatMoney
+     alone shows two blanks and looks like it failed to load. Serving a contract
+     that is deliberately zero-rated next to it is what keeps the smoke render
+     honest about the two not looking the same. */
+  const VAT_FIXTURES = {
+    "k-novat": "demo-contract-vat-unset",
+    "k-zerovat": "demo-contract-vat-zero",
+  };
+
   const contract = /^\/api\/v1\/contracts\/([^/]+)\/$/.exec(path);
   if (contract && method === "GET") {
+    const named = VAT_FIXTURES[contract[1]];
+    if (named) return fixture(named);
     return { ...fixture("demo-contract"), id: contract[1] };
   }
   if (method === "POST" && path === "/api/v1/contracts/") {

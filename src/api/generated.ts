@@ -23,9 +23,8 @@ export interface paths {
         /**
          * @description Confirm an upload that has already landed.
          *
-         *     Not wrapped in replay protection: this call is idempotent by nature. A
-         *     storage key identifies exactly one object, so confirming it twice returns
-         *     the same record rather than creating a second one.
+         *     Retrying is safe: a storage key names one object, so a second
+         *     confirmation returns the record the first one made.
          */
         post: operations["attachments_create"];
         delete?: never;
@@ -220,6 +219,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change the signed-in user's password
+         * @description Verifies the current password, applies the same password policy as registration, and ends every other session on the account. The session making the call survives: a new refresh cookie is set and a new access token is returned. A wrong current password answers 422 INVALID_CREDENTIALS, distinct from the 400 a policy failure gives.
+         */
+        post: operations["auth_password_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/password-reset": {
         parameters: {
             query?: never;
@@ -284,6 +303,66 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["auth_register_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the caller's own sessions
+         * @description One entry per signed-in device, not per refresh token: refresh rotation replaces the stored token roughly every fifteen minutes and every replacement stays in the same session. `id` is stable for the life of the session and is what the revoke endpoint takes. Exactly one entry has `is_current: true` — the session this request arrived on — unless the request carried no refresh cookie, in which case none does.
+         */
+        get: operations["auth_sessions_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * End one of the caller's sessions
+         * @description Ends the session and every refresh token in it. The refresh token that device holds is refused from that moment, and replaying it trips the existing reuse detection. Revoking the current session is allowed and is equivalent to signing out here — the refresh cookie is cleared in the response. A session id belonging to another user, or one that has already ended, answers 404.
+         */
+        delete: operations["auth_sessions_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/sessions/revoke-others": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End every session except the caller's own
+         * @description The session this request arrives on is kept; every other session on the account ends immediately. If the request carries no usable refresh cookie there is no session to keep, and all of them end — including the caller's, who has to sign in again.
+         */
+        post: operations["auth_sessions_revoke_others_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1553,10 +1632,11 @@ export interface components {
             readonly previous_contract_number: string;
             /** Format: decimal */
             readonly monthly_subtotal: string;
+            readonly vat_status: components["schemas"]["VatStatusEnum"];
             /** Format: decimal */
-            readonly vat_amount: string;
+            readonly vat_amount: string | null;
             /** Format: decimal */
-            readonly monthly_total: string;
+            readonly monthly_total: string | null;
             readonly lines: components["schemas"]["ContractLine"][];
             /** Format: date-time */
             readonly created_at: string;
@@ -1594,7 +1674,7 @@ export interface components {
             monthly_fee?: string | null;
             currency?: string;
             /** Format: decimal */
-            vat_rate?: string | null;
+            vat_rate: string;
             billing_period?: components["schemas"]["BillingPeriodEnum"];
             auto_renew?: boolean;
             /** Format: int64 */
@@ -1616,7 +1696,7 @@ export interface components {
             monthly_fee?: string | null;
             currency?: string;
             /** Format: decimal */
-            vat_rate?: string | null;
+            vat_rate: string;
             billing_period?: components["schemas"]["BillingPeriodEnum"];
             auto_renew?: boolean;
             /** Format: int64 */
@@ -2378,6 +2458,19 @@ export interface components {
             };
         };
         /**
+         * @description The current password and the wanted one.
+         *
+         *     The new one runs through `PasswordField`, which is the same field
+         *     registration uses — length from `settings.MIN_PASSWORD_LENGTH`, the common
+         *     password blocklist, and the similarity check. There is no second policy
+         *     here and there must never be one: a floor written twice is a floor that
+         *     only moves in one of the two places.
+         */
+        PasswordChangeRequest: {
+            current_password: string;
+            new_password: string;
+        };
+        /**
          * @description Rejects fields it does not know about.
          *
          *     DRF ignores unknown keys by default, which silently swallows a typo: the
@@ -2468,7 +2561,7 @@ export interface components {
             monthly_fee?: string | null;
             currency?: string;
             /** Format: decimal */
-            vat_rate?: string | null;
+            vat_rate?: string;
             billing_period?: components["schemas"]["BillingPeriodEnum"];
             auto_renew?: boolean;
             /** Format: int64 */
@@ -2627,6 +2720,35 @@ export interface components {
             /** @description Levels that could not be resolved and must be chosen by the user. Stated explicitly rather than left as three nulls: a client that reads null as 'not filled in yet' behaves differently from one that reads it as 'we looked and found nothing', and only one of those asks the user. */
             readonly unmatched: components["schemas"]["UnmatchedEnum"][];
         };
+        /**
+         * @description One signed-in device, not one refresh token.
+         *
+         *     `id` is the chain rather than the row's primary key. The row is replaced
+         *     every time the access token is refreshed, so a client that listed sessions,
+         *     let the user read the screen, and then revoked a row id would hit a session
+         *     that no longer exists roughly as often as not. The chain id is stable for
+         *     as long as the session is.
+         */
+        Session: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: date-time */
+            readonly signed_in_at: string;
+            /** Format: date-time */
+            readonly last_used_at: string;
+            /** Format: date-time */
+            readonly expires_at: string;
+            readonly user_agent: string;
+            readonly ip_address: string | null;
+            /**
+             * @description Whether this is the session the request itself arrived on.
+             *
+             *     Answered from the refresh cookie, which is the only thing that names a
+             *     session — the access token says who the caller is, never which of their
+             *     devices is asking.
+             */
+            readonly is_current: boolean;
+        };
         TerminateRequest: {
             /** Format: date */
             terminated_at: string;
@@ -2714,6 +2836,13 @@ export interface components {
             certificate_valid_until?: string | null;
         };
         /**
+         * @description * `applied` - A rate is stated and charged
+         *     * `zero_rated` - The rate is stated and it is zero
+         *     * `unset` - No rate has been stated, so the VAT cannot be computed
+         * @enum {string}
+         */
+        VatStatusEnum: "applied" | "zero_rated" | "unset";
+        /**
          * @description * `VALIDATION_ERROR` - Request failed validation
          *     * `NOT_FOUND` - Record not found
          *     * `PERMISSION_DENIED` - Insufficient permissions
@@ -2735,6 +2864,7 @@ export interface components {
          *     * `DUPLICATE_TAX_NUMBER` - Tax number already belongs to another customer of this company
          *     * `DUPLICATE_NATIONAL_ID` - National ID already belongs to another customer of this company
          *     * `EMAIL_ALREADY_REGISTERED` - E-mail address is already registered
+         *     * `INVITATION_ALREADY_PENDING` - This address already holds an invitation that has not been accepted
          *     * `IDEMPOTENCY_KEY_REUSED` - Idempotency key was reused with a different request body
          *     * `ELEVATOR_ALREADY_CONTRACTED` - Elevator is already covered by an open contract
          *     * `LAST_OWNER_CANNOT_BE_DEACTIVATED` - A company must keep at least one active owner
@@ -2757,7 +2887,7 @@ export interface components {
          *     * `ATTACHMENT_TARGET_MISMATCH` - Attachment does not belong to the record it is being linked to
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "IDEMPOTENCY_KEY_REUSED" | "ELEVATOR_ALREADY_CONTRACTED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
+        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "ELEVATOR_ALREADY_CONTRACTED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
         /** @description The shape of every error response. There is no `message` field: the backend sends codes, and the words live in the client's translation file, so wording changes in one place and adding a language does not touch the API. */
         ErrorResponse: {
             error: {
@@ -3081,6 +3211,31 @@ export interface operations {
             };
         };
     };
+    auth_password_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChangeRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PasswordChangeRequest"];
+                "multipart/form-data": components["schemas"]["PasswordChangeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+        };
+    };
     auth_password_reset_create: {
         parameters: {
             query?: never;
@@ -3170,6 +3325,63 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TokenResponse"];
                 };
+            };
+        };
+    };
+    auth_sessions_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"][];
+                };
+            };
+        };
+    };
+    auth_sessions_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    auth_sessions_revoke_others_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
