@@ -104,6 +104,10 @@ const PATHS = [
   "/users/u3",
   "/audit-logs",
   "/settings",
+  // Its own route rather than a tab behind a click, which is what makes it
+  // renderable here at all: the password form and the session list are the two
+  // controls on this screen that can sign somebody out if they are wrong.
+  "/settings/profile",
 ];
 
 const ROLES = ["owner", "operations", "technician", "accountant"];
@@ -214,6 +218,19 @@ const EXPECT = {
   // the form for the owner and left it empty for everybody else would pass a
   // check that only looked at one of them.
   "/settings": ["Yükseliş Asansör Bakım ve Servis Ltd. Şti.", "Barbaros Bulvarı"],
+  // Three independent things on the profile tab, so three assertions. The
+  // password form has to be a form and not the sentence it replaced; the
+  // session list has to have read the three rows the mock serves — the device
+  // label is the tell, because it is derived from the user-agent header rather
+  // than copied out of the response; and exactly one row has to be marked as
+  // this one.
+  "/settings/profile": [
+    "Mevcut şifreniz",
+    "Chrome · macOS",
+    "Safari · iOS",
+    "Edge · Windows",
+    "Bu cihaz",
+  ],
 };
 
 /**
@@ -231,6 +248,12 @@ const EXPECT_ABSENT = {
   // appears on it, the two VAT states have collapsed into one and a rate
   // somebody agreed reads as a rate somebody forgot.
   "/contracts/k-zerovat": "Hesaplanamıyor",
+  // A session list says which devices someone carries and, through the address
+  // it was last used from, roughly where they were when they did. The address
+  // is on the record the screen already holds — the mock serves it, because the
+  // contract does — and the screen must not print it. An absence is the only
+  // way to check that, and it is the whole of what was decided here.
+  "/settings/profile": ["88.230.14.7", "185.66.120.44", "AppleWebKit"],
 };
 
 const server = await createServer({

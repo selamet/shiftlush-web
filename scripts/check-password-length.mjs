@@ -33,7 +33,19 @@ const CONSTANT = join(root, "src", "lib", "password.ts");
  */
 const NO_POLICY = ["LoginRequest"];
 
-/** Every write-only `password` property in the contract, by schema. */
+/**
+ * Property names that carry the password policy.
+ *
+ * `new_password` is here because the change-password request spells it that
+ * way, and a check that only looked for `password` waved that schema through
+ * without a word — the exact silence this file's header calls worse than no
+ * check at all. `current_password` is deliberately absent: it is the password
+ * the account already has, judged by comparison and not by the policy, and its
+ * `minLength: 1` says only that the field may not be empty.
+ */
+const POLICY_PROPERTY = /^(\s+)(?:new_)?password:\s*$/;
+
+/** Every write-only password property in the contract, by schema. */
 function passwordFields(spec) {
   const found = [];
   const lines = spec.split("\n");
@@ -43,7 +55,7 @@ function passwordFields(spec) {
     const heading = /^ {4}(\w+):\s*$/.exec(lines[i]);
     if (heading) schema = heading[1];
 
-    const opening = /^(\s+)password:\s*$/.exec(lines[i]);
+    const opening = POLICY_PROPERTY.exec(lines[i]);
     if (!opening) continue;
 
     // The property's own body: the lines indented further than its key.

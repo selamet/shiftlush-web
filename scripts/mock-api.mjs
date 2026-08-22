@@ -69,6 +69,24 @@ function resolve(path, search, method, body) {
     return { ...me, company_id: "co-1", company_name: fixture("demo-company").display_name };
   }
 
+  // The caller's own sessions, and the two ways of ending one. Exactly one row
+  // carries `is_current`, as the contract promises — the profile tab decides
+  // which row gets no "end this" control from that flag alone, so a mock that
+  // set it on none of them or on all of them would render a screen the server
+  // can never produce.
+  if (method === "DELETE" && /^\/api\/v1\/auth\/sessions\/[^/]+$/.test(path)) return {};
+  if (method === "POST" && path === "/api/v1/auth/sessions/revoke-others") return {};
+  if (path === "/api/v1/auth/sessions") return fixture("demo-auth-sessions");
+  if (method === "POST" && path === "/api/v1/auth/password") {
+    // The shape sign-in answers with, because that is what this endpoint
+    // answers with: a client that does not adopt it signs itself out.
+    const me = fixture("demo-users").find((one) => one.id === "u2");
+    return {
+      access: "smoke-access-token",
+      user: { ...me, company_id: "co-1", company_name: fixture("demo-company").display_name },
+    };
+  }
+
   if (method === "POST" && path === "/api/v1/customers/") {
     return { ...fixture("demo-customers")[0], ...body, id: "c-new" };
   }

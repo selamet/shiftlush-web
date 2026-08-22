@@ -22,6 +22,22 @@ export interface Session {
 
 interface SessionContextValue extends Session {
   signIn: (email: string, password: string) => Promise<void>;
+  /**
+   * Takes over the tokens an endpoint handed back mid-session.
+   *
+   * One endpoint does this: changing the password. It ends every session on the
+   * account — including, on the server, the row behind the refresh token this
+   * tab is holding — and re-opens the caller's on the same chain with a new
+   * refresh cookie and a new access token, returned as the `TokenResponse` that
+   * signing in returns.
+   *
+   * The cookie swaps itself; the access token does not. A client that ignores
+   * the response keeps a token that is merely surviving on its own expiry, and
+   * the moment it runs out the refresh behind it is gone too — so a successful
+   * password change would sign the user out, several minutes later, for no
+   * reason they could connect to what they did. Adopting is the whole fix.
+   */
+  adoptTokens: (tokens: TokenResponse) => void;
   /** Called after the address is confirmed, so the banner goes without a reload. */
   markVerified: () => void;
   signOut: () => Promise<void>;
@@ -170,6 +186,19 @@ export function SessionProvider({
     forgetSession();
   }, []);
 
+  const adoptTokens = useCallback((tokens: TokenResponse) => {
+    setAccessToken(tokens.access);
+    // The same user, re-read from the response rather than left alone: it is
+    // the shape sign-in returns and nothing here should be deciding which
+    // half of it is worth keeping.
+    setUser(toSession(tokens.user));
+    setStatus("authenticated");
+    // The cached restore resolved against the tokens that have just been
+    // retired. Left in place, the next guard would answer from it — and it is
+    // an answer about a session that no longer exists.
+    forgetSession();
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await api.post("/auth/logout");
@@ -207,11 +236,12 @@ export function SessionProvider({
       companyName: status === "authenticated" ? (user?.companyName ?? null) : null,
       emailVerified: user?.emailVerified ?? false,
       signIn,
+      adoptTokens,
       signOut,
       markVerified,
       setRole,
     }),
-    [status, user, signIn, signOut, markVerified, setRole],
+    [status, user, signIn, adoptTokens, signOut, markVerified, setRole],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

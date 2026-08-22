@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, UserRound } from "lucide-react";
 import { useSession, initials } from "@/lib/session";
 import { enumLabel } from "@/lib/i18n";
 import {
@@ -64,6 +64,12 @@ export function UserMenu({ fullName, role }: { fullName: string; role: Role }) {
       </DropdownMenuHeader>
 
       <DropdownMenuSeparator />
+
+      {/* Where people look for their own password and their own sessions —
+          under their own name, not under the firm's settings. */}
+      <DropdownMenuItem icon={UserRound} to="/settings/profile">
+        {t("settings.profileTab")}
+      </DropdownMenuItem>
 
       <DropdownMenuItem icon={Settings} to="/settings">
         {t("nav.settings")}

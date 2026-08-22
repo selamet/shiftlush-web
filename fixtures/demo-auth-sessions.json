@@ -1,0 +1,29 @@
+[
+  {
+    "id": "9f1c4c0e-6a2b-4a1e-9f3d-1c0a5b7e2d41",
+    "signed_in_at": "2026-08-23T07:12:00Z",
+    "last_used_at": "2026-08-23T08:40:00Z",
+    "expires_at": "2026-09-22T07:12:00Z",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "ip_address": "88.230.14.7",
+    "is_current": true
+  },
+  {
+    "id": "3b7e9a52-0d18-4c66-b2a7-5e91d4c83f20",
+    "signed_in_at": "2026-08-04T05:55:00Z",
+    "last_used_at": "2026-08-22T18:31:00Z",
+    "expires_at": "2026-09-03T05:55:00Z",
+    "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1",
+    "ip_address": "185.66.120.44",
+    "is_current": false
+  },
+  {
+    "id": "c204f8d1-77a3-4b0f-8e5c-a6b3129d7e58",
+    "signed_in_at": "2026-07-29T06:20:00Z",
+    "last_used_at": "2026-08-19T14:02:00Z",
+    "expires_at": "2026-08-28T06:20:00Z",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
+    "ip_address": null,
+    "is_current": false
+  }
+]
