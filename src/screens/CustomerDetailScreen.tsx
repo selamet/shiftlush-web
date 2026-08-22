@@ -1,9 +1,10 @@
 import { useParams, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, Pencil, Plus, Phone, Mail } from "lucide-react";
-import customers from "@fixtures/demo-customers.json";
-import buildings from "@fixtures/demo-buildings.json";
-import contracts from "@fixtures/demo-contracts.json";
+import { useQuery } from "@tanstack/react-query";
+import { buildingListQuery, contractListQuery, customerQuery } from "@/api/queries";
+import { errorMessage, supportReference } from "@/api/errors";
+import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useSession } from "@/lib/session";
@@ -44,11 +45,39 @@ export function CustomerDetailScreen() {
   const { id } = useParams({ strict: false }) as { id?: string };
   const { role } = useSession();
 
-  const customer = customers.find((row) => row.id === id) ?? customers[0];
-  const ownBuildings = buildings.filter((row) => row.customer === customer.legal_name);
-  const ownContracts = contracts.filter((row) => row.customer === customer.legal_name);
+  const customerId = id ?? "";
+  const query = useQuery({ ...customerQuery(customerId), enabled: Boolean(customerId) });
+
+  // Filtered on the server rather than fetched whole and narrowed here: a firm
+  // with five hundred buildings would otherwise download all of them to show
+  // the four that belong to this customer.
+  const buildingsQuery = useQuery({
+    ...buildingListQuery({ customer: customerId, page_size: 100 }),
+    enabled: Boolean(customerId),
+  });
+  const contractsQuery = useQuery({
+    ...contractListQuery({ customer: customerId, page_size: 100 }),
+    enabled: Boolean(customerId),
+  });
+
   const canWrite = role === "owner" || role === "admin" || role === "operations";
   const canSeeFinancials = role !== "operations" && role !== "technician";
+
+  if (query.isPending) return <DetailSkeleton />;
+
+  if (query.isError || !query.data) {
+    return (
+      <ListError
+        message={errorMessage(query.error, t)}
+        reference={supportReference(query.error)}
+        onRetry={() => void query.refetch()}
+      />
+    );
+  }
+
+  const customer = query.data;
+  const ownBuildings = buildingsQuery.data?.results ?? [];
+  const ownContracts = contractsQuery.data?.results ?? [];
 
   return (
     <div className="flex flex-col gap-4 p-6">
@@ -116,7 +145,7 @@ export function CustomerDetailScreen() {
                     <span className="flex min-w-0 flex-col leading-tight">
                       <span className="truncate text-cell">{building.name}</span>
                       <span className="truncate text-help text-muted-foreground">
-                        {building.neighborhood} · {building.district}
+                        {building.neighborhood_name} · {building.district_name}
                       </span>
                     </span>
                     <span className="shrink-0 tnum text-help text-muted-foreground">
@@ -144,24 +173,37 @@ export function CustomerDetailScreen() {
               )
             }
           >
-            {customer.primary_contact ? (
-              <div className="flex flex-col gap-1.5">
-                <span className="flex items-center gap-2 text-cell">
-                  {customer.primary_contact}
-                  <span className="rounded-sm border border-border-strong px-1.5 text-help text-muted-foreground">
-                    {t("customerDetail.primaryBadge")}
-                  </span>
-                </span>
-                {customer.contact_phone && (
-                  <span className="flex items-center gap-1.5 text-help text-muted-foreground">
-                    <Phone className="size-3.5 shrink-0" aria-hidden="true" />
-                    {customer.contact_phone}
-                  </span>
-                )}
-                <span className="flex items-center gap-1.5 text-help text-muted-foreground">
-                  <Mail className="size-3.5 shrink-0" aria-hidden="true" />
-                  {customer.phone}
-                </span>
+            {customer.contacts.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {customer.contacts.map((contact) => (
+                  <div key={contact.id} className="flex flex-col gap-1.5">
+                    <span className="flex flex-wrap items-center gap-2 text-cell">
+                      {contact.full_name}
+                      <span className="text-help text-muted-foreground">
+                        {enumLabel("customer.contactRole", contact.role)}
+                      </span>
+                      {contact.is_primary && (
+                        <span className="rounded-sm border border-border-strong px-1.5 text-help text-muted-foreground">
+                          {t("customerDetail.primaryBadge")}
+                        </span>
+                      )}
+                    </span>
+                    {contact.phone && (
+                      <span className="flex items-center gap-1.5 text-help text-muted-foreground">
+                        <Phone className="size-3.5 shrink-0" aria-hidden="true" />
+                        {contact.phone}
+                      </span>
+                    )}
+                    {/* Was showing customer.phone next to a mail icon. The
+                        contact's own address is what belongs here. */}
+                    {contact.email && (
+                      <span className="flex items-center gap-1.5 text-help text-muted-foreground">
+                        <Mail className="size-3.5 shrink-0" aria-hidden="true" />
+                        {contact.email}
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             ) : (
               <p className="text-help text-subtle">{t("customerDetail.noContacts")}</p>

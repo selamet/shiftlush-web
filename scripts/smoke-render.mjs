@@ -18,6 +18,7 @@
  * running outside a browser.
  */
 import { createServer } from "vite";
+import { installMockApi } from "./mock-api.mjs";
 import { renderToString } from "react-dom/server";
 import React from "react";
 
@@ -40,6 +41,11 @@ globalThis.document = {
 globalThis.window = globalThis;
 globalThis.scrollTo = () => {};
 
+// Route loaders warm the query cache before the render, so screens see real
+// content instead of a page of skeletons — and they see it through the real
+// request path rather than a direct fixture import.
+installMockApi();
+
 const PATHS = [
   "/login",
   "/styleguide",
@@ -60,6 +66,21 @@ const PATHS = [
 ];
 
 const ROLES = ["owner", "operations", "technician", "accountant"];
+
+/**
+ * Text that must appear on a route that fetches its data.
+ *
+ * "It rendered something" is too weak once screens are query-driven: a page of
+ * loading skeletons clears the length check comfortably. These assert that the
+ * loader filled the cache and the screen read from it, which is the whole point
+ * of prefetching in the route.
+ *
+ * Add an entry as each screen moves off fixtures.
+ */
+const EXPECT = {
+  "/customers": "Çamlıca",
+  "/customers/c1": "Çamlıca",
+};
 
 const server = await createServer({
   server: { middlewareMode: true },
@@ -83,6 +104,11 @@ try {
         await router.load();
         const html = renderToString(React.createElement(RouterProvider, { router }));
         if (!html || html.length < 40) throw new Error(`rendered ${html.length} characters`);
+
+        const expected = EXPECT[path];
+        if (expected && !html.includes(expected)) {
+          throw new Error(`data never reached the page — no "${expected}" in the markup`);
+        }
       } catch (error) {
         errors.push(`${role}: ${error.message}`);
       }

@@ -1,19 +1,25 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
-import customers from "@fixtures/demo-customers.json";
+import { useQuery } from "@tanstack/react-query";
+import { customerListQuery, primaryContact, type Customer } from "@/api/queries";
+import { errorMessage, supportReference } from "@/api/errors";
 import { enumLabel } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
 import { StatusChip } from "@/components/ui/status-chip";
 
-type Customer = (typeof customers)[number];
-
 export function CustomerListScreen() {
   const { t } = useTranslation();
   const { role } = useSession();
-  // The technician only ever sees customers assigned to them, so an empty list
-  // here is a stated condition rather than a missing record.
-  const scoped = role === "technician" ? customers.slice(0, 2) : customers;
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // The technician narrowing happens on the server — their token decides which
+  // customers exist for them at all. The old `customers.slice(0, 2)` was a
+  // stand-in that would have held only until someone opened the network tab.
+  const query = useQuery(customerListQuery({ page, page_size: pageSize }));
+  const rows = query.data?.results ?? [];
 
   const columns: ListColumn<Customer>[] = [
     {
@@ -28,19 +34,21 @@ export function CustomerListScreen() {
     {
       key: "customer.fields.taxNumber",
       hideOnMobile: true,
-      cell: (row) => (
-        <Stacked primary={row.tax_number ?? "—"} secondary={row.tax_office} mono />
-      ),
+      cell: (row) => <Stacked primary={row.tax_number || "—"} secondary={row.tax_office} mono />,
     },
     {
       key: "customer.primaryContact",
       hideOnMobile: true,
-      cell: (row) =>
-        row.primary_contact ? (
-          <Stacked primary={row.primary_contact} secondary={row.contact_phone ?? ""} />
+      cell: (row) => {
+        // Picked in one place, so the list and the detail page cannot disagree
+        // about who the primary contact is.
+        const contact = primaryContact(row);
+        return contact ? (
+          <Stacked primary={contact.full_name} secondary={contact.phone} />
         ) : (
           <span className="text-subtle">—</span>
-        ),
+        );
+      },
     },
     { key: "customer.buildingCount", numeric: true, cell: (row) => row.building_count },
     { key: "customer.elevatorCount", numeric: true, cell: (row) => row.elevator_count },
@@ -63,9 +71,30 @@ export function CustomerListScreen() {
       exportable
       filters={[{ labelKey: "customer.fields.type" }, { labelKey: "customer.fields.isActive" }]}
       columns={columns}
-      rows={scoped}
+      rows={rows}
       rowKey={(row) => row.id}
-      total={role === "technician" ? scoped.length : 52}
+      total={query.data?.pagination.total ?? 0}
+      page={page}
+      pageSize={pageSize}
+      onPageChange={setPage}
+      onPageSizeChange={(size) => {
+        // Back to the first page: staying on page four of a 25-row list after
+        // switching to 100 per page lands past the end and shows nothing.
+        setPageSize(size);
+        setPage(1);
+      }}
+      // Only the first load blanks the table; paging keeps the previous page on
+      // screen, which is what placeholderData on the query is for.
+      loading={query.isPending}
+      error={
+        query.isError
+          ? {
+              message: errorMessage(query.error, t),
+              reference: supportReference(query.error),
+              onRetry: () => void query.refetch(),
+            }
+          : undefined
+      }
       emptyTitleKey={role === "technician" ? "empty.noAssignedCustomers" : "empty.noCustomers"}
     />
   );

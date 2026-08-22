@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "./EmptyState";
+import { ListError, TableSkeleton } from "./ListStates";
 
 export interface ListColumn<T> {
   /** Translation key for the header. */
@@ -55,6 +56,14 @@ interface ListPageProps<T> {
   bulkActions?: (selected: string[]) => React.ReactNode;
   emptyTitleKey: string;
   prerequisite?: { labelKey: string; to: string };
+  /** 1-based. Omit for a static pager — the design-time behaviour. */
+  page?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
+  /** True while the first page is in flight. Paging keeps the old rows instead. */
+  loading?: boolean;
+  /** Set when the request failed. Already translated — this component shows it. */
+  error?: { message: string; reference?: string; onRetry?: () => void };
 }
 
 function FilterButton({ label, count }: { label: string; count?: number }) {
@@ -97,6 +106,11 @@ export function ListPage<T>({
   bulkActions,
   emptyTitleKey,
   prerequisite,
+  page = 1,
+  onPageChange,
+  onPageSizeChange,
+  loading,
+  error,
 }: ListPageProps<T>) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<string[]>([]);
@@ -105,6 +119,7 @@ export function ListPage<T>({
   // control people reach for first.
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  const lastPage = Math.max(1, Math.ceil(total / pageSize));
   const ids = rows.map(rowKey);
   const allSelected = ids.length > 0 && selected.length === ids.length;
   const hasActiveFilters = Boolean(activeFilters && activeFilters.length > 0);
@@ -230,7 +245,11 @@ export function ListPage<T>({
       )}
 
       <div className="mx-6 mb-4 overflow-hidden rounded-lg border border-border-subtle bg-card">
-        {rows.length === 0 ? (
+        {error ? (
+          <ListError {...error} />
+        ) : loading ? (
+          <TableSkeleton columns={columns.length + (selectable ? 1 : 0)} />
+        ) : rows.length === 0 ? (
           <EmptyState
             filtered={hasActiveFilters}
             titleKey={emptyTitleKey}
@@ -322,28 +341,47 @@ export function ListPage<T>({
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle px-4 py-3">
               <span className="tnum text-help text-muted-foreground">
                 {t("common.resultRange", {
-                  from: 1,
-                  to: Math.min(pageSize, total),
+                  // Empty pages read as "0 – 0", which looks like a fault; the
+                  // range starts at 1 only when there is something on it.
+                  from: total === 0 ? 0 : (page - 1) * pageSize + 1,
+                  to: Math.min(page * pageSize, total),
                   total: formatNumber(total),
                 })}
               </span>
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-2 text-help text-muted-foreground">
                   {t("list.perPage")}
-                  <select className="h-control-xs rounded-sm border border-input bg-card px-1.5 text-help focus-ring">
-                    <option>25</option>
-                    <option>50</option>
-                    <option>100</option>
+                  <select
+                    value={pageSize}
+                    onChange={(event) => onPageSizeChange?.(Number(event.target.value))}
+                    disabled={!onPageSizeChange}
+                    className="h-control-xs rounded-sm border border-input bg-card px-1.5 text-help focus-ring"
+                  >
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
                   </select>
                 </label>
                 <div className="flex items-center gap-1">
-                  <Button size="iconXs" variant="secondary" aria-label={t("common.back")}>
+                  <Button
+                    size="iconXs"
+                    variant="secondary"
+                    aria-label={t("common.back")}
+                    disabled={!onPageChange || page <= 1}
+                    onClick={() => onPageChange?.(page - 1)}
+                  >
                     <ChevronLeft />
                   </Button>
                   <span className="tnum px-2 text-help text-muted-foreground">
-                    1 / {Math.max(1, Math.ceil(total / pageSize))}
+                    {page} / {lastPage}
                   </span>
-                  <Button size="iconXs" variant="secondary" aria-label={t("common.next")}>
+                  <Button
+                    size="iconXs"
+                    variant="secondary"
+                    aria-label={t("common.next")}
+                    disabled={!onPageChange || page >= lastPage}
+                    onClick={() => onPageChange?.(page + 1)}
+                  >
                     <ChevronRight />
                   </Button>
                 </div>

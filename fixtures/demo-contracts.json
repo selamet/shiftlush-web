@@ -1,8 +1,74 @@
 [
-  { "id": "k1", "contract_number": "2026-0043", "customer": "Çamlıca Konakları Site Yönetimi", "status": "active", "scope": "maintenance_and_repair", "end_date": "2027-01-31T00:00:00Z", "monthly_fee": "4750.00", "elevator_count": 4 },
-  { "id": "k2", "contract_number": "2026-0042", "customer": "Ataşehir Ofis Kule A.Ş.", "status": "active", "scope": "full_coverage", "end_date": "2027-03-31T00:00:00Z", "monthly_fee": "9800.00", "elevator_count": 14 },
-  { "id": "k3", "contract_number": "2025-0118", "customer": "Nurtepe Sitesi Yönetimi", "status": "expired", "scope": "maintenance_only", "end_date": "2026-05-31T00:00:00Z", "monthly_fee": "5100.00", "elevator_count": 17 },
-  { "id": "k4", "contract_number": "2026-0051", "customer": "Bahçelievler Belediyesi", "status": "draft", "scope": "maintenance_and_repair", "end_date": "2027-08-31T00:00:00Z", "monthly_fee": "3200.00", "elevator_count": 9 },
-  { "id": "k5", "contract_number": "2024-0087", "customer": "Yıldız Apartmanı Yönetimi", "status": "terminated", "scope": "maintenance_only", "end_date": "2026-01-15T00:00:00Z", "monthly_fee": "1400.00", "elevator_count": 1 },
-  { "id": "k6", "contract_number": "2025-0093", "customer": "Çamlıca Konakları Site Yönetimi", "status": "renewed", "scope": "maintenance_and_repair", "end_date": "2026-01-31T00:00:00Z", "monthly_fee": "4200.00", "elevator_count": 4 }
+  {
+    "id": "k1",
+    "contract_number": "2026-0043",
+    "customer": "Çamlıca Konakları Site Yönetimi",
+    "status": "active",
+    "scope": "maintenance_and_repair",
+    "end_date": "2027-01-31T00:00:00Z",
+    "monthly_fee": "4750.00",
+    "elevator_count": 4,
+    "customer_id": "c1",
+    "customer_name": "Çamlıca Konakları Site Yönetimi"
+  },
+  {
+    "id": "k2",
+    "contract_number": "2026-0042",
+    "customer": "Ataşehir Ofis Kule A.Ş.",
+    "status": "active",
+    "scope": "full_coverage",
+    "end_date": "2027-03-31T00:00:00Z",
+    "monthly_fee": "9800.00",
+    "elevator_count": 14,
+    "customer_id": "c2",
+    "customer_name": "Ataşehir Ofis Kule A.Ş."
+  },
+  {
+    "id": "k3",
+    "contract_number": "2025-0118",
+    "customer": "Nurtepe Sitesi Yönetimi",
+    "status": "expired",
+    "scope": "maintenance_only",
+    "end_date": "2026-05-31T00:00:00Z",
+    "monthly_fee": "5100.00",
+    "elevator_count": 17,
+    "customer_id": "c4",
+    "customer_name": "Nurtepe Sitesi Yönetimi"
+  },
+  {
+    "id": "k4",
+    "contract_number": "2026-0051",
+    "customer": "Bahçelievler Belediyesi",
+    "status": "draft",
+    "scope": "maintenance_and_repair",
+    "end_date": "2027-08-31T00:00:00Z",
+    "monthly_fee": "3200.00",
+    "elevator_count": 9,
+    "customer_id": "c3",
+    "customer_name": "Bahçelievler Belediyesi"
+  },
+  {
+    "id": "k5",
+    "contract_number": "2024-0087",
+    "customer": "Yıldız Apartmanı Yönetimi",
+    "status": "terminated",
+    "scope": "maintenance_only",
+    "end_date": "2026-01-15T00:00:00Z",
+    "monthly_fee": "1400.00",
+    "elevator_count": 1,
+    "customer_id": "c5",
+    "customer_name": "Yıldız Apartmanı Yönetimi"
+  },
+  {
+    "id": "k6",
+    "contract_number": "2025-0093",
+    "customer": "Çamlıca Konakları Site Yönetimi",
+    "status": "renewed",
+    "scope": "maintenance_and_repair",
+    "end_date": "2026-01-31T00:00:00Z",
+    "monthly_fee": "4200.00",
+    "elevator_count": 4,
+    "customer_id": "c1",
+    "customer_name": "Çamlıca Konakları Site Yönetimi"
+  }
 ]
