@@ -10,7 +10,15 @@ import {
 import { AppShell } from "@/components/layout/AppShell";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createQueryClient } from "@/api/query-client";
-import { buildingListQuery, contractListQuery, customerListQuery, customerQuery } from "@/api/queries";
+import {
+  buildingListQuery,
+  contractListQuery,
+  customerListQuery,
+  customerQuery,
+  elevatorAttachmentsQuery,
+  elevatorListQuery,
+  elevatorQuery,
+} from "@/api/queries";
 import { SessionProvider, type SessionOverride } from "@/lib/session";
 import type { Role } from "@/components/layout/nav-config";
 import { AddressPicker } from "@/components/forms/AddressPicker";
@@ -116,8 +124,20 @@ export const routeTree = rootRoute.addChildren([
   loginRoute,
   styleguideRoute,
   shellRoute.addChildren([
-    shellChild("/elevators", ElevatorListScreen),
-    shellChild("/elevators/$id", ElevatorDetailScreen),
+    shellChild("/elevators", ElevatorListScreen, () =>
+      queryClient.ensureQueryData(elevatorListQuery({ page: 1, page_size: 25 })),
+    ),
+    shellChild("/elevators/$id", ElevatorDetailScreen, async ({ params }) => {
+      const id = params.id;
+      // The history is not prefetched: only owners and admins may read it, and
+      // the route has no session to check. The component asks for it when the
+      // role allows, which costs one request after paint on two roles out of
+      // five rather than a guaranteed 403 on the other three.
+      await Promise.all([
+        queryClient.ensureQueryData(elevatorQuery(id)),
+        queryClient.ensureQueryData(elevatorAttachmentsQuery(id)),
+      ]);
+    }),
     shellChild("/elevators/$id/edit", ElevatorFormScreen),
     shellChild("/customers", CustomerListScreen, () =>
       queryClient.ensureQueryData(customerListQuery({ page: 1, page_size: 25 })),

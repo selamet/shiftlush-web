@@ -135,7 +135,8 @@
       "addElevator": "Asansör ekle",
       "noCarDoor": "Kabin kapısı yok — ağır uygunsuzluk",
       "noCarDoorShort": "Kabin kapısı yok",
-      "qrRegenerateWarning": "QR kodu yenilendiğinde basılı etiketler geçersiz olur."
+      "qrRegenerateWarning": "QR kodu yenilendiğinde basılı etiketler geçersiz olur.",
+      "noContract": "Bu asansör bir sözleşme kapsamında değil"
     },
     "add": "Asansör ekle"
   },
@@ -547,7 +548,8 @@
     "internalCodeExample": "Örn. CK-A-01",
     "sessionRestoreNote": "Oturum düşerse aynı sekmede, aynı alanda devam edersiniz.",
     "changedTo": "{{from}} → {{to}}",
-    "changed": "değiştirildi"
+    "changed": "değiştirildi",
+    "internalCodePlaceholder": "A-01"
   },
   "boot": {
     "refreshingSession": "Oturum tazeleniyor…"
@@ -723,5 +725,14 @@
     "addContact": "İletişim kişisi ekle",
     "noContacts": "Henüz iletişim kişisi yok",
     "primaryBadge": "Birincil"
+  },
+  "audit": {
+    "actions": {
+      "create": "Kayıt oluşturuldu",
+      "update": "Kayıt güncellendi",
+      "delete": "Kayıt silindi"
+    },
+    "system": "Sistem",
+    "empty": "Henüz değişiklik yok"
   }
 }

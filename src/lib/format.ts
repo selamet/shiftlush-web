@@ -55,3 +55,17 @@ export function formatPercent(rate: string | null | undefined): string {
     maximumFractionDigits: 2,
   }).format(Number(rate) / 100);
 }
+
+/**
+ * A file size a person can judge at a glance.
+ *
+ * The API reports bytes, which is the right thing for it to report and the
+ * wrong thing to put on a screen: nobody reads 2411724 as "about two and a
+ * half megabytes".
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const kilobytes = bytes / 1024;
+  if (kilobytes < 1024) return `${Math.round(kilobytes)} KB`;
+  return `${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 1 }).format(kilobytes / 1024)} MB`;
+}

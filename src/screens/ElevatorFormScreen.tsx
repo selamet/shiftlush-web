@@ -207,7 +207,7 @@ export function ElevatorFormScreen() {
           <p className="flex items-center gap-2 text-help text-muted-foreground">
             <span className="font-mono tnum">{elevator.registration_number}</span>
             <span>·</span>
-            <span>{elevator.building}</span>
+            <span>{elevator.building_name}</span>
           </p>
         </div>
       </div>
@@ -243,7 +243,7 @@ export function ElevatorFormScreen() {
               >
                 <select
                   id="ef-building"
-                  defaultValue={elevator.building}
+                  defaultValue={elevator.building_name}
                   className="h-control-md w-full rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg"
                 >
                   {buildings.map((building) => (
@@ -270,7 +270,10 @@ export function ElevatorFormScreen() {
                 htmlFor="ef-code"
                 hint={t("form.internalCodeExample")}
               >
-                <Input placeholder={elevator.internal_code_example} />
+                {/* A literal example, not a field. It was on the fixture, which the
+                    schema never had — the placeholder is copy, and copy lives
+                    in the translation file. */}
+                <Input placeholder={t("form.internalCodePlaceholder")} />
               </Field>
 
               <Field label={t("elevator.fields.status")} htmlFor="ef-status">

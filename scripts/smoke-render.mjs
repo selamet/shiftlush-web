@@ -80,6 +80,8 @@ const ROLES = ["owner", "operations", "technician", "accountant"];
 const EXPECT = {
   "/customers": "Çamlıca",
   "/customers/c1": "Çamlıca",
+  "/elevators": "34-2018",
+  "/elevators/e1": "34-2019",
 };
 
 const server = await createServer({

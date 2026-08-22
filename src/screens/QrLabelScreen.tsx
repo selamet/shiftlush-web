@@ -41,7 +41,7 @@ function Label({ elevator }: { elevator: Elevator }) {
     >
       <div className="flex flex-col leading-tight">
         <span className="text-[11pt] font-bold">{elevator.name}</span>
-        <span className="truncate text-[9.5pt] font-medium">{elevator.building}</span>
+        <span className="truncate text-[9.5pt] font-medium">{elevator.building_name}</span>
       </div>
 
       <div
@@ -233,7 +233,7 @@ export function QrLabelScreen() {
                   <span className="flex min-w-0 flex-1 flex-col leading-tight">
                     <span className="font-mono tnum text-cell">{row.registration_number}</span>
                     <span className="truncate text-help text-muted-foreground">
-                      {row.name} · {row.building}
+                      {row.name} · {row.building_name}
                     </span>
                   </span>
                   <span className="w-20 shrink-0">

@@ -1201,6 +1201,18 @@ export interface components {
             readonly company_id: string;
             /** Format: uuid */
             readonly user_id: string | null;
+            /**
+             * @description Who did it, by name.
+             *
+             *     The names are looked up once for the whole page and handed in through
+             *     the context — see the viewset. There is no foreign key to join on, and
+             *     that is deliberate: the trail has to survive the hard deletion of what
+             *     it describes, so it holds a plain id.
+             *
+             *     Empty string rather than null for a write with no actor — a background
+             *     job, a bootstrap flow — since the client prints this directly.
+             */
+            readonly user_name: string;
             readonly table_name: string;
             /** Format: uuid */
             readonly record_id: string;
@@ -1523,6 +1535,23 @@ export interface components {
          */
         ControlTypeEnum: "simple_collective" | "down_collective" | "full_collective" | "group_control";
         /**
+         * @description The contract covering this elevator right now, if any.
+         *
+         *     A compact block rather than the whole contract: the detail screen shows four
+         *     facts, and embedding a full contract here would drag its lines — every other
+         *     elevator in the same agreement — into a response about one lift.
+         */
+        CurrentContract: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly contract_number: string;
+            readonly scope: string;
+            /** Format: date */
+            readonly end_date: string;
+            /** Format: decimal */
+            readonly unit_price: string;
+        };
+        /**
          * @description What `/auth/me` returns.
          *
          *     Read-only, and narrower than the model on purpose: `national_id`,
@@ -1755,6 +1784,7 @@ export interface components {
             readonly customer_id: string;
             readonly customer_name: string;
             readonly complex_name: string;
+            readonly current_contract: components["schemas"]["CurrentContract"] | null;
             readonly registration_number: string;
             readonly internal_code: string;
             readonly name: string;

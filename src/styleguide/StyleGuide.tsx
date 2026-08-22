@@ -216,7 +216,7 @@ export function StyleGuide() {
                   <TableRow key={row.registration_number}>
                     <TableCell className="font-mono tnum">{row.registration_number}</TableCell>
                     <TableCell>
-                      <TableCellStacked primary={row.name} secondary={row.building} />
+                      <TableCellStacked primary={row.name} secondary={row.building_name} />
                     </TableCell>
                     <TableCell>
                       <TableCellStacked primary={row.brand} secondary={row.model} />
