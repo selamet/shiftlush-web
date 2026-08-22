@@ -1,0 +1,40 @@
+{
+  "why": [
+    "The buttons that were already dead when check-dead-buttons.mjs landed, and who is fixing each.",
+    "",
+    "Twenty-two of them when this branch opened, all already tracked by an open issue with a branch",
+    "in flight. Blocking on those would have meant either editing four other people's files or not",
+    "landing the check at all, so they are recorded here instead: a new dead button fails from the",
+    "first commit, these fail the moment their branch lands and this entry is not deleted with it.",
+    "",
+    "Seventeen went while this branch was open, as #55 deleted the address picker mock, #50 wired",
+    "the list controls, #57 built the contract-line actions and #58 built the scanner. The check",
+    "named every one of them as stale, by id — twice on this PR's own CI run — and would not go",
+    "green until they were deleted. That is the point of the file.",
+    "",
+    "owner  the GitHub issue tracking the fix. Its branch is SL-<number>. It must be an OPEN issue:",
+    "       #50 closed leaving two of its buttons behind, and pointing at a closed issue would have",
+    "       made this file the only record of them. They were refiled as #66 instead.",
+    "note   what the button is supposed to do once it is wired. Written so the entry can be judged",
+    "       without opening the issue, and so a stale entry is obvious when the check names it.",
+    "",
+    "Entries are keyed on '<file> :: <name>', never on a line number — four other branches were",
+    "editing these files, and every id here survived that. The check prints the id to paste.",
+    "",
+    "This file only ever shrinks. An entry that no longer matches a dead button fails the check by",
+    "name and has to be deleted — a baseline nobody is forced to shrink stops being a debt and",
+    "becomes a permission. Nothing may be added here that was not already dead on 2026-08-23."
+  ],
+  "entries": [
+    {
+      "button": "src/components/list/EmptyState.tsx :: actionKey",
+      "owner": "#66",
+      "note": "The create-the-first-record call to action, shown when a list is empty and has no prerequisite. Should be the Link the list header now uses. Survived the #50 merge, which wired the header but not this."
+    },
+    {
+      "button": "src/components/list/ListPage.tsx :: primaryActionKey",
+      "owner": "#66",
+      "note": "The header primary action, taken when the caller passes no primaryActionTo. Every caller should pass one so this dead branch stops existing. Also survived the #50 merge."
+    }
+  ]
+}
