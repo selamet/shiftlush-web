@@ -14,7 +14,8 @@
     "lint:paths": "node scripts/check-api-paths.mjs",
     "lint:password": "node scripts/check-password-length.mjs",
     "typecheck": "tsc -b --noEmit",
-    "verify": "npm run lint:tr && npm run lint:i18n && npm run lint:errors && npm run lint:paths && npm run lint:password && npm run typecheck && npm run build && npm run smoke",
+    "verify": "npm run lint:tr && npm run lint:i18n && npm run lint:errors && npm run lint:paths && npm run lint:password && npm run typecheck && npm run test:dates && npm run build && npm run smoke",
+    "test:dates": "node scripts/check-dates.mjs",
     "smoke": "node scripts/smoke-render.mjs"
   },
   "dependencies": {

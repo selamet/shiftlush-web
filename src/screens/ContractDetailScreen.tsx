@@ -22,10 +22,12 @@ import {
 } from "@/lib/contract";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { cn } from "@/lib/utils";
+import { todayIso } from "@/lib/date";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney, formatPercent } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Field, Input } from "@/components/ui/field";
 import { ContractStatusChip, StatusChip } from "@/components/ui/status-chip";
 
@@ -564,7 +566,9 @@ export function ContractDetailScreen() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label={t("contractDetail.terminationDate")} htmlFor="tr-date">
-                <Input type="date" defaultValue="2026-08-22" />
+                {/* Today, read from the reader's own clock. The date it used to
+                    open on was the day this dialogue was written. */}
+                <DatePicker defaultValue={todayIso()} />
               </Field>
               <Field
                 label={t("contractDetail.terminationReason")}

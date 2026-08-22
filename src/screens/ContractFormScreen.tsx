@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -23,6 +24,7 @@ import { enumLabel } from "@/lib/i18n";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 
@@ -44,6 +46,13 @@ export function ContractFormScreen() {
   const existing = useQuery({ ...contractQuery(id ?? ""), enabled: editing });
   const customers = useQuery(customerListQuery({ page_size: 100 }));
   const idempotencyKey = useIdempotencyKey();
+
+  /**
+   * Tracked only so the end-date calendar can grey out the days before it.
+   * Null until the user touches the field, so the record's own start date is
+   * still what the calendar reads on an edit form that has not been changed.
+   */
+  const [startDate, setStartDate] = useState<string | null>(null);
 
   const { submit, state } = useSubmit<ContractWrite, Contract>({
     mutationFn: (body) =>
@@ -155,17 +164,31 @@ export function ContractFormScreen() {
             required
             error={state.fields.start_date}
           >
-            <Input name="start_date" type="date" required defaultValue={record?.start_date} />
+            <DatePicker
+              name="start_date"
+              required
+              defaultValue={record?.start_date}
+              onChange={setStartDate}
+              invalid={Boolean(state.fields.start_date)}
+            />
           </Field>
           <Field
             label={t("contract.fields.endDate")}
             htmlFor="kf-end"
             required
             // The server refuses an end date before the start; there is no
-            // useful version of that rule to duplicate here.
+            // useful version of that rule to duplicate here. `min` only greys
+            // the days out — a date typed into the box is still submitted, and
+            // the refusal that comes back is the one that counts.
             error={state.fields.end_date}
           >
-            <Input name="end_date" type="date" required defaultValue={record?.end_date} />
+            <DatePicker
+              name="end_date"
+              required
+              defaultValue={record?.end_date}
+              min={startDate ?? record?.start_date}
+              invalid={Boolean(state.fields.end_date)}
+            />
           </Field>
         </div>
 

@@ -4,6 +4,7 @@ import demoElevators from "@fixtures/demo-elevators.json";
 import { useTheme } from "@/lib/theme";
 import { formatDate, formatNumber } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
 import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
@@ -171,6 +172,41 @@ export function StyleGuide() {
               className="sm:col-span-2"
             >
               <Textarea placeholder={t("common.optional")} />
+            </Field>
+          </div>
+        </Section>
+
+        {/* The picker lives inside forms, and the render check only visits
+            routes — so without a place here nothing renders it in isolation and
+            no reviewer can look at it next to the controls it sits beside. */}
+        <Section title={t("styleguide.sections.dates")}>
+          <div className="grid max-w-3xl gap-4 sm:grid-cols-2">
+            <Field
+              label={t("contract.fields.startDate")}
+              htmlFor="sg-start"
+              required
+              hint={t("datePicker.formatHint")}
+            >
+              <DatePicker required defaultValue="2026-03-05" />
+            </Field>
+            <Field
+              label={t("contract.fields.endDate")}
+              htmlFor="sg-end"
+              hint={t("elevator.fields.warrantyEndDate")}
+            >
+              {/* Nothing before the start date can be picked. The rule still
+                  belongs to the server; this only saves the round trip. */}
+              <DatePicker min="2026-03-05" />
+            </Field>
+            <Field
+              label={t("elevator.fields.lastInspectionDate")}
+              htmlFor="sg-inspection"
+              error={t("datePicker.invalidFormat")}
+            >
+              <DatePicker invalid />
+            </Field>
+            <Field label={t("user.fields.certificateValidUntil")} htmlFor="sg-certificate">
+              <DatePicker disabled defaultValue="2027-01-15" />
             </Field>
           </div>
         </Section>
