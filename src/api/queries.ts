@@ -13,6 +13,11 @@
  */
 import { queryOptions } from "@tanstack/react-query";
 import { api } from "@/api/client";
+// Router endpoints carry a trailing slash and the auth endpoints do not — that
+// is what the contract declares, and it is not cosmetic. Django's APPEND_SLASH
+// answers a slashless POST with a 301, and a browser turns a redirected POST
+// into a GET: the write silently becomes a read and the body is dropped.
+// `scripts/check-api-paths.mjs` checks every literal here against the contract.
 import type { components } from "@/api/generated";
 
 type Schemas = components["schemas"];
@@ -56,7 +61,7 @@ export function customerListQuery(params: ListParams = {}) {
   return queryOptions({
     queryKey: keys.customers.list(params),
     queryFn: ({ signal }) =>
-      api.get<Paginated<Customer>>("/customers", { query: params, signal }),
+      api.get<Paginated<Customer>>("/customers/", { query: params, signal }),
     // The previous page stays on screen while the next one loads, so paging
     // does not blank the table and jump the scroll position.
     placeholderData: (previous) => previous,
@@ -66,7 +71,7 @@ export function customerListQuery(params: ListParams = {}) {
 export function customerQuery(id: string) {
   return queryOptions({
     queryKey: keys.customers.detail(id),
-    queryFn: ({ signal }) => api.get<Customer>(`/customers/${id}`, { signal }),
+    queryFn: ({ signal }) => api.get<Customer>(`/customers/${id}/`, { signal }),
   });
 }
 
@@ -107,7 +112,7 @@ export function buildingListQuery(params: ListParams = {}) {
   return queryOptions({
     queryKey: relatedKeys.buildings.list(params),
     queryFn: ({ signal }) =>
-      api.get<Paginated<Building>>("/buildings", { query: params, signal }),
+      api.get<Paginated<Building>>("/buildings/", { query: params, signal }),
   });
 }
 
@@ -115,7 +120,7 @@ export function contractListQuery(params: ListParams = {}) {
   return queryOptions({
     queryKey: relatedKeys.contracts.list(params),
     queryFn: ({ signal }) =>
-      api.get<Paginated<Contract>>("/contracts", { query: params, signal }),
+      api.get<Paginated<Contract>>("/contracts/", { query: params, signal }),
   });
 }
 
@@ -136,7 +141,7 @@ export function elevatorListQuery(params: ListParams = {}) {
   return queryOptions({
     queryKey: elevatorKeys.list(params),
     queryFn: ({ signal }) =>
-      api.get<Paginated<ElevatorRow>>("/elevators", { query: params, signal }),
+      api.get<Paginated<ElevatorRow>>("/elevators/", { query: params, signal }),
     placeholderData: (previous) => previous,
   });
 }
@@ -144,7 +149,7 @@ export function elevatorListQuery(params: ListParams = {}) {
 export function elevatorQuery(id: string) {
   return queryOptions({
     queryKey: elevatorKeys.detail(id),
-    queryFn: ({ signal }) => api.get<Elevator>(`/elevators/${id}`, { signal }),
+    queryFn: ({ signal }) => api.get<Elevator>(`/elevators/${id}/`, { signal }),
   });
 }
 
@@ -160,7 +165,7 @@ export function elevatorHistoryQuery(id: string) {
   return queryOptions({
     queryKey: elevatorKeys.history(id),
     queryFn: ({ signal }) =>
-      api.get<Paginated<AuditEntry>>("/audit-logs", {
+      api.get<Paginated<AuditEntry>>("/audit-logs/", {
         query: { table_name: "elevator", record_id: id, page_size: 20 },
         signal,
       }),
@@ -171,7 +176,7 @@ export function elevatorAttachmentsQuery(id: string) {
   return queryOptions({
     queryKey: elevatorKeys.attachments(id),
     queryFn: ({ signal }) =>
-      api.get<Paginated<Attachment>>("/attachments", {
+      api.get<Paginated<Attachment>>("/attachments/", {
         query: { object_type: "elevator", object_id: id, page_size: 50 },
         signal,
       }),

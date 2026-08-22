@@ -7,6 +7,10 @@
  * content against the real request path: the same URLs, the same paging
  * envelope, the same field names the server sends.
  *
+ * Paths are spelled the way the contract spells them, trailing slash included.
+ * A mock that is lenient about the shape of a URL is a mock that hides the one
+ * bug this arrangement exists to catch.
+ *
  * That makes this stricter than the fixtures it replaces. A screen reading a
  * field the contract does not have now renders `undefined` in the test, where
  * before the fixture simply had whatever field the screen wanted.
@@ -35,32 +39,32 @@ function page(rows) {
 function resolve(path, search) {
   const customers = fixture("demo-customers");
 
-  const detail = /^\/api\/v1\/customers\/([^/]+)$/.exec(path);
+  const detail = /^\/api\/v1\/customers\/([^/]+)\/$/.exec(path);
   if (detail) {
     return customers.find((row) => row.id === detail[1]) ?? customers[0];
   }
 
-  if (path === "/api/v1/customers") return page(customers);
+  if (path === "/api/v1/customers/") return page(customers);
 
-  const elevator = /^\/api\/v1\/elevators\/([^/]+)$/.exec(path);
+  const elevator = /^\/api\/v1\/elevators\/([^/]+)\/$/.exec(path);
   if (elevator) {
     const detail = fixture("demo-elevator-detail");
     return { ...detail, id: elevator[1] };
   }
 
-  if (path === "/api/v1/elevators") return page(fixture("demo-elevators"));
+  if (path === "/api/v1/elevators/") return page(fixture("demo-elevators"));
 
-  if (path === "/api/v1/attachments") return page(fixture("demo-attachments"));
+  if (path === "/api/v1/attachments/") return page(fixture("demo-attachments"));
 
-  if (path === "/api/v1/audit-logs") return page(fixture("demo-audit-logs-elevator"));
+  if (path === "/api/v1/audit-logs/") return page(fixture("demo-audit-logs-elevator"));
 
-  if (path === "/api/v1/buildings") {
+  if (path === "/api/v1/buildings/") {
     const customer = search.get("customer");
     const rows = fixture("demo-buildings");
     return page(customer ? rows.filter((row) => row.customer_id === customer) : rows);
   }
 
-  if (path === "/api/v1/contracts") {
+  if (path === "/api/v1/contracts/") {
     const customer = search.get("customer");
     const rows = fixture("demo-contracts");
     return page(customer ? rows.filter((row) => row.customer_id === customer) : rows);

@@ -29,6 +29,11 @@ jobs:
       - name: Every API error code has a Turkish message
         run: npm run lint:errors
 
+      # A slashless router path is answered with a 301, and a browser turns a
+      # redirected POST into a GET — the write is dropped and nothing throws.
+      - name: Every API path the client calls exists
+        run: npm run lint:paths
+
       # The same guarantee the backend gives its own schema: the types are
       # generated, so a hand-edited generated.ts would silently disagree with
       # the contract every screen is written against.
