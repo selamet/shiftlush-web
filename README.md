@@ -38,8 +38,42 @@ bundle, so changing one means rebuilding, and none of them may hold a secret.
 | `npm run lint:tr` | Fails if any Turkish character appears under `src/` |
 | `npm run lint:i18n` | Fails on a translation key with no entry in `messages/tr.json` |
 | `npm run test:privacy` | Plants a national identity number, a password and two live tokens in the channels the Sentry SDK collects through, and fails if any of them reaches the transport |
+| `npm run lint:contract` | Fails if `openapi/v1.yaml` is not the contract the backend published |
+| `npm run api:sync` | Pulls the published contract and regenerates `src/api/generated.ts` |
 | `npm run smoke` | Renders every screen for every role and fails on any render error |
 | `npm run verify` | All of the above, plus the build |
+
+## The contract
+
+`openapi/v1.yaml` is generated from the backend's serializers and committed
+here, so the build never needs a running backend. It is not edited by hand and
+not written by hand — it is pulled:
+
+```bash
+npm run api:sync    # fetch the published contract, regenerate the types
+```
+
+then `openapi/v1.yaml` and `src/api/generated.ts` are committed together.
+
+`npm run lint:contract` compares this copy against the contract on
+`shiftlush-api`'s `main` branch. That repository is public, so its spec is a
+static file over HTTPS — no token, no clone, no running backend. **The check
+fails closed:** if the published contract cannot be read, that is a failure and
+not a pass. A drift check that goes green when it could not compare is exactly
+the check this one replaced.
+
+When it goes red the backend has moved on and this copy has not. The fix is
+`npm run api:sync`.
+
+Working somewhere without network, point it at a local checkout of the API
+repository:
+
+```bash
+SHIFTLUSH_CONTRACT_URL=../shiftlush-api/openapi/v1.yaml npm run lint:contract
+```
+
+It prints the source it resolved on every run, and refuses to compare this
+repository's spec against itself.
 
 ## Language rule
 

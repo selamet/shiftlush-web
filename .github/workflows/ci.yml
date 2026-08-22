@@ -18,13 +18,30 @@ jobs:
 
       - run: npm ci
 
+      # First, because every check below reads openapi/v1.yaml and is only worth
+      # as much as that file's currency.
+      #
+      # What this replaced compared openapi/v1.yaml against openapi/v1.sha256 —
+      # two files in this repository, written together by one `make sync-spec`
+      # in the other one, so the pair agreed with itself by construction. It
+      # could catch a hand-edited spec and could never catch the backend moving
+      # on, which is the failure section 14.1 built it for. While it was green
+      # the two copies drifted by 214 lines and four /auth endpoints.
+      #
+      # This compares against the contract on shiftlush-api's main branch. That
+      # repository is public, so its spec is a static file over HTTPS: no token,
+      # no clone, and no running backend — 14.1's critical rule holds, and the
+      # build below still compiles from the copy committed here.
+      - name: The contract is the one the backend published
+        run: npm run lint:contract
+
       - name: No Turkish in src
         run: npm run lint:tr
 
       - name: Every translation key exists
         run: npm run lint:i18n
 
-      # Runs after the checksum check above, so it reads the contract the
+      # Runs after the contract check above, so it reads the contract the
       # backend actually published rather than a stale copy.
       - name: Every API error code has a Turkish message
         run: npm run lint:errors
@@ -63,11 +80,3 @@ jobs:
 
       - name: Every route renders
         run: npm run smoke
-
-      - name: The contract matches the backend
-        # Both repositories hold a copy of the generated spec. Without this the
-        # two drift apart silently and the frontend builds against a contract
-        # the backend stopped serving.
-        run: |
-          echo "$(cat openapi/v1.sha256)  openapi/v1.yaml" | shasum -a 256 -c - \
-            || (echo "openapi/v1.yaml does not match its checksum. Run 'make sync-spec' in shiftlush-api." && exit 1)
