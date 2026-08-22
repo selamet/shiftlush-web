@@ -4,12 +4,75 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ShiftLush</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!--
+      Fonts are self-hosted, not fetched from fonts.googleapis.com, and the
+      faces are declared inline so they cost no request. `crossorigin` is
+      required on the preloads even though these are same-origin: font fetches
+      are always CORS-mode, and a preload without it downloads twice.
+      Comments are kept short here because this file is on the critical path;
+      the reasoning, and how to regenerate the woff2 files, is in vite.config.ts.
+    -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;500;600&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/assets/fonts/source-sans-3-v19-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
+    <link
+      rel="preload"
+      href="/assets/fonts/source-sans-3-v19-latin-ext.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <style>
+      /* Source Sans 3, variable, 300-700. Preloaded: the login screen needs both slices. */
+      @font-face {
+        font-family: "Source Sans 3";
+        font-style: normal;
+        font-weight: 300 700;
+        font-display: swap;
+        src: url("/assets/fonts/source-sans-3-v19-latin.woff2") format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+          U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+          U+FEFF, U+FFFD;
+      }
+      @font-face {
+        font-family: "Source Sans 3";
+        font-style: normal;
+        font-weight: 300 700;
+        font-display: swap;
+        src: url("/assets/fonts/source-sans-3-v19-latin-ext.woff2") format("woff2");
+        unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+          U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+          U+2113, U+2C60-2C7F, U+A720-A7FF;
+      }
+      /* Source Code Pro, variable, 400-600. Not preloaded: registration and
+         contract numbers only, which no first screen shows. */
+      @font-face {
+        font-family: "Source Code Pro";
+        font-style: normal;
+        font-weight: 400 600;
+        font-display: swap;
+        src: url("/assets/fonts/source-code-pro-v31-latin.woff2") format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+          U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+          U+FEFF, U+FFFD;
+      }
+      @font-face {
+        font-family: "Source Code Pro";
+        font-style: normal;
+        font-weight: 400 600;
+        font-display: swap;
+        src: url("/assets/fonts/source-code-pro-v31-latin-ext.woff2") format("woff2");
+        unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+          U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+          U+2113, U+2C60-2C7F, U+A720-A7FF;
+      }
+    </style>
+    <!-- A preconnect to the API origin is injected below at build time; see vite.config.ts. -->
   </head>
   <body>
     <div id="root"></div>
