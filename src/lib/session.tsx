@@ -35,6 +35,43 @@ const SessionContext = createContext<SessionContextValue | null>(null);
  * and making those two paths need a running backend would mean the smoke test
  * proves less, not more.
  */
+/**
+ * Restoring the session, once per page load.
+ *
+ * A promise rather than React state, because the router has to be able to await
+ * it: the guard must decide before the loaders run, and a component-level
+ * redirect fires too late — the loader has already made the request that a
+ * signed-out visitor should never have made.
+ *
+ * Cached, so several consumers asking at once produce one call to
+ * /auth/refresh rather than one each.
+ */
+let restoring: Promise<CurrentUser | null> | null = null;
+
+export function ensureSession(): Promise<CurrentUser | null> {
+  restoring ??= (async () => {
+    try {
+      // The refresh cookie is httpOnly, so the only way to find out whether a
+      // session exists is to ask. An anonymous visitor gets a 401 here, which
+      // is the expected answer rather than an error.
+      const tokens = await api.post<TokenResponse>("/auth/refresh", undefined, {
+        anonymous: true,
+      });
+      setAccessToken(tokens.access);
+      return tokens.user;
+    } catch {
+      setAccessToken(null);
+      return null;
+    }
+  })();
+  return restoring;
+}
+
+/** Called after signing in or out, so the next guard asks again. */
+export function forgetSession(): void {
+  restoring = null;
+}
+
 export interface SessionOverride {
   role: Role;
   fullName: string;
@@ -76,25 +113,13 @@ export function SessionProvider({
     if (override) return;
 
     let cancelled = false;
-
-    // The refresh cookie is httpOnly, so there is no way to know whether a
-    // session exists without asking. An anonymous visitor lands here too and
-    // gets a 401, which is the expected answer rather than an error.
-    void (async () => {
-      try {
-        const tokens = await api.post<TokenResponse>("/auth/refresh", undefined, {
-          anonymous: true,
-        });
-        if (cancelled) return;
-        setAccessToken(tokens.access);
-        setUser(toSession(tokens.user));
-        setStatus("authenticated");
-      } catch {
-        if (cancelled) return;
-        setAccessToken(null);
-        setStatus("anonymous");
-      }
-    })();
+    // The same promise the router guard awaited, so this does not make a second
+    // call to find out what has already been established.
+    void ensureSession().then((current) => {
+      if (cancelled) return;
+      setUser(current ? toSession(current) : null);
+      setStatus(current ? "authenticated" : "anonymous");
+    });
 
     return () => {
       cancelled = true;
@@ -108,6 +133,12 @@ export function SessionProvider({
       setAccessToken(null);
       setUser(null);
       setStatus("anonymous");
+      forgetSession();
+      // Navigated rather than left in place. A shell whose every request fails
+      // is not a state anybody can act on, and it looks identical to an outage.
+      if (!window.location.pathname.startsWith("/login")) {
+        window.location.assign("/login");
+      }
     });
   }, []);
 
@@ -122,6 +153,8 @@ export function SessionProvider({
     setAccessToken(tokens.access);
     setUser(toSession(tokens.user));
     setStatus("authenticated");
+    // The cached answer is now wrong; the next guard has to ask again.
+    forgetSession();
   }, []);
 
   const signOut = useCallback(async () => {
@@ -134,6 +167,7 @@ export function SessionProvider({
       setAccessToken(null);
       setUser(null);
       setStatus("anonymous");
+      forgetSession();
     }
   }, []);
 

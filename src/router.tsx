@@ -22,7 +22,7 @@ import {
   buildingQuery,
   contractQuery,
 } from "@/api/queries";
-import { SessionProvider, type SessionOverride } from "@/lib/session";
+import { SessionProvider, ensureSession, type SessionOverride } from "@/lib/session";
 import type { Role } from "@/components/layout/nav-config";
 import { LoginScreen } from "@/screens/LoginScreen";
 import { ElevatorListScreen } from "@/screens/ElevatorListScreen";
@@ -78,6 +78,14 @@ const rootRoute = createRootRoute({
 const shellRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "shell",
+  // Before the loaders, not inside the components. A component-level redirect
+  // fires after the loader has already made the request a signed-out visitor
+  // should never have made — which is exactly the storm this fixes.
+  beforeLoad: async () => {
+    if (sessionOverride) return;
+    if (await ensureSession()) return;
+    throw redirect({ to: "/login" });
+  },
   component: () => (
     <AppShell>
       <Outlet />
@@ -121,6 +129,12 @@ const indexRoute = createRoute({
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
+  // Arriving at a sign-in form while signed in is a small confusion with an
+  // obvious answer.
+  beforeLoad: async () => {
+    if (sessionOverride) return;
+    if (await ensureSession()) throw redirect({ to: "/elevators" });
+  },
   component: LoginScreen,
 });
 

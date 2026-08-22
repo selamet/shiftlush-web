@@ -154,9 +154,14 @@ function resolve(path, search, method, body) {
  * file does not know about exercises its own error state instead of crashing
  * the test with an unrelated message.
  */
+/** Every URL the stub was asked for, so a test can assert what was *not* asked. */
+export const requested = [];
+
 export function installMockApi() {
+  requested.length = 0;
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(typeof input === "string" ? input : input.url);
+    requested.push(url.pathname);
     const sent = init.body ? JSON.parse(init.body) : undefined;
     const body = resolve(url.pathname, url.searchParams, init.method ?? "GET", sent);
 
