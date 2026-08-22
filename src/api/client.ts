@@ -181,8 +181,13 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
  * Retried exactly once. A second 401 after a successful refresh means the
  * problem is not the token — it is permission, or a revoked account — and
  * retrying again would spin.
+ *
+ * Returns the Response rather than a body, because not every endpoint answers
+ * with JSON: the label sheet answers with a PDF. Everything up to "this
+ * response is good" is identical for both, and that is the part with the token,
+ * the refresh and the error envelope in it — the part that must not exist twice.
  */
-export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function sendWithAuth(path: string, options: RequestOptions): Promise<Response> {
   let response: Response;
   try {
     response = await send(path, options);
@@ -205,12 +210,31 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 
   if (!response.ok) throw await toApiError(response);
+  return response;
+}
+
+export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const response = await sendWithAuth(path, options);
 
   // 204, and 200s with an empty body.
   if (response.status === 204 || response.headers.get("Content-Length") === "0") {
     return undefined as T;
   }
   return (await response.json()) as T;
+}
+
+/**
+ * A response that is a file rather than a record.
+ *
+ * The label sheet is a PDF built by the server and it is fetched, not linked:
+ * the endpoint is a POST — the identifiers go in the body because a firm
+ * printing its whole estate would build a URL no proxy accepts — and it needs
+ * the bearer token, which an anchor cannot carry. What the caller does with the
+ * blob is the caller's problem; this only promises it arrived.
+ */
+export async function requestFile(path: string, options: RequestOptions = {}): Promise<Blob> {
+  const response = await sendWithAuth(path, options);
+  return await response.blob();
 }
 
 export const api = {
@@ -224,6 +248,8 @@ export const api = {
     request<T>(path, { ...options, method: "PUT", body }),
   delete: <T>(path: string, options?: Omit<RequestOptions, "method" | "body">) =>
     request<T>(path, { ...options, method: "DELETE" }),
+  postFile: (path: string, body?: unknown, options?: Omit<RequestOptions, "method" | "body">) =>
+    requestFile(path, { ...options, method: "POST", body }),
 };
 
 /** Exposed for tests only: resets module state between cases. */

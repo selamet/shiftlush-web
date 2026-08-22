@@ -467,3 +467,46 @@ export function attachmentDownloadUrl(id: string) {
 export function deleteAttachment(id: string) {
   return api.delete<void>(`/attachments/${id}/`);
 }
+
+// ---------------------------------------------------------------------------
+// QR labels
+// ---------------------------------------------------------------------------
+
+/**
+ * Sheet geometry, mirrored from `apps/elevators/labels.py`.
+ *
+ * The server owns the layout; these two numbers exist here only so the screen
+ * can say what will happen before it asks. Twelve is what makes "seven cells
+ * will be blank" a sentence, and 240 is the ceiling the serializer enforces —
+ * a request over it is refused with a validation error, which is a worse way to
+ * learn about a limit than a disabled button.
+ */
+export const LABELS_PER_PAGE = 12;
+export const MAX_LABELS = 240;
+
+/**
+ * The printable sheet, as the server renders it.
+ *
+ * A POST rather than a GET, and identifiers in the body rather than the query
+ * string: a firm printing five hundred lifts would otherwise build a URL no
+ * proxy accepts. The order sent is the order printed, so the sheet can be
+ * checked against the list it came from.
+ *
+ * Deliberately not a query. It is not cacheable by key — the same ids print the
+ * same sheet only until a token is regenerated — and it is an action the user
+ * takes, not state the screen reads.
+ */
+export function fetchLabelPdf(elevatorIds: string[], signal?: AbortSignal): Promise<Blob> {
+  return api.postFile("/elevators/labels/", { elevator_ids: elevatorIds }, { signal });
+}
+
+/**
+ * Issues the elevator a new QR token.
+ *
+ * Destructive in a way the verb does not admit: every label already printed for
+ * this lift stops resolving the moment this returns, including the one stuck to
+ * the wall. Callers are expected to have asked first.
+ */
+export function regenerateQr(id: string): Promise<Elevator> {
+  return api.post<Elevator>(`/elevators/${id}/regenerate-qr/`);
+}

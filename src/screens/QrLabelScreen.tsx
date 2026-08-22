@@ -1,106 +1,117 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Printer, QrCode, Building2, Users, Download, Search, TriangleAlert } from "lucide-react";
-import demoElevators from "@fixtures/demo-elevators.json";
-import company from "@fixtures/demo-company.json";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Building2,
+  ExternalLink,
+  FileDown,
+  FileText,
+  Loader2,
+  Plus,
+  QrCode,
+  Search,
+  Trash2,
+  Users,
+} from "lucide-react";
+import { ApiError } from "@/api/client";
+import { errorMessage } from "@/api/errors";
+import {
+  LABELS_PER_PAGE,
+  MAX_LABELS,
+  buildingListQuery,
+  customerListQuery,
+  elevatorKeys,
+  elevatorListQuery,
+  fetchLabelPdf,
+  regenerateQr,
+  type ElevatorRow,
+  type ListParams,
+} from "@/api/queries";
+import { Alert } from "@/components/ui/alert";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { InspectionLabel } from "@/components/ui/inspection-label";
 
 /**
- * Sheet geometry, taken from the design and stated in real millimetres.
+ * Choosing what to print, and getting the sheet from the server.
  *
- * 3 x 63.3 + 2 x 10 = 209.9 ≈ 210, and 4 x 69.25 + 2 x 10 = 297. The preview is
- * rendered at these sizes so what you see is what leaves the printer.
+ * The output is a PDF the server renders, not a browser print of DOM labels.
+ * Specification line 1813 is the whole reason this screen exists: the label is
+ * read in a machine room, in dim light, off a surface that has been dusty for
+ * years, so the symbol has a minimum size and the type has a minimum weight.
+ * `window.print()` cannot promise either — margins, scale and colour handling
+ * differ between browsers and are finally the user's printer settings, and a
+ * sheet that came back six percent small because "fit to page" was left on is a
+ * sheet that fails where it is needed. The server's PDF is the same document
+ * every time.
+ *
+ * That is also why nothing here draws a label. The artwork lives in
+ * `templates/labels/elevator_labels.html` and having a second copy of it in the
+ * DOM would mean two renderers of one sticker, drifting, only one of which ever
+ * gets stuck to a lift. What this screen shows instead is a placement plan:
+ * which cell each label lands in, and how many cells stay empty.
  */
-const COLS = 3;
-const ROWS = 4;
-const PER_SHEET = COLS * ROWS;
-const CELL_W = "63.3mm";
-const CELL_H = "69.25mm";
-const QR_SIDE = "29.6mm";
 
-type Elevator = (typeof demoElevators)[number];
+/** What the print list has to remember about a lift that has scrolled away. */
+type PrintItem = Pick<
+  ElevatorRow,
+  "id" | "registration_number" | "name" | "building_name" | "customer_name"
+>;
+
+function toPrintItem(row: ElevatorRow): PrintItem {
+  return {
+    id: row.id,
+    registration_number: row.registration_number,
+    name: row.name,
+    building_name: row.building_name,
+    customer_name: row.customer_name,
+  };
+}
 
 /**
- * One printed label.
+ * One page of the plan.
  *
- * Read in a machine room: dim light, dust, and a sticker that has been there
- * for years. Hence heavy type, maximum contrast, and no rule thinner than
- * 0.7mm — a hairline that survives on screen disappears on scuffed vinyl.
- *
- * The inspection label colour is deliberately absent. A single-colour print
- * cannot distinguish it, and the value changes over time: printing it would
- * mean reprinting the physical sticker every time the inspection result does.
+ * Twelve cells whether or not twelve are used, because the empty ones are the
+ * point: a person who has selected five needs to see the seven they are about
+ * to leave blank before the sheet comes out of the printer, not after.
  */
-function Label({ elevator }: { elevator: Elevator }) {
-  return (
-    <div
-      className="flex flex-col justify-between border-[0.7mm] border-black bg-white p-[4mm] text-black"
-      style={{ width: CELL_W, height: CELL_H }}
-    >
-      <div className="flex flex-col leading-tight">
-        <span className="text-[11pt] font-bold">{elevator.name}</span>
-        <span className="truncate text-[9.5pt] font-medium">{elevator.building_name}</span>
-      </div>
-
-      <div
-        className="mx-auto grid place-items-center border-[0.7mm] border-black"
-        style={{ width: QR_SIDE, height: QR_SIDE }}
-      >
-        <QrCode className="size-[22mm]" aria-hidden="true" />
-      </div>
-
-      <div className="flex flex-col items-center gap-[0.5mm] leading-tight">
-        <span className="font-mono text-[10pt] font-bold tracking-tight">
-          {elevator.registration_number}
-        </span>
-        <span className="text-[8.5pt] font-bold uppercase">{company.display_name}</span>
-        <span className="text-[8.5pt] font-semibold">{company.phone}</span>
-      </div>
-    </div>
-  );
-}
-
-/** An empty cell is drawn, not omitted — the waste has to be visible. */
-function EmptyCell() {
-  return (
-    <div
-      className="border-[0.5mm] border-dashed border-neutral-400"
-      style={{ width: CELL_W, height: CELL_H }}
-    />
-  );
-}
-
-function Sheet({ page, rows }: { page: number; rows: Elevator[] }) {
+function PagePlan({ page, items }: { page: number; items: PrintItem[] }) {
   const { t } = useTranslation();
-  const blanks = PER_SHEET - rows.length;
+  const blanks = LABELS_PER_PAGE - items.length;
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-baseline gap-2 print:hidden">
+    <div className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap items-baseline gap-2">
         <span className="text-label">{t("qrLabels.page", { n: page })}</span>
         <span className="tnum text-help text-muted-foreground">
-          {t("qrLabels.filledOf", { filled: rows.length, total: PER_SHEET })}
+          {t("qrLabels.filledOf", { filled: items.length, total: LABELS_PER_PAGE })}
         </span>
         {blanks > 0 && (
           <span className="tnum text-help text-warning">
-            {t("qrLabels.emptyCells", { count: blanks })}
+            {t("qrLabels.emptyCellsOnPage", { count: blanks })}
           </span>
         )}
       </div>
 
-      {/* Always white paper with black ink, even in dark theme: the preview
-          simulates the sheet, not the interface. */}
-      <div
-        className="grid bg-white p-[10mm] shadow-md print:shadow-none"
-        style={{ width: "210mm", gridTemplateColumns: `repeat(${COLS}, ${CELL_W})` }}
-      >
-        {rows.map((elevator) => (
-          <Label key={elevator.id} elevator={elevator} />
+      <div className="grid grid-cols-3 gap-1.5">
+        {items.map((item, index) => (
+          <div
+            key={item.id}
+            className="flex min-w-0 flex-col justify-between gap-1 rounded-md border border-border bg-card p-2"
+          >
+            <span className="tnum text-help text-subtle">{index + 1}</span>
+            <span className="truncate font-mono tnum text-cell">{item.registration_number}</span>
+            <span className="truncate text-help text-muted-foreground">{item.building_name}</span>
+          </div>
         ))}
         {Array.from({ length: blanks }).map((_, index) => (
-          <EmptyCell key={`blank-${index}`} />
+          <div
+            key={`blank-${index}`}
+            className="flex min-h-20 items-end rounded-md border border-dashed border-border-strong p-2"
+          >
+            <span className="tnum text-help text-subtle">{items.length + index + 1}</span>
+          </div>
         ))}
       </div>
     </div>
@@ -109,82 +120,180 @@ function Sheet({ page, rows }: { page: number; rows: Elevator[] }) {
 
 export function QrLabelScreen() {
   const { t } = useTranslation();
-  const [selected, setSelected] = useState<string[]>(demoElevators.map((row) => row.id));
+  const queryClient = useQueryClient();
 
-  const rows = demoElevators.filter((row) => selected.includes(row.id));
-  const pages: Elevator[][] = [];
-  for (let i = 0; i < rows.length; i += PER_SHEET) {
-    pages.push(rows.slice(i, i + PER_SHEET));
-  }
-  const blanks = pages.length * PER_SHEET - rows.length;
-  const overflowing = rows.length > PER_SHEET;
+  const [items, setItems] = useState<PrintItem[]>([]);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [buildingId, setBuildingId] = useState("");
+  const [customerId, setCustomerId] = useState("");
+  const [notice, setNotice] = useState("");
+  const [confirming, setConfirming] = useState<PrintItem | null>(null);
 
-  function toggle(id: string) {
-    setSelected((current) =>
-      current.includes(id) ? current.filter((x) => x !== id) : [...current, id],
-    );
+  // Held in a ref as well as in state: the cleanup that revokes it runs on
+  // unmount, when the state it closed over is whatever it was at the last
+  // render, and revoking the wrong one leaks the right one.
+  const [pdfUrl, setPdfUrl] = useState("");
+  const pdfUrlRef = useRef("");
+
+  const replacePdf = useCallback((blob: Blob | null) => {
+    if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
+    const next = blob ? URL.createObjectURL(blob) : "";
+    pdfUrlRef.current = next;
+    setPdfUrl(next);
+  }, []);
+
+  useEffect(() => () => replacePdf(null), [replacePdf]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const chosen = useMemo(() => new Set(items.map((item) => item.id)), [items]);
+  const signature = items.map((item) => item.id).join(",");
+
+  // A sheet already produced describes the list as it was. Changing the list
+  // makes it a document that no longer matches the screen it came from, and a
+  // stale PDF sitting under a "ready" heading is worse than no PDF.
+  useEffect(() => {
+    replacePdf(null);
+  }, [signature, replacePdf]);
+
+  const elevators = useQuery(
+    elevatorListQuery({ search: debouncedSearch || undefined, page_size: 25 }),
+  );
+  const buildings = useQuery(buildingListQuery({ page_size: 200 }));
+  const customers = useQuery(customerListQuery({ page_size: 200 }));
+
+  const room = MAX_LABELS - items.length;
+
+  const addMany = useCallback(
+    (rows: ElevatorRow[]) => {
+      // Worked out from the current state rather than inside the updater: React
+      // does not promise to run an updater synchronously, so a count incremented
+      // in there is still zero when the caller reads it and every bulk add
+      // reports "nothing added".
+      const seen = new Set(items.map((item) => item.id));
+      const fresh: PrintItem[] = [];
+      for (const row of rows) {
+        if (seen.has(row.id)) continue;
+        if (items.length + fresh.length >= MAX_LABELS) break;
+        fresh.push(toPrintItem(row));
+        seen.add(row.id);
+      }
+      if (fresh.length > 0) setItems((current) => [...current, ...fresh]);
+      return fresh.length;
+    },
+    [items],
+  );
+
+  /**
+   * "Every lift in this building", and the same for a customer.
+   *
+   * Fetched on demand rather than watched with an enabled query: the user
+   * presses a button, and a query that fires the moment a dropdown changes adds
+   * rows before they have finished choosing.
+   */
+  const addGroup = useMutation({
+    mutationFn: (params: ListParams) =>
+      queryClient.fetchQuery(elevatorListQuery({ ...params, page_size: MAX_LABELS })),
+    onSuccess: (page) => {
+      const added = addMany(page.results);
+      setNotice(added > 0 ? t("qrLabels.addedCount", { count: added }) : t("qrLabels.nothingAdded"));
+    },
+  });
+
+  const pdf = useMutation({
+    mutationFn: () => fetchLabelPdf(items.map((item) => item.id)),
+    onSuccess: (blob) => replacePdf(blob),
+  });
+
+  const regenerate = useMutation({
+    mutationFn: (item: PrintItem) => regenerateQr(item.id),
+    onSuccess: async (_elevator, item) => {
+      setNotice(t("qrLabels.regenerateDone", { name: item.registration_number }));
+      // Any sheet already generated carries this lift's previous token, so it
+      // would print a sticker that resolves to nothing.
+      replacePdf(null);
+      await queryClient.invalidateQueries({ queryKey: elevatorKeys.all });
+    },
+  });
+
+  function pdfError(error: unknown): string {
+    if (error instanceof ApiError && error.status === 503) return t("qrLabels.pdfUnavailable");
+    if (error instanceof ApiError && error.status === 404) return t("qrLabels.pdfEmpty");
+    return errorMessage(error, t);
   }
 
-  /** Which page and cell a label lands in — shown so the sheet holds no surprises. */
-  function cellRef(index: number) {
-    return `${Math.floor(index / PER_SHEET) + 1} / ${(index % PER_SHEET) + 1}`;
+  const pages: PrintItem[][] = [];
+  for (let index = 0; index < items.length; index += LABELS_PER_PAGE) {
+    pages.push(items.slice(index, index + LABELS_PER_PAGE));
   }
+  const blanks = pages.length * LABELS_PER_PAGE - items.length;
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-title">{t("qrLabels.title")}</h1>
-          <p className="text-help text-muted-foreground">{t("qrLabels.sheetSpec")}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" disabled={rows.length === 0}>
-            <Download />
-            {t("qrLabels.downloadPdf")}
-          </Button>
-          <Button size="sm" disabled={rows.length === 0} onClick={() => window.print()}>
-            <Printer />
-            {t("common.print")}
-          </Button>
-        </div>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-title">{t("qrLabels.title")}</h1>
+        <p className="text-help text-muted-foreground">{t("qrLabels.sheetSpec")}</p>
+        <p className="text-help text-muted-foreground">{t("qrLabels.serverRenders")}</p>
       </div>
 
-      {/* Overflow states the outcome in numbers and offers both ways out — the
-          cost of a wasted sheet is not the paper, it is the minute spent
-          noticing afterwards. */}
-      {overflowing && blanks > 0 && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border-l-[3px] border-warning bg-warning-bg px-3 py-2.5 print:hidden">
-          <TriangleAlert className="size-4 shrink-0 text-warning" aria-hidden="true" />
-          <span className="tnum text-body text-warning">
-            {t("qrLabels.labelCount", { count: rows.length })} ·{" "}
-            {t("qrLabels.pageCount", { count: pages.length })} ·{" "}
-            {t("qrLabels.emptyCells", { count: blanks })}
-          </span>
-          <button
-            type="button"
-            onClick={() => setSelected((current) => current.slice(0, -1))}
-            className="text-help text-warning underline"
-          >
-            {t("qrLabels.dropLast")}
-          </button>
-          <button type="button" className="text-help text-warning underline">
-            {t("qrLabels.addMore", { count: blanks })}
-          </button>
-        </div>
+      {notice && (
+        <Alert tone="info">{notice}</Alert>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)] print:block">
-        {/* Selection ------------------------------------------------------ */}
-        <div className="flex flex-col gap-3 print:hidden">
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="xs">
-              <Building2 />
-              {t("qrLabels.addBuilding")}
-            </Button>
-            <Button variant="secondary" size="xs">
-              <Users />
-              {t("qrLabels.addCustomer")}
-            </Button>
+      <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+        {/* Source ---------------------------------------------------------- */}
+        <div className="flex min-w-0 flex-col gap-3">
+          <span className="text-colhead uppercase text-subtle">{t("qrLabels.source")}</span>
+
+          <div className="flex flex-col gap-2 rounded-lg border border-border-subtle bg-card p-3">
+            <div className="flex items-end gap-2">
+              <SearchableSelect
+                className="min-w-0 flex-1"
+                options={(buildings.data?.results ?? []).map((building) => ({
+                  value: building.id,
+                  label: building.name,
+                  hint: building.customer_name,
+                }))}
+                value={buildingId}
+                onChange={setBuildingId}
+                placeholder={t("qrLabels.pickBuilding")}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!buildingId || addGroup.isPending || room <= 0}
+                onClick={() => addGroup.mutate({ building: buildingId })}
+              >
+                <Building2 />
+                {t("qrLabels.addBuilding")}
+              </Button>
+            </div>
+
+            <div className="flex items-end gap-2">
+              <SearchableSelect
+                className="min-w-0 flex-1"
+                options={(customers.data?.results ?? []).map((customer) => ({
+                  value: customer.id,
+                  label: customer.legal_name,
+                }))}
+                value={customerId}
+                onChange={setCustomerId}
+                placeholder={t("qrLabels.pickCustomer")}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!customerId || addGroup.isPending || room <= 0}
+                onClick={() => addGroup.mutate({ customer: customerId })}
+              >
+                <Users />
+                {t("qrLabels.addCustomer")}
+              </Button>
+            </div>
           </div>
 
           <label className="relative flex items-center">
@@ -194,109 +303,251 @@ export function QrLabelScreen() {
             />
             <input
               type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
               placeholder={t("qrLabels.searchElevator")}
               className="h-control-sm w-full rounded-md border border-input bg-card pl-9 pr-3 text-body placeholder:text-subtle focus-ring"
             />
           </label>
 
           <div className="overflow-hidden rounded-lg border border-border-subtle bg-card">
-            <div className="flex items-center gap-3 border-b border-border bg-background px-3 py-1.5 text-colhead uppercase text-muted-foreground">
-              <span className="w-4 shrink-0" />
-              <span className="w-12 shrink-0">{t("qrLabels.cell")}</span>
-              <span className="min-w-0 flex-1">{t("elevator.fields.registrationNumber")}</span>
-              <span className="w-20 shrink-0">{t("elevator.fields.inspectionLabel")}</span>
-            </div>
-            {demoElevators.map((row) => {
-              const index = rows.findIndex((candidate) => candidate.id === row.id);
-              return (
-                <label
-                  key={row.id}
-                  className="flex items-center gap-3 border-b border-border-subtle px-3 py-2 last:border-0 hover:bg-muted"
-                >
-                  <input
-                    type="checkbox"
-                    checked={index !== -1}
-                    onChange={() => toggle(row.id)}
-                    className="size-4 shrink-0 rounded-xs accent-primary"
-                  />
-                  {/* Where this label lands. A cell past the first sheet is
-                      marked, so overflow is visible before printing. */}
-                  <span
-                    className={cn(
-                      "w-12 shrink-0 tnum text-help",
-                      index === -1 ? "text-subtle" : "text-muted-foreground",
-                      index >= PER_SHEET && "font-medium text-warning",
-                    )}
+            {elevators.isPending ? (
+              <p className="px-3 py-6 text-center text-body text-muted-foreground">
+                {t("common.loading")}
+              </p>
+            ) : elevators.isError ? (
+              <div className="p-3">
+                <Alert tone="error" block>
+                  {errorMessage(elevators.error, t)}
+                </Alert>
+              </div>
+            ) : elevators.data.results.length === 0 ? (
+              <p className="px-3 py-6 text-center text-body text-muted-foreground">
+                {debouncedSearch ? t("empty.noFilterResults") : t("empty.noElevators")}
+              </p>
+            ) : (
+              elevators.data.results.map((row) => {
+                const already = chosen.has(row.id);
+                return (
+                  <div
+                    key={row.id}
+                    className="flex items-center gap-3 border-b border-border-subtle px-3 py-2 last:border-0"
                   >
-                    {index === -1 ? "—" : cellRef(index)}
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col leading-tight">
-                    <span className="font-mono tnum text-cell">{row.registration_number}</span>
-                    <span className="truncate text-help text-muted-foreground">
-                      {row.name} · {row.building_name}
+                    <span className="flex min-w-0 flex-1 flex-col leading-tight">
+                      <span className="font-mono tnum text-cell">{row.registration_number}</span>
+                      <span className="truncate text-help text-muted-foreground">
+                        {row.name} · {row.building_name}
+                      </span>
                     </span>
-                  </span>
-                  <span className="w-20 shrink-0">
-                    <InspectionLabel value={row.inspection_label} />
-                  </span>
-                </label>
-              );
-            })}
+                    {already ? (
+                      <span className="shrink-0 text-help text-subtle">
+                        {t("qrLabels.inList")}
+                      </span>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="xs"
+                        className="shrink-0"
+                        disabled={room <= 0}
+                        onClick={() => addMany([row])}
+                      >
+                        <Plus />
+                        {t("qrLabels.addToPrintList")}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
 
-          <p className="flex items-start gap-1.5 text-help text-muted-foreground">
-            <TriangleAlert className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
-            {t("qrLabels.regenerateWarning")}
-          </p>
+          {elevators.data && elevators.data.pagination.total > elevators.data.results.length && (
+            <p className="text-help text-muted-foreground">
+              {t("qrLabels.moreElevators", {
+                count: elevators.data.pagination.total - elevators.data.results.length,
+              })}
+            </p>
+          )}
+
           <p className="text-help text-muted-foreground">{t("qrLabels.noPrinterHint")}</p>
         </div>
 
-        {/* Preview -------------------------------------------------------- */}
+        {/* Print list and output ------------------------------------------- */}
         <div className="flex min-w-0 flex-col gap-3">
-          <div className="flex flex-wrap items-baseline gap-2 print:hidden">
-            <span className="text-colhead uppercase text-subtle">{t("qrLabels.preview")}</span>
-            <span className="text-help text-muted-foreground">
-              {t("qrLabels.previewSimulatesPaper")}
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-baseline gap-2">
+              <span className="text-colhead uppercase text-subtle">{t("qrLabels.printList")}</span>
+              <span className="tnum text-help text-muted-foreground">
+                {t("qrLabels.labelCount", { count: items.length })} ·{" "}
+                {t("qrLabels.pageCount", { count: pages.length })}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {items.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={() => setItems([])}>
+                  <Trash2 />
+                  {t("qrLabels.clearList")}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                disabled={items.length === 0 || pdf.isPending}
+                onClick={() => pdf.mutate()}
+              >
+                {pdf.isPending ? <Loader2 className="animate-spin" /> : <FileText />}
+                {pdf.isPending ? t("qrLabels.generating") : t("qrLabels.generate")}
+              </Button>
+            </div>
           </div>
 
-          {rows.length === 0 ? (
-            /* Not a "nothing here" screen but a teaching one: the grid stays so
-               a first-time user learns an A4 holds twelve and fills left to
-               right, top to bottom. */
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-wrap items-baseline gap-2">
-                <span className="tnum text-label">{t("qrLabels.labelCount", { count: 0 })}</span>
-                <span className="tnum text-help text-muted-foreground">
-                  {t("qrLabels.emptyCells", { count: PER_SHEET })}
-                </span>
-                <span className="text-help text-muted-foreground">{t("qrLabels.noSelection")}</span>
+          <p className="text-help text-muted-foreground">{t("qrLabels.regenerateWarning")}</p>
+
+          {pdf.isError && (
+            <Alert tone="error" block>
+              {pdfError(pdf.error)}
+            </Alert>
+          )}
+          {regenerate.isError && (
+            <Alert tone="error" block>
+              {errorMessage(regenerate.error, t)}
+            </Alert>
+          )}
+
+          {pdfUrl && (
+            <div className="flex flex-col gap-2 rounded-lg border border-success bg-success-bg/40 p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-label text-success">{t("qrLabels.ready")}</span>
+                {/* Both ways out, because neither can be assumed: a sandboxed
+                    frame may refuse to render the viewer, and a popup blocker
+                    may swallow a tab opened after an await. */}
+                <a
+                  href={pdfUrl}
+                  download="qr-etiketleri.pdf"
+                  className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
+                >
+                  <FileDown />
+                  {t("qrLabels.downloadPdf")}
+                </a>
+                <a
+                  href={pdfUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+                >
+                  <ExternalLink />
+                  {t("qrLabels.openPdf")}
+                </a>
               </div>
-              <div className="max-w-full overflow-x-auto">
-                <div className="w-[210mm] origin-top-left scale-[0.55] 2xl:scale-[0.7]">
-                  <Sheet page={1} rows={[]} />
-                </div>
-              </div>
-              <p className="text-help text-muted-foreground">{t("qrLabels.layoutStillShown")}</p>
-              <p className="text-help text-muted-foreground">
-                {t("qrLabels.printDisabledWhenEmpty")}
-              </p>
-            </div>
-          ) : (
-            <div className="max-w-full overflow-x-auto">
-              <div className="flex w-[210mm] origin-top-left scale-[0.55] flex-col gap-6 print:scale-100 2xl:scale-[0.7]">
-                {pages.map((pageRows, index) => (
-                  <Sheet key={index} page={index + 1} rows={pageRows} />
-                ))}
-              </div>
+              <iframe
+                src={pdfUrl}
+                title={t("qrLabels.preview")}
+                className="h-[60vh] w-full rounded-md border border-border bg-card"
+              />
             </div>
           )}
 
-          <p className="text-help text-muted-foreground print:hidden">
-            {t("qrLabels.whitePaperInDark")}
-          </p>
+          {room <= 0 && (
+            <Alert tone="warning" block>
+              {t("qrLabels.limitReached", { count: MAX_LABELS })}
+            </Alert>
+          )}
+          {room > 0 && room <= LABELS_PER_PAGE && (
+            <Alert tone="info" block>
+              {t("qrLabels.roomLeft", { count: room })}
+            </Alert>
+          )}
+
+          {items.length === 0 ? (
+            <div className="flex flex-col gap-3 rounded-lg border border-dashed border-border p-6">
+              <p className="text-body text-muted-foreground">{t("qrLabels.printListEmpty")}</p>
+              <p className="text-help text-muted-foreground">{t("qrLabels.emptyCellsStayEmpty")}</p>
+            </div>
+          ) : (
+            <>
+              {/* The decision about the blank cells, stated before the sheet is
+                  made rather than discovered on the paper. */}
+              {blanks > 0 && (
+                <Alert tone="warning" block>
+                  {items.length === 1
+                    ? t("qrLabels.singleLabelNote")
+                    : `${t("qrLabels.emptyCells", { count: blanks })} — ${t("qrLabels.emptyCellsStayEmpty")}`}
+                </Alert>
+              )}
+
+              <div className="flex flex-col gap-1.5 overflow-hidden rounded-lg border border-border-subtle bg-card">
+                {items.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-3 border-b border-border-subtle px-3 py-2 last:border-0"
+                  >
+                    <span className="w-12 shrink-0 tnum text-help text-muted-foreground">
+                      {Math.floor(index / LABELS_PER_PAGE) + 1} / {(index % LABELS_PER_PAGE) + 1}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col leading-tight">
+                      <span className="font-mono tnum text-cell">{item.registration_number}</span>
+                      <span className="truncate text-help text-muted-foreground">
+                        {item.customer_name && item.customer_name !== item.building_name
+                          ? `${item.building_name} · ${item.customer_name}`
+                          : item.building_name}
+                      </span>
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      disabled={regenerate.isPending}
+                      onClick={() => setConfirming(item)}
+                    >
+                      <QrCode />
+                      {t("qr.regenerate")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="iconXs"
+                      aria-label={t("qrLabels.remove")}
+                      onClick={() => setItems((current) => current.filter((x) => x.id !== item.id))}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-colhead uppercase text-subtle">
+                  {t("qrLabels.placementPlan")}
+                </span>
+                <span className="text-help text-muted-foreground">
+                  {t("qrLabels.placementPlanNote")}
+                </span>
+              </div>
+              <div className="flex flex-col gap-4">
+                {pages.map((pageItems, index) => (
+                  <PagePlan key={index} page={index + 1} items={pageItems} />
+                ))}
+              </div>
+            </>
+          )}
+
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirming !== null}
+        weight="heavy"
+        title={t("qrLabels.regenerateFor", { name: confirming?.registration_number ?? "" })}
+        body={t("qrLabels.regenerateBody")}
+        consequences={[
+          t("qrLabels.regenerateConsequenceLabels"),
+          t("qrLabels.regenerateConsequenceWall"),
+          t("qrLabels.regenerateConsequenceReprint"),
+        ]}
+        confirmLabel={regenerate.isPending ? t("qrLabels.regenerating") : t("qr.regenerate")}
+        onConfirm={() => {
+          if (confirming) regenerate.mutate(confirming);
+          setConfirming(null);
+        }}
+        onCancel={() => setConfirming(null)}
+      />
     </div>
   );
 }
