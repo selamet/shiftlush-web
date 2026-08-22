@@ -17,6 +17,7 @@ import { allOf, type BuildingType } from "@/api/enums";
 import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
+import { parseCoordinates } from "@/lib/map-provider";
 import { AddressSelect } from "@/components/forms/AddressSelect";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -108,6 +109,14 @@ export function BuildingFormScreen() {
           // to detach it.
           if (editing && record?.complex_id && values.complex === undefined) {
             values.complex = null;
+          }
+          // Same trap, same fix: the picker renders its hidden inputs only
+          // while it holds a pin, so a cleared location is an absent key. On a
+          // PATCH that means "leave it alone", and the coordinates the user
+          // just removed would still be on the record.
+          if (editing && record?.latitude != null && values.latitude === undefined) {
+            values.latitude = null;
+            values.longitude = null;
           }
           submit(values as unknown as BuildingWrite);
         }}
@@ -226,6 +235,10 @@ export function BuildingFormScreen() {
                 }
               : undefined
           }
+          // `BuildingWriteRequest` carries latitude and longitude, so a pin
+          // dropped here is a pin that gets saved. That is the whole test for
+          // whether a screen may show a map.
+          location={{ initial: parseCoordinates(record?.latitude, record?.longitude) }}
         />
 
         <div className="grid gap-5 sm:grid-cols-2">

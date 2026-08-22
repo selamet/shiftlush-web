@@ -431,7 +431,11 @@
       "neighborhoodMinChars": "Aramak için en az 2 karakter girin",
       "neighborhoodNotFound": "Mahalle bulunamadı — adres tarifi alanına yazın",
       "locationMissing": "Konum girilmedi",
-      "geocodeSuggestion": "Harita önerisi — kontrol edip düzeltebilirsiniz"
+      "geocodeSuggestion": "Harita önerisi — kontrol edip düzeltebilirsiniz",
+      "levelUnmatched": "Eşleşme bulunamadı — siz seçin",
+      "matchConfidence": "%{{percent}} benzerlik",
+      "dropPinHere": "Pini buraya bırak",
+      "clearLocation": "Konumu temizle"
     },
     "province": "İl",
     "district": "İlçe",

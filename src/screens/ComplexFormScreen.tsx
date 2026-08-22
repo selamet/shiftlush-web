@@ -13,6 +13,7 @@ import {
 } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
+import { parseCoordinates } from "@/lib/map-provider";
 import { AddressSelect } from "@/components/forms/AddressSelect";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -75,7 +76,15 @@ export function ComplexFormScreen() {
         className="flex max-w-2xl flex-col gap-5"
         onSubmit={(event) => {
           event.preventDefault();
-          submit(formValues(event.currentTarget) as unknown as ComplexWrite);
+          const values: Record<string, unknown> = formValues(event.currentTarget);
+          // The picker renders its hidden inputs only while it holds a pin, so
+          // a cleared location is an absent key — and on a PATCH an absent key
+          // means "leave it alone". null is how the API is told to forget it.
+          if (editing && record?.latitude != null && values.latitude === undefined) {
+            values.latitude = null;
+            values.longitude = null;
+          }
+          submit(values as unknown as ComplexWrite);
         }}
       >
         {state.message && (
@@ -133,6 +142,10 @@ export function ComplexFormScreen() {
                 }
               : undefined
           }
+          // `ComplexWriteRequest` carries latitude and longitude, so a pin
+          // dropped here is a pin that gets saved. That is the whole test for
+          // whether a screen may show a map.
+          location={{ initial: parseCoordinates(record?.latitude, record?.longitude) }}
         />
 
         <div className="grid gap-5 sm:grid-cols-2">
