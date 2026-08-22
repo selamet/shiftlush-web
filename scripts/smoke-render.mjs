@@ -18,7 +18,7 @@
  * running outside a browser.
  */
 import { createServer } from "vite";
-import { installMockApi } from "./mock-api.mjs";
+import { installMockApi, requested } from "./mock-api.mjs";
 import { renderToString } from "react-dom/server";
 import React from "react";
 
@@ -166,6 +166,30 @@ try {
       console.error(`  FAIL  ${path}`);
       for (const message of errors) console.error(`          ${message}`);
     }
+  }
+  // The guard, checked as an anonymous visitor rather than through the
+  // override every other case uses. Without it a signed-out person lands
+  // inside the application and its loaders start making calls that can only
+  // 401 — which is what filled a production network panel with red.
+  // Asserted on the requests rather than on the resulting location, because
+  // `router.load()` does not apply a redirect thrown in beforeLoad — the
+  // existing `/` to `/elevators` redirect does not take effect here either.
+  // What it does prove is the thing that was actually wrong: the loader never
+  // runs, so a signed-out visitor makes no request that can only 401.
+  requested.length = 0;
+  const guarded = createRouterForPath("/elevators");
+  await guarded.load();
+  const askedFor = requested.filter((path) => path.startsWith("/api/v1/elevators"));
+
+  if (askedFor.length > 0) {
+    console.error(`  FAIL  anonymous visitor requested ${askedFor[0]}`);
+    console.error("          The guard must run before the loaders, not in the component.");
+    failures += 1;
+  } else if (!requested.includes("/api/v1/auth/refresh")) {
+    console.error("  FAIL  the session was never checked — the guard did not run at all");
+    failures += 1;
+  } else {
+    console.log("  OK    anonymous visitor asks only whether they have a session");
   }
 } finally {
   await server.close();
