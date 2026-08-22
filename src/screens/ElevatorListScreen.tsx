@@ -1,17 +1,56 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { Printer, TriangleAlert } from "lucide-react";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { elevatorListQuery, type ElevatorRow } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate } from "@/lib/format";
 import { useSession } from "@/lib/session";
+import { enumFilter, listSearchSchema, useListSearch } from "@/lib/list-search";
 import { Button } from "@/components/ui/button";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
 import { InspectionLabel } from "@/components/ui/inspection-label";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
+
+/**
+ * What `GET /elevators/` narrows by, spelled the way the contract spells it.
+ *
+ * Building and customer are absent on purpose. Both are references to a set
+ * that runs to thousands, so they need the searchable picker rather than a menu
+ * listing every building the firm has — and an empty menu would be the same
+ * dead control in a new shape.
+ */
+const filters = [
+  enumFilter({
+    param: "status",
+    labelKey: "elevator.fields.status",
+    namespace: "elevator.status",
+    values: ["active", "suspended", "sealed", "out_of_service", "uncontracted"],
+  }),
+  enumFilter({
+    param: "inspection_label",
+    labelKey: "elevator.fields.inspectionLabel",
+    namespace: "elevator.inspectionLabel",
+    values: ["green", "blue", "yellow", "red", "none"],
+  }),
+  enumFilter({
+    param: "category",
+    labelKey: "elevator.fields.category",
+    namespace: "elevator.category",
+    values: [
+      "passenger",
+      "freight",
+      "passenger_freight",
+      "dumbwaiter",
+      "accessibility_platform",
+      "vehicle",
+    ],
+  }),
+];
+
+/** Bound to the route, so the search parameters arrive typed and validated. */
+export const elevatorListSearch = listSearchSchema(filters);
 
 /**
  * Seven columns, chosen for what someone scanning 500 rows actually needs:
@@ -23,18 +62,18 @@ import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
  * The other 24 fields — pit depth, rated speed, CE number — are record fields,
  * not search criteria, and live on the detail screen. Three of these columns
  * carry two lines, which is what keeps a 12-column table at seven and off
- * horizontal scroll.
+ * horizontal scroll. Which of them are on screen is now the reader's to
+ * choose — the seven are the starting point, not the whole offer.
  */
 export function ElevatorListScreen() {
   const { t } = useTranslation();
   const { role } = useSession();
   const readOnly = role === "technician";
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const list = useListSearch(filters);
 
   // The technician sees the elevators of the customers assigned to them; that
   // narrowing is the server's, decided by their token.
-  const query = useQuery(elevatorListQuery({ page, page_size: pageSize }));
+  const query = useQuery(elevatorListQuery(list.params));
   const rows = query.data?.results ?? [];
 
   const columns: ListColumn<ElevatorRow>[] = [
@@ -119,29 +158,13 @@ export function ElevatorListScreen() {
       titleKey="elevator.title"
       primaryActionKey={readOnly ? undefined : "elevator.add"}
       primaryActionTo={readOnly ? undefined : "/elevators/new"}
-      exportable
-      filters={[
-        { labelKey: "elevator.fields.status" },
-        { labelKey: "elevator.fields.inspectionLabel", count: 2 },
-        { labelKey: "building.singular" },
-        { labelKey: "customer.singular", count: 1 },
-        { labelKey: "elevator.fields.category" },
-      ]}
-      // No active-filter chips until the filter controls exist. They used to be
-      // hardcoded to two inspection labels and a customer, which was fine
-      // against fixtures and becomes a lie the moment the list is real: chips
-      // claiming a filter is applied above an unfiltered list.
+      state={list}
+      searchable
+      filters={filters}
       columns={columns}
       rows={rows}
       rowKey={(row) => row.id}
       total={query.data?.pagination.total ?? 0}
-      page={page}
-      pageSize={pageSize}
-      onPageChange={setPage}
-      onPageSizeChange={(size) => {
-        setPageSize(size);
-        setPage(1);
-      }}
       loading={query.isPending}
       error={
         query.isError

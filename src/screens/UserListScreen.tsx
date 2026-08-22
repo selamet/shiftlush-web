@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -6,12 +5,26 @@ import { TriangleAlert } from "lucide-react";
 import { userListQuery, type TeamUser } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { formatDateTime, formatDate } from "@/lib/format";
+import { booleanFilter, enumFilter, listSearchSchema, useListSearch } from "@/lib/list-search";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
 import { RoleChip, StatusChip } from "@/components/ui/status-chip";
 import { PendingInvitations } from "@/components/users/PendingInvitations";
 
 /** Certificates expire, and an expired one blocks the technician on site. */
 const WARN_WITHIN_DAYS = 60;
+
+/** `GET /users/` declares no `search`, so this list is not offered one. */
+const filters = [
+  enumFilter({
+    param: "role",
+    labelKey: "user.fields.role",
+    namespace: "user.role",
+    values: ["owner", "admin", "operations", "technician", "accountant"],
+  }),
+  booleanFilter({ param: "is_active", labelKey: "user.fields.isActive" }),
+];
+
+export const userListSearch = listSearchSchema(filters);
 
 function certificateState(validUntil: string | null): "none" | "ok" | "expiring" {
   if (!validUntil) return "none";
@@ -26,10 +39,9 @@ function certificateState(validUntil: string | null): "none" | "ok" | "expiring"
  */
 export function UserListScreen() {
   const { t } = useTranslation();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const list = useListSearch(filters);
 
-  const query = useQuery(userListQuery({ page, page_size: pageSize }));
+  const query = useQuery(userListQuery(list.params));
   const rows = query.data?.results ?? [];
 
   const columns: ListColumn<TeamUser>[] = [
@@ -104,18 +116,12 @@ export function UserListScreen() {
         // primary action as a plain button with no click handler unless this is
         // set, and that component is not this screen's to change.
         primaryActionTo="/users/invite"
-        filters={[{ labelKey: "user.fields.role" }, { labelKey: "user.fields.isActive" }]}
+        state={list}
+        filters={filters}
         columns={columns}
         rows={rows}
         rowKey={(row) => row.id}
         total={query.data?.pagination.total ?? 0}
-        page={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setPage(1);
-        }}
         loading={query.isPending}
         error={
           query.isError

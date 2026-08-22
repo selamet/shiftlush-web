@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -6,19 +5,31 @@ import { customerListQuery, primaryContact, type Customer } from "@/api/queries"
 import { errorMessage, supportReference } from "@/api/errors";
 import { enumLabel } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { booleanFilter, enumFilter, listSearchSchema, useListSearch } from "@/lib/list-search";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
 import { StatusChip } from "@/components/ui/status-chip";
+
+const filters = [
+  enumFilter({
+    param: "type",
+    labelKey: "customer.fields.type",
+    namespace: "customer.type",
+    values: ["complex_management", "building_management", "corporate", "public", "individual"],
+  }),
+  booleanFilter({ param: "is_active", labelKey: "customer.fields.isActive" }),
+];
+
+export const customerListSearch = listSearchSchema(filters);
 
 export function CustomerListScreen() {
   const { t } = useTranslation();
   const { role } = useSession();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const list = useListSearch(filters);
 
   // The technician narrowing happens on the server — their token decides which
   // customers exist for them at all. The old `customers.slice(0, 2)` was a
   // stand-in that would have held only until someone opened the network tab.
-  const query = useQuery(customerListQuery({ page, page_size: pageSize }));
+  const query = useQuery(customerListQuery(list.params));
   const rows = query.data?.results ?? [];
 
   const columns: ListColumn<Customer>[] = [
@@ -69,21 +80,13 @@ export function CustomerListScreen() {
       titleKey={role === "technician" ? "nav.myCustomers" : "customer.title"}
       primaryActionKey={role === "technician" ? undefined : "customer.add"}
       primaryActionTo={role === "technician" ? undefined : "/customers/new"}
-      exportable
-      filters={[{ labelKey: "customer.fields.type" }, { labelKey: "customer.fields.isActive" }]}
+      state={list}
+      searchable
+      filters={filters}
       columns={columns}
       rows={rows}
       rowKey={(row) => row.id}
       total={query.data?.pagination.total ?? 0}
-      page={page}
-      pageSize={pageSize}
-      onPageChange={setPage}
-      onPageSizeChange={(size) => {
-        // Back to the first page: staying on page four of a 25-row list after
-        // switching to 100 per page lands past the end and shows nothing.
-        setPageSize(size);
-        setPage(1);
-      }}
       // Only the first load blanks the table; paging keeps the previous page on
       // screen, which is what placeholderData on the query is for.
       loading={query.isPending}
