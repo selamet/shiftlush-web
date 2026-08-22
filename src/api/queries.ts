@@ -203,6 +203,32 @@ export function updateCustomer(id: string, body: Partial<CustomerWrite>) {
   return api.patch<Customer>(`/customers/${id}/`, body);
 }
 
+export type CustomerContactWrite = Schemas["CustomerContactNestedWriteRequest"];
+
+/**
+ * Adding a contact to a customer.
+ *
+ * Through the customer's own path rather than the flat `/customer-contacts`,
+ * so the customer is in the URL and cannot be got wrong: the server refuses a
+ * body that names one, because two sources for the same value is how they come
+ * to disagree.
+ */
+export function createCustomerContact(
+  customerId: string,
+  body: CustomerContactWrite,
+  idempotencyKey: string,
+) {
+  return api.post<CustomerContact>(`/customers/${customerId}/contacts/`, body, {
+    idempotencyKey,
+  });
+}
+
+export function updateCustomerContact(id: string, body: Partial<CustomerContactWrite>) {
+  // The flat path, because an existing contact is addressed by its own id and
+  // the customer it belongs to does not change.
+  return api.patch<CustomerContact>(`/customer-contacts/${id}/`, body);
+}
+
 // --------------------------------------------------------------------------
 // Public authentication flows
 //

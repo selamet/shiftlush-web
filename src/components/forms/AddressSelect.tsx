@@ -28,11 +28,26 @@ export function AddressSelect({
   name,
   initial,
   error,
+  required = true,
 }: {
   name: string;
-  /** The record being edited, so the chain can open where it left off. */
-  initial?: { neighborhoodId: number | null; districtName: string; provinceName: string };
+  /**
+   * The record being edited, so the chain can open where it left off.
+   *
+   * The names are nullable because the neighbourhood is: a record can be
+   * entered before anyone knows where it is, and the API says so now.
+   */
+  initial?: {
+    neighborhoodId: number | null;
+    districtName: string | null;
+    provinceName: string | null;
+  };
   error?: string;
+  /**
+   * A building has to be somewhere. A customer does not: the address here is
+   * where the invoice goes, and it is often not known at the first call.
+   */
+  required?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -91,11 +106,16 @@ export function AddressSelect({
         </Field>
       </div>
 
-      <Field label={t("address.neighborhood")} htmlFor="addr-neighborhood" required error={error}>
+      <Field
+        label={t("address.neighborhood")}
+        htmlFor="addr-neighborhood"
+        required={required}
+        error={error}
+      >
         <SearchableSelect
           id="addr-neighborhood"
           name={name}
-          required
+          required={required}
           defaultValue={initial?.neighborhoodId ? String(initial.neighborhoodId) : ""}
           // The record carries the names, so there is no request to make just
           // to render a value that is already known.

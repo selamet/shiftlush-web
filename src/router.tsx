@@ -31,6 +31,7 @@ import { ElevatorFormScreen } from "@/screens/ElevatorFormScreen";
 import { CustomerListScreen } from "@/screens/CustomerListScreen";
 import { CustomerFormScreen } from "@/screens/CustomerFormScreen";
 import { CustomerDetailScreen } from "@/screens/CustomerDetailScreen";
+import { ContactFormScreen } from "@/screens/ContactFormScreen";
 import { ComplexListScreen } from "@/screens/ComplexListScreen";
 import { BuildingListScreen } from "@/screens/BuildingListScreen";
 import { BuildingFormScreen } from "@/screens/BuildingFormScreen";
@@ -191,6 +192,15 @@ export const routeTree = rootRoute.addChildren([
     ),
     shellChild("/customers/new", CustomerFormScreen),
     shellChild("/customers/$id/edit", CustomerFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(customerQuery(params.id)),
+    ),
+    // Both contact routes hang off the customer, and both load it: the create
+    // form needs its name for the breadcrumb, and the edit form finds the
+    // contact in the record rather than fetching it a second time.
+    shellChild("/customers/$id/contacts/new", ContactFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(customerQuery(params.id)),
+    ),
+    shellChild("/customers/$id/contacts/$contactId", ContactFormScreen, ({ params }) =>
       queryClient.ensureQueryData(customerQuery(params.id)),
     ),
     shellChild("/customers", CustomerListScreen, () =>

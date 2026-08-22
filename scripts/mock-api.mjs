@@ -60,7 +60,23 @@ function resolve(path, search, method, body) {
   }
   const patched = /^\/api\/v1\/customers\/([^/]+)\/$/.exec(path);
   if (method === "PATCH" && patched) {
-    return { ...fixture("demo-customers")[0], ...body, id: patched[1] };
+    const rows = fixture("demo-customers");
+    const before = rows.find((row) => row.id === patched[1]) ?? rows[0];
+    return { ...before, ...body, id: patched[1] };
+  }
+
+  // Contacts. Created under the customer, edited by their own id — the two
+  // paths the contact form uses, and both have to answer or the form renders
+  // its error state and the smoke run passes on a broken screen.
+  const nested = /^\/api\/v1\/customers\/([^/]+)\/contacts\/$/.exec(path);
+  if (nested) {
+    const contacts = fixture("demo-customers")[0].contacts;
+    if (method === "POST") return { ...contacts[0], ...body, id: "k-new", customer_id: nested[1] };
+    return page(contacts);
+  }
+  const contact = /^\/api\/v1\/customer-contacts\/([^/]+)\/$/.exec(path);
+  if (contact) {
+    return { ...fixture("demo-customers")[0].contacts[0], ...body, id: contact[1] };
   }
 
   const customers = fixture("demo-customers");

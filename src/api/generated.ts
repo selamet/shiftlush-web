@@ -733,6 +733,24 @@ export interface paths {
         patch: operations["customers_partial_update"];
         trace?: never;
     };
+    "/api/v1/customers/{id}/contacts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The contacts of this customer. */
+        get: operations["customers_contacts_list"];
+        put?: never;
+        /** @description Add a contact to this customer. The customer comes from the path. */
+        post: operations["customers_contacts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/districts/": {
         parameters: {
             query?: never;
@@ -1258,7 +1276,15 @@ export interface components {
         BillingPeriodEnum: "monthly" | "quarterly" | "semiannual" | "annual";
         /** @enum {unknown} */
         BlankEnum: "";
-        /** @description The address fields every property-like record shares. */
+        /**
+         * @description The named address behind a `neighborhood` foreign key.
+         *
+         *     Every one of these keys is nullable — a record can be entered before anyone
+         *     knows where it is — so the fields are declared nullable too. Without that
+         *     the contract promises a string on rows that hold nothing, a generated client
+         *     reads the field as always present, and the screen prints an empty line
+         *     without anything having failed.
+         */
         BuildingRead: {
             /** Format: uuid */
             readonly id: string;
@@ -1272,9 +1298,9 @@ export interface components {
             readonly complex_name: string;
             /** Format: int64 */
             readonly neighborhood_id: number | null;
-            readonly neighborhood_name: string;
-            readonly district_name: string;
-            readonly province_name: string;
+            readonly neighborhood_name: string | null;
+            readonly district_name: string | null;
+            readonly province_name: string | null;
             readonly street: string;
             readonly building_number: string;
             readonly address_note: string;
@@ -1373,7 +1399,15 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
         };
-        /** @description The address fields every property-like record shares. */
+        /**
+         * @description The named address behind a `neighborhood` foreign key.
+         *
+         *     Every one of these keys is nullable — a record can be entered before anyone
+         *     knows where it is — so the fields are declared nullable too. Without that
+         *     the contract promises a string on rows that hold nothing, a generated client
+         *     reads the field as always present, and the screen prints an empty line
+         *     without anything having failed.
+         */
         ComplexRead: {
             /** Format: uuid */
             readonly id: string;
@@ -1383,9 +1417,9 @@ export interface components {
             readonly customer_name: string;
             /** Format: int64 */
             readonly neighborhood_id: number | null;
-            readonly neighborhood_name: string;
-            readonly district_name: string;
-            readonly province_name: string;
+            readonly neighborhood_name: string | null;
+            readonly district_name: string | null;
+            readonly province_name: string | null;
             readonly street: string;
             readonly building_number: string;
             /** Format: decimal */
@@ -1612,6 +1646,22 @@ export interface components {
             /** Format: date */
             readonly certificate_valid_until: string | null;
         };
+        /**
+         * @description The same contact, created under `/customers/{id}/contacts`.
+         *
+         *     `customer` is gone from the field list rather than made read-only, so
+         *     `StrictMixin` refuses a body that names it. Two sources for one value is how
+         *     they come to disagree, and the path is the source.
+         */
+        CustomerContactNestedWriteRequest: {
+            full_name: string;
+            /** @default other */
+            role: components["schemas"]["ContactRole"];
+            phone?: string;
+            email?: string;
+            is_primary?: boolean;
+            notes?: string;
+        };
         CustomerContactRead: {
             /** Format: uuid */
             readonly id: string;
@@ -1663,6 +1713,15 @@ export interface components {
             is_primary?: boolean;
             notes?: string;
         };
+        /**
+         * @description The named address behind a `neighborhood` foreign key.
+         *
+         *     Every one of these keys is nullable — a record can be entered before anyone
+         *     knows where it is — so the fields are declared nullable too. Without that
+         *     the contract promises a string on rows that hold nothing, a generated client
+         *     reads the field as always present, and the screen prints an empty line
+         *     without anything having failed.
+         */
         CustomerRead: {
             /** Format: uuid */
             readonly id: string;
@@ -1675,6 +1734,9 @@ export interface components {
             readonly email: string;
             /** Format: int64 */
             readonly neighborhood_id: number | null;
+            readonly neighborhood_name: string | null;
+            readonly district_name: string | null;
+            readonly province_name: string | null;
             readonly street: string;
             readonly building_number: string;
             readonly unit_number: string;
@@ -2596,6 +2658,7 @@ export interface components {
          *     * `INTERNAL_ERROR` - Unexpected server error
          *     * `THROTTLED` - Rate limit exceeded
          *     * `SERVICE_UNAVAILABLE` - A required service is not available
+         *     * `CONSTRAINT_VIOLATION` - The request violates a database constraint
          *     * `API_VERSION_SUNSET` - This API version is no longer served
          *     * `INVALID_TAX_NUMBER` - Tax number failed its check digit
          *     * `INVALID_NATIONAL_ID` - National ID failed its check digit
@@ -2606,6 +2669,8 @@ export interface components {
          *     * `RECORD_IN_USE` - Record is referenced by other records
          *     * `DUPLICATE_REGISTRATION_NUMBER` - Registration number already exists for this company
          *     * `DUPLICATE_CONTRACT_NUMBER` - Contract number already exists for this company
+         *     * `DUPLICATE_TAX_NUMBER` - Tax number already belongs to another customer of this company
+         *     * `DUPLICATE_NATIONAL_ID` - National ID already belongs to another customer of this company
          *     * `EMAIL_ALREADY_REGISTERED` - E-mail address is already registered
          *     * `IDEMPOTENCY_KEY_REUSED` - Idempotency key was reused with a different request body
          *     * `ELEVATOR_ALREADY_CONTRACTED` - Elevator is already covered by an open contract
@@ -2614,6 +2679,8 @@ export interface components {
          *     * `CANNOT_DEACTIVATE_SELF` - A user cannot deactivate their own account
          *     * `BUILDING_CUSTOMER_MISMATCH` - A building in a complex must share the complex's customer
          *     * `TERMINATION_REASON_REQUIRED` - A termination reason is required
+         *     * `FIELD_REQUIRED_FOR_CUSTOMER_TYPE` - This customer type requires this field
+         *     * `FIELD_NOT_VALID_FOR_CUSTOMER_TYPE` - This field does not apply to this customer type
          *     * `STATUS_NOT_USER_SELECTABLE` - This status is assigned by the system
          *     * `INVALID_CREDENTIALS` - E-mail or password is incorrect
          *     * `ACCOUNT_LOCKED` - Too many failed attempts; account is temporarily locked
@@ -2627,7 +2694,7 @@ export interface components {
          *     * `ATTACHMENT_TARGET_MISMATCH` - Attachment does not belong to the record it is being linked to
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "EMAIL_ALREADY_REGISTERED" | "IDEMPOTENCY_KEY_REUSED" | "ELEVATOR_ALREADY_CONTRACTED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
+        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "IDEMPOTENCY_KEY_REUSED" | "ELEVATOR_ALREADY_CONTRACTED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
         /** @description The shape of every error response. There is no `message` field: the backend sends codes, and the words live in the client's translation file, so wording changes in one place and adding a language does not touch the API. */
         ErrorResponse: {
             error: {
@@ -3853,6 +3920,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CustomerWrite"];
+                };
+            };
+        };
+    };
+    customers_contacts_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this customer. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCustomerContactReadList"];
+                };
+            };
+        };
+    };
+    customers_contacts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this customer. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerContactNestedWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CustomerContactNestedWriteRequest"];
+                "multipart/form-data": components["schemas"]["CustomerContactNestedWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerContactRead"];
                 };
             };
         };
