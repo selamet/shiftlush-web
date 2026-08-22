@@ -29,6 +29,8 @@ import {
   invitationListQuery,
   activeOwnerCountQuery,
   companyQuery,
+  currentUserQuery,
+  sessionListQuery,
 } from "@/api/queries";
 import { SessionProvider, ensureSession, type SessionOverride } from "@/lib/session";
 import type { ListSearch } from "@/lib/list-search";
@@ -53,7 +55,7 @@ import { UserListScreen, userListSearch } from "@/screens/UserListScreen";
 import { InviteUserScreen } from "@/screens/InviteUserScreen";
 import { UserDetailScreen } from "@/screens/UserDetailScreen";
 import { AuditLogListScreen, auditLogListSearch } from "@/screens/AuditLogListScreen";
-import { SettingsScreen } from "@/screens/SettingsScreen";
+import { ProfileSettingsScreen, SettingsScreen } from "@/screens/SettingsScreen";
 import { QrLabelScreen } from "@/screens/QrLabelScreen";
 import { ScanScreen } from "@/screens/ScanScreen";
 import { QrResolveScreen } from "@/screens/QrResolveScreen";
@@ -388,9 +390,22 @@ export const routeTree = rootRoute.addChildren([
     }),
     shellChild("/audit-logs", AuditLogListScreen, undefined, auditLogListSearch),
     // The company record only. The signed-in user's own details belong to the
-    // profile tab, which most visits never open — prefetching them would mean a
-    // request on every visit for a panel behind a second click.
+    // profile tab, which is a route of its own — prefetching them here would
+    // mean a request on every visit for a panel most visits never open.
+    //
+    // Declared before the tab beneath it for readability; the router ranks the
+    // static segment above nothing at all either way.
     shellChild("/settings", SettingsScreen, () => queryClient.ensureQueryData(companyQuery())),
+    // The person, and the devices they are signed in on. Both at once: the
+    // session list is the evidence that a password change did what it said,
+    // and a list that arrives after the form has already been read is a list
+    // nobody looks at twice.
+    shellChild("/settings/profile", ProfileSettingsScreen, async () => {
+      await Promise.all([
+        queryClient.ensureQueryData(currentUserQuery()),
+        queryClient.ensureQueryData(sessionListQuery()),
+      ]);
+    }),
   ]),
 ]);
 

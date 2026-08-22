@@ -33,12 +33,30 @@ interface UseSubmitOptions<TInput, TResult> {
   mutationFn: (input: TInput) => Promise<TResult>;
   /** Query keys to invalidate on success, so lists do not show stale rows. */
   invalidate?: QueryKey[];
+  /**
+   * Error codes the server sends against no field, which on this form belong
+   * to one. Code → field name.
+   *
+   * Changing a password is the case this exists for. `INVALID_CREDENTIALS`
+   * arrives as a top-level code and the server is right to send it that way:
+   * "the password you typed is wrong" is a different answer from "the password
+   * you chose is unacceptable", and it deliberately refuses to dress the first
+   * one up as a validation failure. But on a form with two password boxes, a
+   * banner over the top says nothing about which of them to retype. The server
+   * owns what happened; the form owns where the user has to look.
+   *
+   * Only for codes with exactly one possible field. A code that could mean
+   * either box would be guessed at here, and a wrong guess points at the field
+   * that was fine.
+   */
+  fieldForCode?: Record<string, string>;
   onSuccess?: (result: TResult) => void;
 }
 
 export function useSubmit<TInput, TResult>({
   mutationFn,
   invalidate = [],
+  fieldForCode,
   onSuccess,
 }: UseSubmitOptions<TInput, TResult>) {
   const { t } = useTranslation();
@@ -64,6 +82,14 @@ export function useSubmit<TInput, TResult>({
     },
     onError: (error) => {
       const byField = fieldErrors(error, t);
+
+      // Placed before the count below, which is what decides between a field
+      // error and a banner: a code routed to a field must not also be shouted
+      // at the top of the form.
+      const routed = error instanceof ApiError ? fieldForCode?.[error.code] : undefined;
+      // Never over the top of what the server actually said about that field.
+      if (routed && !byField[routed]) byField[routed] = errorMessage(error, t);
+
       setFields(byField);
       // A field-level failure is already shown against its input; repeating it
       // at the top of the form says the same thing twice and buries the case

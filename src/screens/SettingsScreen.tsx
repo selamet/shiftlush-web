@@ -1,13 +1,12 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Lock } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   companyKeys,
   companyLogoQuery,
   companyQuery,
   currentUserQuery,
-  requestPasswordReset,
   updateCompany,
   type Company,
   type CompanyWrite,
@@ -20,9 +19,10 @@ import { enumLabel } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AddressSelect } from "@/components/forms/AddressSelect";
 import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
+import { ChangePasswordForm } from "@/components/settings/ChangePasswordForm";
+import { SessionList } from "@/components/settings/SessionList";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -79,10 +79,74 @@ function baseline(record: Company): Record<string, string> {
   };
 }
 
-export function SettingsScreen() {
-  const { t } = useTranslation();
-  const [tab, setTab] = useState<"company" | "profile">("company");
+// `labelKey`, not `label`: that is the spelling scripts/check-i18n-keys.mjs
+// recognises, and a key it cannot see is a key it reports as unused — which is
+// an invitation to delete a string that is very much on the screen.
+const TABS = [
+  { key: "company", path: "/settings", labelKey: "settings.companyTab" },
+  { key: "profile", path: "/settings/profile", labelKey: "settings.profileTab" },
+] as const;
 
+/**
+ * Two tabs, one per route rather than one piece of local state.
+ *
+ * The profile tab now holds a password form and a list of signed-in devices,
+ * which is the half of this screen somebody is sent to — "check your sessions",
+ * "change your password" — and a tab that only exists after a click cannot be
+ * linked to, cannot be returned to with the back button, and is never rendered
+ * by anything that walks the route tree. The user menu points straight at it,
+ * and the render smoke test now covers it for every role.
+ *
+ * Each tab also fetches only what it shows: the company record is not asked for
+ * to render a page about the signed-in person.
+ */
+export function SettingsScreen() {
+  return <Settings tab="company" />;
+}
+
+/** The profile half, addressed by its own route. */
+export function ProfileSettingsScreen() {
+  return <Settings tab="profile" />;
+}
+
+function Settings({ tab }: { tab: (typeof TABS)[number]["key"] }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex flex-col gap-4 p-6">
+      <h1 className="text-title">{t("company.title")}</h1>
+
+      <div className="flex gap-1 border-b border-border">
+        {TABS.map((entry) => (
+          <Link
+            key={entry.key}
+            to={entry.path}
+            className={cn(
+              "flex h-control-md items-center px-3 text-body transition-colors focus-ring",
+              tab === entry.key
+                ? "border-b-2 border-primary font-medium text-foreground"
+                : "border-b-2 border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t(entry.labelKey)}
+          </Link>
+        ))}
+      </div>
+
+      {tab === "company" ? <CompanyTab /> : <ProfileTab />}
+    </div>
+  );
+}
+
+/**
+ * Fetching the company record, separately from the form that writes it.
+ *
+ * The form takes the record as a prop and builds its uncontrolled inputs from
+ * it, so it must not exist before the record does — a form keyed on a value
+ * that arrives later is a form whose fields are blank and stay blank.
+ */
+function CompanyTab() {
+  const { t } = useTranslation();
   const company = useQuery(companyQuery());
 
   if (company.isPending) return <DetailSkeleton />;
@@ -96,31 +160,7 @@ export function SettingsScreen() {
     );
   }
 
-  return (
-    <div className="flex flex-col gap-4 p-6">
-      <h1 className="text-title">{t("company.title")}</h1>
-
-      <div className="flex gap-1 border-b border-border">
-        {(["company", "profile"] as const).map((key) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setTab(key)}
-            className={cn(
-              "flex h-control-md items-center px-3 text-body transition-colors focus-ring",
-              tab === key
-                ? "border-b-2 border-primary font-medium text-foreground"
-                : "border-b-2 border-transparent text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {t(key === "company" ? "settings.companyTab" : "settings.profileTab")}
-          </button>
-        ))}
-      </div>
-
-      {tab === "company" ? <CompanyTab record={company.data} /> : <ProfileTab />}
-    </div>
-  );
+  return <CompanyForm record={company.data} />;
 }
 
 /**
@@ -130,7 +170,7 @@ export function SettingsScreen() {
  * disappearing — knowing the firm's tax number is useful to an accountant who
  * may not change it, and a field that vanishes reads as a field that is empty.
  */
-function CompanyTab({ record }: { record: Company }) {
+function CompanyForm({ record }: { record: Company }) {
   const { t } = useTranslation();
   const { role } = useSession();
   const canEditCompany = role === "owner";
@@ -544,30 +584,19 @@ function CompanyTab({ record }: { record: Company }) {
 }
 
 /**
- * The signed-in person, and the two things they can do about their own access.
+ * The signed-in person, and what they can do about their own access.
  *
- * Both are narrower than they look, and the contract is why. There is no
- * authenticated password-change operation — only the reset flow, which proves
- * the address rather than the old password — and no session resource at all,
- * so "sign out my other devices" is not something this screen can offer
- * without inventing an endpoint. What it can do is say what actually ends a
- * session, before anybody is surprised by one ending.
+ * Both controls here were removed once, and correctly: there was no
+ * authenticated password-change operation and no session resource at all, so
+ * the honest screen was one that explained what ends a session rather than one
+ * offering a button that would have ended the wrong one. Both endpoints exist
+ * now, and the explanations have been replaced by the things they were standing
+ * in for.
  */
 function ProfileTab() {
   const { t } = useTranslation();
   const { role } = useSession();
   const me = useQuery(currentUserQuery());
-
-  const [asking, setAsking] = useState(false);
-  const [sent, setSent] = useState(false);
-
-  const reset = useSubmit<string, void>({
-    mutationFn: (email) => requestPasswordReset(email),
-    onSuccess: () => {
-      setAsking(false);
-      setSent(true);
-    },
-  });
 
   if (me.isPending) return <DetailSkeleton />;
   if (me.isError || !me.data) {
@@ -612,43 +641,12 @@ function ProfileTab() {
       </Section>
 
       <Section title={t("auth.password")}>
-        <div className="flex flex-col gap-3">
-          <p className="text-body text-muted-foreground">
-            {t("settings.passwordBody", { email: user.email })}
-          </p>
-          {reset.state.message && <Alert tone="error" block title={reset.state.message} />}
-          {sent ? (
-            <Alert tone="success" title={t("settings.passwordSent")} />
-          ) : (
-            <div>
-              <Button variant="secondary" size="sm" onClick={() => setAsking(true)}>
-                <Lock aria-hidden="true" />
-                {t("settings.changePassword")}
-              </Button>
-            </div>
-          )}
-        </div>
+        <ChangePasswordForm />
       </Section>
 
       <Section title={t("settings.activeSessions")}>
-        {/* No button, because there is no endpoint behind one. Saying what does
-            end a session is worth more than a control that would have had to
-            end this one too — pressing it, landing on the login screen and
-            reading that as a fault is exactly what this avoids. */}
-        <p className="text-body text-muted-foreground">{t("settings.sessionsBody")}</p>
+        <SessionList />
       </Section>
-
-      {/* Asking, because the link is only useful to somebody expecting it, and
-          because the consequence belongs before the action rather than after
-          it: finishing the reset ends every session, this one included. */}
-      <ConfirmDialog
-        open={asking}
-        title={t("settings.passwordConfirmTitle")}
-        body={t("settings.passwordConfirmBody", { email: user.email })}
-        confirmLabel={reset.state.pending ? t("common.sending") : t("auth.sendResetLink")}
-        onConfirm={() => reset.submit(user.email)}
-        onCancel={() => setAsking(false)}
-      />
     </div>
   );
 }

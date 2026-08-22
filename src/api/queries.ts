@@ -906,3 +906,65 @@ export function currentUserQuery() {
     queryFn: ({ signal }) => api.get<CurrentUser>("/auth/me", { signal }),
   });
 }
+
+// --------------------------------------------------------------------------
+// The signed-in person's own access
+//
+// Every request here is scoped to the caller by the token and takes no user
+// id at all. There is no way to ask for somebody else's sessions, and no
+// screen should be built as though there were: a session list says which
+// devices a person carries and when they last held one, which is theirs to
+// read and nobody else's.
+// --------------------------------------------------------------------------
+
+/**
+ * One signed-in device.
+ *
+ * Named apart from the `Session` in `lib/session`, which is this application's
+ * own idea of "who is signed in here". This one is a row on the server: one per
+ * sign-in, surviving every refresh-token rotation in between, which is why `id`
+ * stays revocable for as long as the device is signed in.
+ */
+export type AuthSession = Schemas["Session"];
+
+export const sessionKeys = {
+  all: ["auth", "sessions"] as const,
+};
+
+export function sessionListQuery() {
+  return queryOptions({
+    queryKey: sessionKeys.all,
+    queryFn: ({ signal }) => api.get<AuthSession[]>("/auth/sessions", { signal }),
+    // Zero, against the client's thirty-second default. That default is right
+    // for operational data two colleagues are reading at once; this is a
+    // security screen somebody opens *because* they want to know what is open
+    // now, and half a minute of a revoked device still being listed is the one
+    // answer it must never give.
+    staleTime: 0,
+  });
+}
+
+/**
+ * Changing the password from inside a session.
+ *
+ * Answers with the same `TokenResponse` sign-in does, and that is not a
+ * formality: the change ends every session on the account and re-opens the
+ * caller's on a new refresh cookie and a new access token. A caller that drops
+ * the response signs itself out on success. See `adoptTokens` in lib/session.
+ */
+export function changePassword(currentPassword: string, newPassword: string) {
+  return api.post<TokenResponse>("/auth/password", {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+}
+
+/** Ends one session. The caller's own survives unless it is the one named. */
+export function revokeSession(sessionId: string) {
+  return api.delete<void>(`/auth/sessions/${sessionId}`);
+}
+
+/** Ends every session but the caller's, which is kept by the server. */
+export function revokeOtherSessions() {
+  return api.post<void>("/auth/sessions/revoke-others");
+}
