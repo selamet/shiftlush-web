@@ -53,6 +53,31 @@ import { cn } from "@/lib/utils";
  * which cell each label lands in, and how many cells stay empty.
  */
 
+/**
+ * How many rows a picker asks for.
+ *
+ * A dropdown shows a handful; it was asking for two hundred, which is neither
+ * all of a large firm's buildings nor a page. Searching happens on the server
+ * now, so this is a page size rather than a ceiling on what is reachable.
+ */
+const PICKER_PAGE_SIZE = 20;
+
+/**
+ * A value that stops changing until the typing does.
+ *
+ * Three fields here search the server. Without this, each one spends a request
+ * per keystroke, and the answers race: the list settles on whichever reply
+ * happens to land last rather than on the one the user is still typing.
+ */
+function useDebounced(value: string, delay = 300): string {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(value.trim()), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return settled;
+}
+
 /** What the print list has to remember about a lift that has scrolled away. */
 type PrintItem = Pick<
   ElevatorRow,
@@ -124,9 +149,13 @@ export function QrLabelScreen() {
 
   const [items, setItems] = useState<PrintItem[]>([]);
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [buildingId, setBuildingId] = useState("");
-  const [customerId, setCustomerId] = useState("");
+  // The picker owns what is typed into it and hands it up; what is chosen has
+  // to be kept here with its label, because the option list moves on as soon as
+  // the next search runs and the chosen row is usually not in it.
+  const [buildingQuery, setBuildingQuery] = useState("");
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [pickedBuilding, setPickedBuilding] = useState<{ id: string; label: string } | null>(null);
+  const [pickedCustomer, setPickedCustomer] = useState<{ id: string; label: string } | null>(null);
   const [notice, setNotice] = useState("");
   const [confirming, setConfirming] = useState<PrintItem | null>(null);
 
@@ -145,11 +174,6 @@ export function QrLabelScreen() {
 
   useEffect(() => () => replacePdf(null), [replacePdf]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-
   const chosen = useMemo(() => new Set(items.map((item) => item.id)), [items]);
   const signature = items.map((item) => item.id).join(",");
 
@@ -160,11 +184,38 @@ export function QrLabelScreen() {
     replacePdf(null);
   }, [signature, replacePdf]);
 
+  const debouncedSearch = useDebounced(search);
+  const debouncedBuildingQuery = useDebounced(buildingQuery);
+  const debouncedCustomerQuery = useDebounced(customerQuery);
+
   const elevators = useQuery(
     elevatorListQuery({ search: debouncedSearch || undefined, page_size: 25 }),
   );
-  const buildings = useQuery(buildingListQuery({ page_size: 200 }));
-  const customers = useQuery(customerListQuery({ page_size: 200 }));
+  // Searched on the server. The building search matches the customer's legal
+  // name as well as the building's own, so typing a customer finds their
+  // buildings without the user having to know which control to use.
+  const buildings = useQuery(
+    buildingListQuery({
+      search: debouncedBuildingQuery || undefined,
+      page_size: PICKER_PAGE_SIZE,
+    }),
+  );
+  const customers = useQuery(
+    customerListQuery({
+      search: debouncedCustomerQuery || undefined,
+      page_size: PICKER_PAGE_SIZE,
+    }),
+  );
+
+  const buildingOptions = (buildings.data?.results ?? []).map((building) => ({
+    value: building.id,
+    label: building.name,
+    hint: building.customer_name,
+  }));
+  const customerOptions = (customers.data?.results ?? []).map((customer) => ({
+    value: customer.id,
+    label: customer.legal_name,
+  }));
 
   const room = MAX_LABELS - items.length;
 
@@ -253,20 +304,22 @@ export function QrLabelScreen() {
             <div className="flex items-end gap-2">
               <SearchableSelect
                 className="min-w-0 flex-1"
-                options={(buildings.data?.results ?? []).map((building) => ({
-                  value: building.id,
-                  label: building.name,
-                  hint: building.customer_name,
-                }))}
-                value={buildingId}
-                onChange={setBuildingId}
+                options={buildingOptions}
+                value={pickedBuilding?.id ?? ""}
+                selectedLabel={pickedBuilding?.label}
+                onChange={(value) => {
+                  const option = buildingOptions.find((candidate) => candidate.value === value);
+                  setPickedBuilding(option ? { id: value, label: option.label } : null);
+                }}
+                onSearchChange={setBuildingQuery}
+                loading={buildings.isPending}
                 placeholder={t("qrLabels.pickBuilding")}
               />
               <Button
                 variant="secondary"
                 size="sm"
-                disabled={!buildingId || addGroup.isPending || room <= 0}
-                onClick={() => addGroup.mutate({ building: buildingId })}
+                disabled={!pickedBuilding || addGroup.isPending || room <= 0}
+                onClick={() => addGroup.mutate({ building: pickedBuilding?.id })}
               >
                 <Building2 />
                 {t("qrLabels.addBuilding")}
@@ -276,19 +329,22 @@ export function QrLabelScreen() {
             <div className="flex items-end gap-2">
               <SearchableSelect
                 className="min-w-0 flex-1"
-                options={(customers.data?.results ?? []).map((customer) => ({
-                  value: customer.id,
-                  label: customer.legal_name,
-                }))}
-                value={customerId}
-                onChange={setCustomerId}
+                options={customerOptions}
+                value={pickedCustomer?.id ?? ""}
+                selectedLabel={pickedCustomer?.label}
+                onChange={(value) => {
+                  const option = customerOptions.find((candidate) => candidate.value === value);
+                  setPickedCustomer(option ? { id: value, label: option.label } : null);
+                }}
+                onSearchChange={setCustomerQuery}
+                loading={customers.isPending}
                 placeholder={t("qrLabels.pickCustomer")}
               />
               <Button
                 variant="secondary"
                 size="sm"
-                disabled={!customerId || addGroup.isPending || room <= 0}
-                onClick={() => addGroup.mutate({ customer: customerId })}
+                disabled={!pickedCustomer || addGroup.isPending || room <= 0}
+                onClick={() => addGroup.mutate({ customer: pickedCustomer?.id })}
               >
                 <Users />
                 {t("qrLabels.addCustomer")}
