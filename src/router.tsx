@@ -137,6 +137,26 @@ type Loader = (context: LoaderContext) => Promise<unknown>;
  * a filter prefetches the list it names rather than warming page one and then
  * fetching what was actually asked for.
  */
+/**
+ * A list, plus the count of the record it depends on when the list is empty.
+ *
+ * The empty state offers one of two things — "create the first one" or "you
+ * need a customer first" — and which one is right depends on a fact neither the
+ * list nor the route knows. Fetching it here rather than in the screen means the
+ * answer is in the cache before the first paint, instead of the empty state
+ * showing nothing for a beat and then deciding.
+ *
+ * Only asked when the list came back empty, and only ever one row: the count is
+ * the whole answer.
+ */
+async function listAndParentCount(
+  list: Promise<{ pagination: { total: number } }>,
+  parent: () => Promise<unknown>,
+) {
+  const page = await list;
+  if (page.pagination.total === 0) await parent();
+}
+
 function shellChild(
   path: string,
   component: () => React.ReactNode,
@@ -214,7 +234,10 @@ export const routeTree = rootRoute.addChildren([
       "/elevators",
       ElevatorListScreen,
       ({ deps }) =>
-        queryClient.ensureQueryData(elevatorListQuery(elevatorListSearch.params(deps.search))),
+        listAndParentCount(
+          queryClient.ensureQueryData(elevatorListQuery(elevatorListSearch.params(deps.search))),
+          () => queryClient.ensureQueryData(buildingListQuery({ page_size: 1 })),
+        ),
       elevatorListSearch,
     ),
     shellChild("/elevators/$id", ElevatorDetailScreen, async ({ params }) => {
@@ -271,7 +294,10 @@ export const routeTree = rootRoute.addChildren([
       "/complexes",
       ComplexListScreen,
       ({ deps }) =>
-        queryClient.ensureQueryData(complexListQuery(complexListSearch.params(deps.search))),
+        listAndParentCount(
+          queryClient.ensureQueryData(complexListQuery(complexListSearch.params(deps.search))),
+          () => queryClient.ensureQueryData(customerListQuery({ page_size: 1 })),
+        ),
       complexListSearch,
     ),
     shellChild("/complexes/$id", ComplexDetailScreen, async ({ params }) => {
@@ -287,7 +313,10 @@ export const routeTree = rootRoute.addChildren([
       "/buildings",
       BuildingListScreen,
       ({ deps }) =>
-        queryClient.ensureQueryData(buildingListQuery(buildingListSearch.params(deps.search))),
+        listAndParentCount(
+          queryClient.ensureQueryData(buildingListQuery(buildingListSearch.params(deps.search))),
+          () => queryClient.ensureQueryData(customerListQuery({ page_size: 1 })),
+        ),
       buildingListSearch,
     ),
     shellChild("/buildings/$id/edit", BuildingFormScreen, ({ params }) =>
@@ -298,7 +327,10 @@ export const routeTree = rootRoute.addChildren([
       "/contracts",
       ContractListScreen,
       ({ deps }) =>
-        queryClient.ensureQueryData(contractListQuery(contractListSearch.params(deps.search))),
+        listAndParentCount(
+          queryClient.ensureQueryData(contractListQuery(contractListSearch.params(deps.search))),
+          () => queryClient.ensureQueryData(customerListQuery({ page_size: 1 })),
+        ),
       contractListSearch,
     ),
     shellChild("/contracts/new", ContractFormScreen),
