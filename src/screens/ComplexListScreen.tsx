@@ -1,8 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { complexListQuery, type Complex } from "@/api/queries";
+import { complexListQuery, type Complex,
+  customerListQuery,} from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
+import { prerequisiteMissing } from "@/lib/prerequisite";
 import { listSearchSchema, useListSearch } from "@/lib/list-search";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
 
@@ -43,6 +45,13 @@ export function ComplexListScreen() {
 
   const query = useQuery(complexListQuery(list.params));
 
+  // Whether the parent record exists only matters when this list is empty, so
+  // that is the only time the question is asked -- and one row answers it.
+  const listIsEmpty =
+    !query.isPending && !query.isError && (query.data?.results.length ?? 0) === 0;
+  const parents = useQuery({ ...customerListQuery({ page_size: 1 }), enabled: listIsEmpty });
+  const missingParent = prerequisiteMissing(parents, listIsEmpty);
+
   return (
     <ListPage
       breadcrumbKey="nav.groups.records"
@@ -67,7 +76,7 @@ export function ComplexListScreen() {
       emptyTitleKey="empty.noComplexes"
       // A complex belongs to a customer, so there is nothing to create until
       // one exists — the empty state points there instead of offering "add".
-      prerequisite={{ labelKey: "customer.add", to: "/customers" }}
+      prerequisite={{ labelKey: "customer.add", to: "/customers", missing: missingParent }}
     />
   );
 }

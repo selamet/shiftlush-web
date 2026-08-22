@@ -24,8 +24,9 @@ import {
   updateElevator,
   type ElevatorRow,
   type ElevatorWrite,
-} from "@/api/queries";
+  buildingListQuery,} from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
+import { prerequisiteMissing } from "@/lib/prerequisite";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate } from "@/lib/format";
 import { useSession } from "@/lib/session";
@@ -1005,6 +1006,13 @@ export function ElevatorListScreen() {
   // The technician sees the elevators of the customers assigned to them; that
   // narrowing is the server's, decided by their token.
   const query = useQuery(elevatorListQuery(list.params));
+
+  // Whether the parent record exists only matters when this list is empty, so
+  // that is the only time the question is asked -- and one row answers it.
+  const listIsEmpty =
+    !query.isPending && !query.isError && (query.data?.results.length ?? 0) === 0;
+  const parents = useQuery({ ...buildingListQuery({ page_size: 1 }), enabled: listIsEmpty });
+  const missingParent = prerequisiteMissing(parents, listIsEmpty);
   const rows = query.data?.results ?? [];
   const total = query.data?.pagination.total ?? 0;
 
@@ -1133,7 +1141,7 @@ export function ElevatorListScreen() {
         <ElevatorBulkActions selection={selection} filterTotal={total} nameOf={nameOf} />
       )}
       emptyTitleKey="empty.noElevators"
-      prerequisite={{ labelKey: "building.add", to: "/buildings" }}
+      prerequisite={{ labelKey: "building.add", to: "/buildings", missing: missingParent }}
     />
   );
 }

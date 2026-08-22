@@ -1,8 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { buildingListQuery, type Building } from "@/api/queries";
+import { buildingListQuery, type Building,
+  customerListQuery,} from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
+import { prerequisiteMissing } from "@/lib/prerequisite";
 import { enumLabel } from "@/lib/i18n";
 import { booleanFilter, enumFilter, listSearchSchema, useListSearch } from "@/lib/list-search";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
@@ -34,6 +36,13 @@ export function BuildingListScreen() {
   const list = useListSearch(filters);
 
   const query = useQuery(buildingListQuery(list.params));
+
+  // Whether the parent record exists only matters when this list is empty, so
+  // that is the only time the question is asked -- and one row answers it.
+  const listIsEmpty =
+    !query.isPending && !query.isError && (query.data?.results.length ?? 0) === 0;
+  const parents = useQuery({ ...customerListQuery({ page_size: 1 }), enabled: listIsEmpty });
+  const missingParent = prerequisiteMissing(parents, listIsEmpty);
   const rows = query.data?.results ?? [];
 
   const columns: ListColumn<Building>[] = [
@@ -89,7 +98,7 @@ export function BuildingListScreen() {
       emptyTitleKey="empty.noBuildings"
       // A building cannot exist without a customer, so an empty list here is
       // more often "no customers yet" than "no buildings yet".
-      prerequisite={{ labelKey: "customer.add", to: "/customers" }}
+      prerequisite={{ labelKey: "customer.add", to: "/customers", missing: missingParent }}
     />
   );
 }

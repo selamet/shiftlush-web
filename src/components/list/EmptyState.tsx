@@ -19,8 +19,14 @@ interface EmptyStateProps {
   filtered?: boolean;
   onClearFilters?: () => void;
   titleKey: string;
-  /** The record that must exist first, if any. */
-  prerequisite?: { labelKey: string; to: string };
+  /**
+   * The record that must exist first, and whether it is in fact missing.
+   *
+   * `missing` undefined means the question is still being answered. Both
+   * offers are wrong in that moment, so neither is made — see
+   * `usePrerequisiteMissing`.
+   */
+  prerequisite?: { labelKey: string; to: string; missing?: boolean };
   /**
    * The create action, and where it goes.
    *
@@ -63,7 +69,7 @@ export function EmptyState({
       <Inbox className="size-8 text-subtle" aria-hidden="true" />
       <p className="text-body text-muted-foreground">{t(titleKey)}</p>
 
-      {prerequisite ? (
+      {prerequisite?.missing === undefined && prerequisite ? null : prerequisite?.missing ? (
         <>
           <p className="max-w-sm text-help text-subtle">{t("empty.prerequisiteHint")}</p>
           <Link to={prerequisite.to} className={buttonVariants({ variant: "secondary", size: "sm" })}>

@@ -1,8 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { contractListQuery, type Contract } from "@/api/queries";
+import { contractListQuery, type Contract,
+  customerListQuery,} from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
+import { prerequisiteMissing } from "@/lib/prerequisite";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useSession } from "@/lib/session";
@@ -33,6 +35,13 @@ export function ContractListScreen() {
   const list = useListSearch(filters);
 
   const query = useQuery(contractListQuery(list.params));
+
+  // Whether the parent record exists only matters when this list is empty, so
+  // that is the only time the question is asked -- and one row answers it.
+  const listIsEmpty =
+    !query.isPending && !query.isError && (query.data?.results.length ?? 0) === 0;
+  const parents = useQuery({ ...customerListQuery({ page_size: 1 }), enabled: listIsEmpty });
+  const missingParent = prerequisiteMissing(parents, listIsEmpty);
   const rows = query.data?.results ?? [];
 
   // The server drops the money fields for roles that may not see them, so the
@@ -100,7 +109,7 @@ export function ContractListScreen() {
       emptyTitleKey="empty.noContracts"
       // A contract needs a customer to belong to, so an empty list here is more
       // often "no customers yet".
-      prerequisite={{ labelKey: "customer.add", to: "/customers" }}
+      prerequisite={{ labelKey: "customer.add", to: "/customers", missing: missingParent }}
     />
   );
 }

@@ -68,7 +68,7 @@ interface ListPageProps<T> {
   /** Rendered inside the selection strip; receives what is selected. */
   bulkActions?: (selection: ListSelection) => React.ReactNode;
   emptyTitleKey: string;
-  prerequisite?: { labelKey: string; to: string };
+  prerequisite?: { labelKey: string; to: string; missing?: boolean };
   /** True while the first page is in flight. Paging keeps the old rows instead. */
   loading?: boolean;
   /** Set when the request failed. Already translated — this component shows it. */
