@@ -12,13 +12,12 @@ import { setAccessToken } from "@/api/client";
 import { errorMessage } from "@/api/errors";
 import { formValues, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
+import { MIN_PASSWORD_LENGTH } from "@/lib/password";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { PublicShell } from "@/screens/PublicShell";
 import { useEffect, useState } from "react";
-
-const MIN_PASSWORD_LENGTH = 10;
 
 /**
  * Accepting an invitation.
