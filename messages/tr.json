@@ -4,6 +4,7 @@
   },
   "common": {
     "save": "Kaydet",
+    "saving": "Kaydediliyor…",
     "cancel": "İptal",
     "delete": "Sil",
     "deletePermanently": "Kalıcı olarak sil",

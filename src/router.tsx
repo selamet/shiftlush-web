@@ -27,6 +27,7 @@ import { ElevatorListScreen } from "@/screens/ElevatorListScreen";
 import { ElevatorDetailScreen } from "@/screens/ElevatorDetailScreen";
 import { ElevatorFormScreen } from "@/screens/ElevatorFormScreen";
 import { CustomerListScreen } from "@/screens/CustomerListScreen";
+import { CustomerFormScreen } from "@/screens/CustomerFormScreen";
 import { CustomerDetailScreen } from "@/screens/CustomerDetailScreen";
 import { ComplexListScreen } from "@/screens/ComplexListScreen";
 import { BuildingListScreen } from "@/screens/BuildingListScreen";
@@ -139,6 +140,10 @@ export const routeTree = rootRoute.addChildren([
       ]);
     }),
     shellChild("/elevators/$id/edit", ElevatorFormScreen),
+    shellChild("/customers/new", CustomerFormScreen),
+    shellChild("/customers/$id/edit", CustomerFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(customerQuery(params.id)),
+    ),
     shellChild("/customers", CustomerListScreen, () =>
       queryClient.ensureQueryData(customerListQuery({ page: 1, page_size: 25 })),
     ),

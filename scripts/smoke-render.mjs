@@ -53,7 +53,9 @@ const PATHS = [
   "/elevators/e1",
   "/elevators/e1/edit",
   "/customers",
+  "/customers/new",
   "/customers/c1",
+  "/customers/c1/edit",
   "/complexes",
   "/buildings",
   "/buildings/new",
@@ -80,6 +82,9 @@ const ROLES = ["owner", "operations", "technician", "accountant"];
 const EXPECT = {
   "/customers": "Çamlıca",
   "/customers/c1": "Çamlıca",
+  // The edit form must arrive with the record already in its inputs; an empty
+  // form here would mean the loader or the defaultValue wiring is broken.
+  "/customers/c1/edit": "Çamlıca",
   "/elevators": "34-2018",
   "/elevators/e1": "34-2019",
 };
