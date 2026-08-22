@@ -300,37 +300,42 @@ export function AttachmentsPanel({
             <span className="ml-auto shrink-0 text-help text-subtle">
               {formatFileSize(transfer.file.size)}
             </span>
-            {transfer.error ? (
-              <Button
-                type="button"
-                size="xs"
-                variant="secondary"
-                onClick={() => void run(transfer)}
-              >
-                {t("attachment.retry")}
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                size="iconXs"
-                variant="ghost"
-                aria-label={t("common.cancel")}
-                onClick={() => transfer.controller.abort()}
-              >
-                <X aria-hidden="true" />
-              </Button>
-            )}
-            {transfer.error && (
-              <Button
-                type="button"
-                size="iconXs"
-                variant="ghost"
-                aria-label={t("common.close")}
-                onClick={() => dropTransfer(transfer.id)}
-              >
-                <X aria-hidden="true" />
-              </Button>
-            )}
+            {/* Grouped without a gap of its own — see the attachment row
+                below: `.hit-40 + .hit-40` already keeps these apart, and the
+                row's `gap-3` would double it. */}
+            <span className="flex shrink-0 items-center">
+              {transfer.error ? (
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => void run(transfer)}
+                >
+                  {t("attachment.retry")}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  size="iconXs"
+                  variant="ghost"
+                  aria-label={t("common.cancel")}
+                  onClick={() => transfer.controller.abort()}
+                >
+                  <X aria-hidden="true" />
+                </Button>
+              )}
+              {transfer.error && (
+                <Button
+                  type="button"
+                  size="iconXs"
+                  variant="ghost"
+                  aria-label={t("common.close")}
+                  onClick={() => dropTransfer(transfer.id)}
+                >
+                  <X aria-hidden="true" />
+                </Button>
+              )}
+            </span>
           </div>
 
           {transfer.error ? (
@@ -376,26 +381,31 @@ export function AttachmentsPanel({
             <span className="ml-auto shrink-0 text-help text-subtle">
               {formatFileSize(file.size_bytes)}
             </span>
-            <Button
-              type="button"
-              size="iconXs"
-              variant="ghost"
-              aria-label={t("common.download")}
-              onClick={() => void download(file)}
-            >
-              <Download aria-hidden="true" />
-            </Button>
-            {canWrite && (
+            {/* Download and delete sit in their own group with no gap of their
+                own: the row's `gap-3` would stack on top of the separation
+                `.hit-40 + .hit-40` already enforces, and double it. */}
+            <span className="flex shrink-0 items-center">
               <Button
                 type="button"
                 size="iconXs"
                 variant="ghost"
-                aria-label={t("common.delete")}
-                onClick={() => setPendingDelete(file)}
+                aria-label={t("common.download")}
+                onClick={() => void download(file)}
               >
-                <Trash2 aria-hidden="true" />
+                <Download aria-hidden="true" />
               </Button>
-            )}
+              {canWrite && (
+                <Button
+                  type="button"
+                  size="iconXs"
+                  variant="ghost"
+                  aria-label={t("common.delete")}
+                  onClick={() => setPendingDelete(file)}
+                >
+                  <Trash2 aria-hidden="true" />
+                </Button>
+              )}
+            </span>
           </div>
         );
       })}

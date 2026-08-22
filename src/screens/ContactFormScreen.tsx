@@ -210,7 +210,7 @@ function ContactForm({ customer, record }: { customer: Customer; record?: Custom
             name="is_primary"
             type="checkbox"
             defaultChecked={record?.is_primary ?? false}
-            className="mt-0.5 size-4 rounded-xs accent-primary"
+            className="checkbox mt-0.5"
           />
           <span className="flex flex-col leading-tight">
             <span className="text-body">{t("contact.fields.isPrimary")}</span>
