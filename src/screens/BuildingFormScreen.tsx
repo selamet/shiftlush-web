@@ -12,6 +12,7 @@ import {
   type Building,
   type BuildingWrite,
 } from "@/api/queries";
+import { allOf, type BuildingType } from "@/api/enums";
 import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
@@ -22,7 +23,17 @@ import { Field, Input, Textarea } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 
-const TYPES = ["residential", "commercial", "mixed", "public", "industrial"] as const;
+const TYPES = allOf<BuildingType>()([
+  "residential",
+  "commercial",
+  "mixed_use",
+  "public",
+  "hospital",
+  "mall",
+  "hotel",
+  "school",
+  "industrial",
+]);
 
 export function BuildingFormScreen() {
   const { t } = useTranslation();
