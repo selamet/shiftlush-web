@@ -8,6 +8,9 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { createQueryClient } from "@/api/query-client";
+import { buildingListQuery, contractListQuery, customerListQuery, customerQuery } from "@/api/queries";
 import { SessionProvider, type SessionOverride } from "@/lib/session";
 import type { Role } from "@/components/layout/nav-config";
 import { AddressPicker } from "@/components/forms/AddressPicker";
@@ -34,11 +37,22 @@ import { StyleGuide } from "@/styleguide/StyleGuide";
  */
 let sessionOverride: SessionOverride | undefined;
 
+/**
+ * One client for the whole application.
+ *
+ * Created at module scope rather than inside the component: a client rebuilt on
+ * re-render throws away every cached response, and the symptom is a screen that
+ * refetches everything whenever an unrelated piece of state changes.
+ */
+export const queryClient = createQueryClient();
+
 const rootRoute = createRootRoute({
   component: () => (
-    <SessionProvider override={sessionOverride}>
-      <Outlet />
-    </SessionProvider>
+    <QueryClientProvider client={queryClient}>
+      <SessionProvider override={sessionOverride}>
+        <Outlet />
+      </SessionProvider>
+    </QueryClientProvider>
   ),
 });
 
@@ -52,8 +66,29 @@ const shellRoute = createRoute({
   ),
 });
 
-function shellChild(path: string, component: () => React.ReactNode) {
-  return createRoute({ getParentRoute: () => shellRoute, path, component });
+type Loader = (context: { params: Record<string, string> }) => Promise<unknown>;
+
+/**
+ * A route inside the application shell, optionally prefetching its data.
+ *
+ * The loader warms the query cache before the component renders, so the screen
+ * reads from a populated cache instead of mounting empty and filling in. Two
+ * things fall out of that: navigating to a record the user just came from is
+ * instant, and the render smoke test — which already awaits `router.load()` —
+ * gets real content rather than a page of skeletons.
+ *
+ * A loader that rejects is swallowed on purpose. The component runs the same
+ * query and owns the error state; letting the loader throw would replace the
+ * screen's own error handling with the router's, and the user would lose the
+ * retry button along with the rest of the page.
+ */
+function shellChild(path: string, component: () => React.ReactNode, loader?: Loader) {
+  return createRoute({
+    getParentRoute: () => shellRoute,
+    path,
+    component,
+    loader: loader ? (context) => loader(context).catch(() => undefined) : undefined,
+  });
 }
 
 const indexRoute = createRoute({
@@ -84,8 +119,20 @@ export const routeTree = rootRoute.addChildren([
     shellChild("/elevators", ElevatorListScreen),
     shellChild("/elevators/$id", ElevatorDetailScreen),
     shellChild("/elevators/$id/edit", ElevatorFormScreen),
-    shellChild("/customers", CustomerListScreen),
-    shellChild("/customers/$id", CustomerDetailScreen),
+    shellChild("/customers", CustomerListScreen, () =>
+      queryClient.ensureQueryData(customerListQuery({ page: 1, page_size: 25 })),
+    ),
+    shellChild("/customers/$id", CustomerDetailScreen, async ({ params }) => {
+      const id = params.id;
+      // Fetched together rather than in sequence: the record and the two lists
+      // beside it are one screen, and waterfalling them makes the page fill in
+      // three visible steps.
+      await Promise.all([
+        queryClient.ensureQueryData(customerQuery(id)),
+        queryClient.ensureQueryData(buildingListQuery({ customer: id, page_size: 100 })),
+        queryClient.ensureQueryData(contractListQuery({ customer: id, page_size: 100 })),
+      ]);
+    }),
     shellChild("/complexes", ComplexListScreen),
     shellChild("/buildings", BuildingListScreen),
     // The address picker is the third step of the building form; until the

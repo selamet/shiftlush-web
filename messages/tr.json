@@ -30,7 +30,8 @@
     "actions": "İşlemler",
     "selectedCount": "{{count}} kayıt seçildi",
     "resultRange": "{{from}}-{{to}} / {{total}} kayıt",
-    "untranslatedValue": "Bu değerin Türkçe karşılığı henüz tanımlı değil"
+    "untranslatedValue": "Bu değerin Türkçe karşılığı henüz tanımlı değil",
+    "retry": "Tekrar dene"
   },
   "elevator": {
     "title": "Asansörler",
@@ -215,6 +216,14 @@
       "corporate": "Kurumsal",
       "public": "Kamu",
       "individual": "Şahıs"
+    },
+    "contactRole": {
+      "manager": "Yönetici",
+      "auditor": "Denetçi",
+      "caretaker": "Kapıcı",
+      "technical_lead": "Teknik sorumlu",
+      "accounting": "Muhasebe",
+      "other": "Diğer"
     },
     "add": "Müşteri ekle",
     "buildingCount": "Bina",
@@ -505,7 +514,8 @@
     "showResults": "{{count}} kaydı göster",
     "sharableFilters": "Filtreler adres çubuğunda taşınır — bu bağlantıyı ekip arkadaşınıza gönderebilirsiniz",
     "filters": "Filtreler",
-    "hideFilters": "Filtreleri gizle"
+    "hideFilters": "Filtreleri gizle",
+    "loadFailed": "Liste yüklenemedi"
   },
   "form": {
     "unsavedChanges": "Kaydedilmemiş değişiklikler",
