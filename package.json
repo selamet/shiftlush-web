@@ -11,8 +11,9 @@
     "lint:tr": "node scripts/check-no-turkish.mjs",
     "lint:i18n": "node scripts/check-i18n-keys.mjs",
     "lint:errors": "node scripts/check-error-codes.mjs",
+    "lint:paths": "node scripts/check-api-paths.mjs",
     "typecheck": "tsc -b --noEmit",
-    "verify": "npm run lint:tr && npm run lint:i18n && npm run lint:errors && npm run typecheck && npm run build && npm run smoke",
+    "verify": "npm run lint:tr && npm run lint:i18n && npm run lint:errors && npm run lint:paths && npm run typecheck && npm run build && npm run smoke",
     "smoke": "node scripts/smoke-render.mjs"
   },
   "dependencies": {
