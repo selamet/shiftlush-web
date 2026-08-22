@@ -8,7 +8,7 @@ import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useSession } from "@/lib/session";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusChip, ContractStatusChip } from "@/components/ui/status-chip";
 
 function Card({
@@ -99,10 +99,14 @@ export function CustomerDetailScreen() {
           </div>
         </div>
         {canWrite && (
-          <Button size="sm">
+          <Link
+            to="/customers/$id/edit"
+            params={{ id: customer.id }}
+            className={buttonVariants({ size: "sm" })}
+          >
             <Pencil />
             {t("common.edit")}
-          </Button>
+          </Link>
         )}
       </div>
 

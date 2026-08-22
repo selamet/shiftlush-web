@@ -182,3 +182,23 @@ export function elevatorAttachmentsQuery(id: string) {
       }),
   });
 }
+
+export type CustomerWrite = Schemas["CustomerWriteRequest"];
+
+/**
+ * Creating and updating a customer.
+ *
+ * The create carries an Idempotency-Key. The server stores the response against
+ * it for a day and replays it, so a retry after a dropped connection returns
+ * the record that was already made rather than making a second one.
+ */
+export function createCustomer(body: CustomerWrite, idempotencyKey: string) {
+  return api.post<Customer>("/customers/", body, { idempotencyKey });
+}
+
+export function updateCustomer(id: string, body: Partial<CustomerWrite>) {
+  // PATCH, not PUT: the API does not route a full replace, because it means the
+  // client must send every field it does not want cleared — and the day the
+  // model grows a column, old clients start wiping it.
+  return api.patch<Customer>(`/customers/${id}/`, body);
+}

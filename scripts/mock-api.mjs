@@ -36,7 +36,18 @@ function page(rows) {
  * Routes are matched most-specific first, so `/customers/{id}` is tried before
  * the collection. Each entry returns the body for that path.
  */
-function resolve(path, search) {
+function resolve(path, search, method, body) {
+  // Writes are answered, not just reads. A form that submits during the smoke
+  // test must get a record back, or the screen renders its error state and the
+  // test passes while proving the opposite of what it claims.
+  if (method === "POST" && path === "/api/v1/customers/") {
+    return { ...fixture("demo-customers")[0], ...body, id: "c-new" };
+  }
+  const patched = /^\/api\/v1\/customers\/([^/]+)\/$/.exec(path);
+  if (method === "PATCH" && patched) {
+    return { ...fixture("demo-customers")[0], ...body, id: patched[1] };
+  }
+
   const customers = fixture("demo-customers");
 
   const detail = /^\/api\/v1\/customers\/([^/]+)\/$/.exec(path);
@@ -80,9 +91,10 @@ function resolve(path, search) {
  * the test with an unrelated message.
  */
 export function installMockApi() {
-  globalThis.fetch = async (input) => {
+  globalThis.fetch = async (input, init = {}) => {
     const url = new URL(typeof input === "string" ? input : input.url);
-    const body = resolve(url.pathname, url.searchParams);
+    const sent = init.body ? JSON.parse(init.body) : undefined;
+    const body = resolve(url.pathname, url.searchParams, init.method ?? "GET", sent);
 
     if (body === null) {
       return new Response(

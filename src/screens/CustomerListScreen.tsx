@@ -68,6 +68,7 @@ export function CustomerListScreen() {
       breadcrumbKey="nav.groups.records"
       titleKey={role === "technician" ? "nav.myCustomers" : "customer.title"}
       primaryActionKey={role === "technician" ? undefined : "customer.add"}
+      primaryActionTo={role === "technician" ? undefined : "/customers/new"}
       exportable
       filters={[{ labelKey: "customer.fields.type" }, { labelKey: "customer.fields.isActive" }]}
       columns={columns}
