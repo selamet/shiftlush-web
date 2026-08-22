@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { todayIso } from "@/lib/date";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney, formatPercent } from "@/lib/format";
+import { elevatorLabel } from "@/lib/elevator";
 import { useSession } from "@/lib/session";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -610,7 +611,9 @@ export function ContractDetailScreen() {
                     params={{ id: elevator.elevator_id }}
                     className="text-primary hover:underline"
                   >
-                    {elevator.registration_number}
+                    {/* A lift with neither number nor name would otherwise be a
+                        line nobody can open. */}
+                    {elevatorLabel(elevator) ?? t("elevator.hints.registrationMissing")}
                   </Link>
                 </td>
                 <td className="px-2">

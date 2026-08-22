@@ -143,7 +143,8 @@
       "noCarDoorShort": "Kabin kapısı yok",
       "qrRegenerateWarning": "QR kodu yenilendiğinde basılı etiketler geçersiz olur.",
       "noContract": "Bu asansör bir sözleşme kapsamında değil",
-      "hasCarDoorHint": "Kabin kapısı yoksa muayenede ciddi uygunsuzluk sayılır"
+      "hasCarDoorHint": "Kabin kapısı yoksa muayenede ciddi uygunsuzluk sayılır",
+      "registrationMissing": "Kimlik no girilmedi"
     },
     "add": "Asansör ekle",
     "selectBuilding": "Bina seçin"
