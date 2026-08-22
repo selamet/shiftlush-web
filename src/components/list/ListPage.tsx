@@ -5,8 +5,14 @@ import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal, X } from "l
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
 import type { ListParams } from "@/api/queries";
-import { PAGE_SIZES, type ListFilter, type ListState } from "@/lib/list-search";
+import {
+  PAGE_SIZES,
+  type ListFilter,
+  type ListFilterOption,
+  type ListState,
+} from "@/lib/list-search";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { ColumnMenu, useColumnPreferences } from "./ColumnMenu";
 import { ListMenu, ListMenuOption } from "./ListMenu";
 import { EmptyState } from "./EmptyState";
@@ -168,13 +174,38 @@ export function ListPage<T>({
         >
           {filters?.map((filter) => {
             const value = state.filters[filter.param];
+
+            // Nothing to draw: the value arrived on a link rather than being
+            // chosen, and its chip above the table is both the notice that it
+            // is applied and the way to drop it.
+            if (filter.kind === "scope") return null;
+
+            if (filter.kind === "date") {
+              return (
+                <label key={filter.param} className="flex items-center gap-1.5">
+                  <span className="text-help whitespace-nowrap text-muted-foreground">
+                    {t(filter.labelKey)}
+                  </span>
+                  <DatePicker
+                    value={value ?? ""}
+                    // "" is what the picker reports when the box is emptied,
+                    // and null is what removes a filter — so the two have to be
+                    // mapped onto each other here or clearing the date would
+                    // put an empty parameter in the URL.
+                    onChange={(iso) => state.setFilter(filter.param, iso || null)}
+                    className="w-40"
+                  />
+                </label>
+              );
+            }
+
             const chosen = filter.options.find((option) => option.value === value);
             return (
               <ListMenu
                 key={filter.param}
                 label={t(filter.labelKey)}
                 active={Boolean(value)}
-                value={chosen ? t(chosen.labelKey) : undefined}
+                value={chosen ? optionLabel(chosen, t) : undefined}
                 panel={(close) => (
                   <>
                     <ListMenuOption
@@ -197,7 +228,7 @@ export function ListPage<T>({
                           close();
                         }}
                       >
-                        {t(option.labelKey)}
+                        {optionLabel(option, t)}
                       </ListMenuOption>
                     ))}
                   </>
@@ -482,6 +513,11 @@ interface ActiveFilter {
   remove: () => void;
 }
 
+/** An option's own text where it has one, its translation otherwise. */
+function optionLabel(option: ListFilterOption, t: (key: string) => string): string {
+  return option.label ?? t(option.labelKey);
+}
+
 /**
  * The chips above the table, derived from the URL rather than passed in.
  *
@@ -513,7 +549,10 @@ function describeFilters(
     active.push({
       param: filter.param,
       labelKey: filter.labelKey,
-      value: option ? t(option.labelKey) : value,
+      // Falling back to the raw value is deliberate. A chip that cannot name
+      // what it is filtering by must still say that something is, or the table
+      // underneath is a slice presenting itself as the whole.
+      value: option ? optionLabel(option, t) : (filter.formatValue?.(value) ?? value),
       remove: () => state.setFilter(filter.param, null),
     });
   }

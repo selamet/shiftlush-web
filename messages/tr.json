@@ -538,7 +538,9 @@
       "actor": "Kullanıcı",
       "createdAt": "Tarih",
       "ipAddress": "IP adresi",
-      "tableName": "Tablo"
+      "tableName": "Tablo",
+      "since": "Başlangıç",
+      "until": "Bitiş"
     },
     "action": {
       "create": "Oluşturma",
@@ -557,7 +559,10 @@
       "company": "Firma",
       "attachment": "Ek"
     },
-    "maskedNotice": "Hassas alanlar maskelenmiştir"
+    "maskedNotice": "Hassas alanlar maskelenmiştir",
+    "restricted": "Denetim kayıtlarını yalnızca firma sahibi ve yöneticiler görebilir",
+    "restrictedHint": "Bir kaydın geçmişine erişmeniz gerekiyorsa firma sahibinden talep edin.",
+    "recordScope": "Tek kayıt"
   },
   "settings": {
     "companyTab": "Firma bilgileri",

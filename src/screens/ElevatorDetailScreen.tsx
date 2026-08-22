@@ -657,22 +657,25 @@ export function ElevatorDetailScreen() {
                   {canSeeHistory ? t("audit.empty") : t("detail.hiddenForRole")}
                 </p>
               )}
-              {/* The tab on this screen, not the audit log list. The trail is
-                  readable by owner and admin only — the same `canSeeHistory`
-                  the query obeys, rather than a second rule beside it — and
-                  `/audit-logs` cannot yet be opened scoped to one record: it
-                  holds no filter in its URL, so the link would land on every
-                  row the firm has and call it this lift's history. When that
-                  screen takes `table_name` and `record_id` from the URL, this
-                  is the link to move. */}
+              {/* The audit log list, scoped to this lift. It now reads
+                  `table_name` and `record_id` from its URL, which was the
+                  condition this link was waiting on: before that it could only
+                  land on every row the firm has and call it this lift's
+                  history. The rail shows three entries and the tab shows a
+                  page; the whole trail is more than either, and it is where
+                  you can carry on narrowing by who and by when.
+
+                  Still behind `canSeeHistory` — owner and admin only, the same
+                  rule the query obeys rather than a second one beside it — so
+                  this never offers a route that would answer 403. */}
               {canSeeHistory && history.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setTab("history")}
+                <Link
+                  to="/audit-logs"
+                  search={{ table_name: "elevator", record_id: elevatorId }}
                   className="self-start text-help text-primary hover:underline"
                 >
                   {t("detail.viewAllHistory")}
-                </button>
+                </Link>
               )}
             </div>
           </RailCard>
