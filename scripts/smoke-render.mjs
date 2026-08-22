@@ -121,7 +121,9 @@ const EXPECT = {
 };
 
 const server = await createServer({
-  server: { middlewareMode: true },
+  // No HMR: this renders each route once and exits. The websocket server it
+  // would otherwise open is a listening socket nobody connects to.
+  server: { middlewareMode: true, hmr: false },
   appType: "custom",
   logLevel: "error",
 });
@@ -173,6 +175,24 @@ try {
 
 if (failures > 0) {
   console.error(`\n${failures} render failure(s)`);
-  process.exit(1);
+} else {
+  console.log(`\nAll ${PATHS.length} routes render across ${ROLES.length} roles`);
 }
-console.log(`\nAll ${PATHS.length} routes render across ${ROLES.length} roles`);
+
+/*
+ * Exit rather than let the event loop drain.
+ *
+ * Rendering the routes takes about a second. Waiting for Node to decide it has
+ * nothing left to do took five minutes, which was most of the CI run and all of
+ * the reason a one-line change took six minutes to verify.
+ *
+ * The cause is the query cache: `gcTime` defaults to five minutes, so every
+ * query the loaders populate schedules a collection timer that far out, and a
+ * pending timer keeps the process alive. There were twenty-four of them.
+ *
+ * They could be cleared by giving the smoke run its own client, but that would
+ * mean rendering against a cache configured differently from the real one --
+ * and this script exists to render the real thing. So the verdict is printed
+ * and the process ends, which is what a one-shot checker should do anyway.
+ */
+process.exit(failures > 0 ? 1 : 0);
