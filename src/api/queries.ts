@@ -45,6 +45,18 @@ export type CustomerContact = Schemas["CustomerContactRead"];
 export type ListParams = Record<string, string | number | boolean | null | undefined>;
 
 /**
+ * The most rows one list request will ever return, mirrored from
+ * `core/pagination.py`.
+ *
+ * Its comment there calls the ceiling non-negotiable, and it is: without it a
+ * client asking for ten thousand rows turns one request into an outage. It is
+ * repeated here because it is also the limit on what a screen can *enumerate* —
+ * anything a bulk action wants to act on by id has to fit in one page, or the
+ * client is assembling a set it was deliberately never handed.
+ */
+export const MAX_PAGE_SIZE = 100;
+
+/**
  * Keys are hierarchical so a broad invalidation reaches the narrow ones:
  * invalidating `customers.all` clears every list *and* every detail, which is
  * what you want after a delete.
