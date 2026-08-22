@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { components } from "@/api/generated";
 import { api, onSessionExpired, setAccessToken } from "@/api/client";
 import type { Role } from "@/components/layout/nav-config";
@@ -104,6 +105,7 @@ export function SessionProvider({
   children: React.ReactNode;
   override?: SessionOverride;
 }) {
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<SessionStatus>(override ? "authenticated" : "restoring");
   const [user, setUser] = useState<Omit<Session, "status"> | null>(
     override ? { ...override, emailVerified: override.emailVerified ?? true } : null,
@@ -134,13 +136,14 @@ export function SessionProvider({
       setUser(null);
       setStatus("anonymous");
       forgetSession();
+      queryClient.clear();
       // Navigated rather than left in place. A shell whose every request fails
       // is not a state anybody can act on, and it looks identical to an outage.
       if (!window.location.pathname.startsWith("/login")) {
         window.location.assign("/login");
       }
     });
-  }, []);
+  }, [queryClient]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     // Deliberately not wrapped in try/catch: the login screen shows the error,
@@ -168,8 +171,14 @@ export function SessionProvider({
       setUser(null);
       setStatus("anonymous");
       forgetSession();
+      // Every cached answer belonged to the session that just ended. Left in
+      // place, the next person to sign in on this tab is shown the previous
+      // one's customers and contract totals in the first frame, before a
+      // request of their own has answered — the cache outlives the session
+      // otherwise, because the client is created once at module scope.
+      queryClient.clear();
     }
-  }, []);
+  }, [queryClient]);
 
   const markVerified = useCallback(() => {
     setUser((current) => (current ? { ...current, emailVerified: true } : current));
