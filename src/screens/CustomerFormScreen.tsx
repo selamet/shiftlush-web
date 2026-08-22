@@ -10,6 +10,7 @@ import {
   type Customer,
   type CustomerWrite,
 } from "@/api/queries";
+import { allOf, type CustomerType } from "@/api/enums";
 import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
@@ -19,13 +20,13 @@ import { Field, Input, Textarea } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 
-const TYPES = [
+const TYPES = allOf<CustomerType>()([
   "complex_management",
   "building_management",
   "corporate",
   "public",
   "individual",
-] as const;
+]);
 
 /**
  * Creating and editing a customer.

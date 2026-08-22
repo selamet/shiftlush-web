@@ -11,6 +11,12 @@ import {
   type Contract,
   type ContractWrite,
 } from "@/api/queries";
+import {
+  allOf,
+  type BillingPeriod,
+  type ContractScope,
+  type PricingType,
+} from "@/api/enums";
 import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
@@ -20,9 +26,13 @@ import { Field, Input, Textarea } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 
-const SCOPES = ["maintenance_only", "maintenance_and_repair", "full_coverage"] as const;
-const PRICING = ["per_elevator", "flat"] as const;
-const BILLING = ["monthly", "quarterly", "semiannual", "annual"] as const;
+const SCOPES = allOf<ContractScope>()([
+  "maintenance_only",
+  "maintenance_and_repair",
+  "full_coverage",
+]);
+const PRICING = allOf<PricingType>()(["per_elevator", "flat"]);
+const BILLING = allOf<BillingPeriod>()(["monthly", "quarterly", "semiannual", "annual"]);
 
 export function ContractFormScreen() {
   const { t } = useTranslation();
