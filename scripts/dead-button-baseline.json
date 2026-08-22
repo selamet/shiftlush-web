@@ -35,21 +35,6 @@
       "button": "src/components/list/ListPage.tsx :: primaryActionKey",
       "owner": "#66",
       "note": "The header primary action, taken when the caller passes no primaryActionTo. Every caller should pass one so this dead branch stops existing. Also survived the #50 merge."
-    },
-    {
-      "button": "src/screens/ElevatorListScreen.tsx :: qr.printSelected",
-      "owner": "#59",
-      "note": "Should call fetchLabelPdf with the selected ids, after stating sheet count and how many label cells stay blank."
-    },
-    {
-      "button": "src/screens/ElevatorListScreen.tsx :: list.changeStatus",
-      "owner": "#59",
-      "note": "Should PATCH each selected elevator, offering only user-selectable statuses and naming every row the server refuses."
-    },
-    {
-      "button": "src/screens/ElevatorListScreen.tsx :: contract.actions.addElevator",
-      "owner": "#59",
-      "note": "Should add the selection to a contract one elevator at a time, because the bulk endpoint is atomic and one refusal rolls back all of them."
     }
   ]
 }
