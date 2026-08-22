@@ -133,6 +133,23 @@ function resolve(path, search, method, body) {
     ];
   }
 
+  const complex = /^\/api\/v1\/complexes\/([^/]+)\/$/.exec(path);
+  if (method === "PATCH" && complex) {
+    return { ...fixture("demo-complexes")[0], ...body, id: complex[1] };
+  }
+  if (method === "POST" && path === "/api/v1/complexes/") {
+    return { ...fixture("demo-complexes")[0], ...body, id: "s-new" };
+  }
+  if (complex && method === "GET") {
+    const rows = fixture("demo-complexes");
+    return rows.find((row) => row.id === complex[1]) ?? rows[0];
+  }
+  if (path === "/api/v1/complexes/") {
+    const customer = search.get("customer");
+    const rows = fixture("demo-complexes");
+    return page(customer ? rows.filter((row) => row.customer_id === customer) : rows);
+  }
+
   const building = /^\/api\/v1\/buildings\/([^/]+)\/$/.exec(path);
   if (building && method === "GET") {
     return { ...fixture("demo-buildings")[0], id: building[1] };
@@ -143,8 +160,13 @@ function resolve(path, search, method, body) {
 
   if (path === "/api/v1/buildings/") {
     const customer = search.get("customer");
-    const rows = fixture("demo-buildings");
-    return page(customer ? rows.filter((row) => row.customer_id === customer) : rows);
+    const inComplex = search.get("complex");
+    let rows = fixture("demo-buildings");
+    if (customer) rows = rows.filter((row) => row.customer_id === customer);
+    // The complex detail page asks the server to narrow this rather than
+    // filtering in the browser, so the mock has to honour the same parameter.
+    if (inComplex) rows = rows.filter((row) => row.complex_id === inComplex);
+    return page(rows);
   }
 
   const contract = /^\/api\/v1\/contracts\/([^/]+)\/$/.exec(path);

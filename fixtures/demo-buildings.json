@@ -15,7 +15,8 @@
     "customer_name": "Çamlıca Konakları Site Yönetimi",
     "neighborhood_name": "Barbaros Mah.",
     "district_name": "Ataşehir",
-    "complex_name": "Çamlıca Konakları"
+    "complex_name": "Çamlıca Konakları",
+    "complex_id": "s1"
   },
   {
     "id": "b2",
@@ -33,7 +34,8 @@
     "customer_name": "Çamlıca Konakları Site Yönetimi",
     "neighborhood_name": "Barbaros Mah.",
     "district_name": "Ataşehir",
-    "complex_name": "Çamlıca Konakları"
+    "complex_name": "Çamlıca Konakları",
+    "complex_id": "s1"
   },
   {
     "id": "b3",
@@ -51,7 +53,8 @@
     "customer_name": "Ataşehir Ofis Kule A.Ş.",
     "neighborhood_name": "Küçükbakkalköy Mah.",
     "district_name": "Ataşehir",
-    "complex_name": ""
+    "complex_name": "",
+    "complex_id": null
   },
   {
     "id": "b4",
@@ -69,7 +72,8 @@
     "customer_name": "Bahçelievler Belediyesi",
     "neighborhood_name": "Cumhuriyet Mah.",
     "district_name": "Bahçelievler",
-    "complex_name": ""
+    "complex_name": "",
+    "complex_id": null
   },
   {
     "id": "b5",
@@ -87,6 +91,7 @@
     "customer_name": "Yıldız Apartmanı Yönetimi",
     "neighborhood_name": "Fenerbahçe Mah.",
     "district_name": "Kadıköy",
-    "complex_name": ""
+    "complex_name": "",
+    "complex_id": null
   }
 ]

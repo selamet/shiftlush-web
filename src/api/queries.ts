@@ -510,3 +510,43 @@ export function fetchLabelPdf(elevatorIds: string[], signal?: AbortSignal): Prom
 export function regenerateQr(id: string): Promise<Elevator> {
   return api.post<Elevator>(`/elevators/${id}/regenerate-qr/`);
 }
+
+// --------------------------------------------------------------------------
+// Complexes
+//
+// A complex is the layer between a customer and their buildings: the blocks of
+// one housing estate, under one management. It is optional — a single
+// apartment building has none — which is why every relation to it is nullable.
+// --------------------------------------------------------------------------
+
+export type Complex = Schemas["ComplexRead"];
+export type ComplexWrite = Schemas["ComplexWriteRequest"];
+
+export const complexKeys = {
+  all: ["complexes"] as const,
+  list: (params: ListParams) => ["complexes", "list", params] as const,
+  detail: (id: string) => ["complexes", "detail", id] as const,
+} as const;
+
+export function complexListQuery(params: ListParams = {}) {
+  return queryOptions({
+    queryKey: complexKeys.list(params),
+    queryFn: ({ signal }) => api.get<Paginated<Complex>>("/complexes/", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function complexQuery(id: string) {
+  return queryOptions({
+    queryKey: complexKeys.detail(id),
+    queryFn: ({ signal }) => api.get<Complex>(`/complexes/${id}/`, { signal }),
+  });
+}
+
+export function createComplex(body: ComplexWrite, idempotencyKey: string) {
+  return api.post<Complex>("/complexes/", body, { idempotencyKey });
+}
+
+export function updateComplex(id: string, body: Partial<ComplexWrite>) {
+  return api.patch<Complex>(`/complexes/${id}/`, body);
+}

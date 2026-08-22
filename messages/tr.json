@@ -317,7 +317,10 @@
       "customer": "Müşteri",
       "notes": "Notlar"
     },
-    "add": "Site ekle"
+    "add": "Site ekle",
+    "selectCustomer": "Müşteri seçin",
+    "none": "Siteye bağlı değil",
+    "pickerHint": "Bina bir sitenin içindeyse seçin — site, müşterininkiyle aynı olmalı"
   },
   "user": {
     "title": "Kullanıcılar",
@@ -848,6 +851,9 @@
     "editContact": "İletişim kişisini düzenle",
     "billingAddress": "Fatura adresi",
     "noAddress": "Fatura adresi girilmemiş"
+  },
+  "complexDetail": {
+    "buildings": "Site içindeki binalar"
   },
   "audit": {
     "actions": {

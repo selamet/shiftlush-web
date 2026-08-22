@@ -6,6 +6,7 @@ import { ChevronRight } from "lucide-react";
 import {
   buildingKeys,
   buildingQuery,
+  complexListQuery,
   createBuilding,
   customerListQuery,
   updateBuilding,
@@ -50,6 +51,19 @@ export function BuildingFormScreen() {
   const customers = useQuery(customerListQuery({ page_size: 100 }));
   const [customerId, setCustomerId] = useState(search.customer ?? "");
 
+  // What the picker is currently set to: the local choice wins, so changing the
+  // customer on an edit re-reads the complexes rather than going on offering
+  // the previous customer's.
+  const selectedCustomer = customerId || existing.data?.customer_id || "";
+
+  // A building's customer must match its complex's customer — the server checks
+  // it (spec 5.9), so the list is narrowed to the one already chosen rather
+  // than offering every complex and letting the save fail.
+  const complexes = useQuery({
+    ...complexListQuery({ customer: selectedCustomer, page_size: 100 }),
+    enabled: Boolean(selectedCustomer),
+  });
+
   const { submit, state } = useSubmit<BuildingWrite, Building>({
     mutationFn: (body) =>
       editing ? updateBuilding(id as string, body) : createBuilding(body, idempotencyKey),
@@ -69,7 +83,6 @@ export function BuildingFormScreen() {
   }
 
   const record = existing.data;
-  const selectedCustomer = record?.customer_id ?? customerId;
 
   return (
     <div className="flex flex-col gap-4 p-6">
@@ -88,7 +101,15 @@ export function BuildingFormScreen() {
         className="flex max-w-2xl flex-col gap-5"
         onSubmit={(event) => {
           event.preventDefault();
-          submit(formValues(event.currentTarget) as unknown as BuildingWrite);
+          const values: Record<string, unknown> = formValues(event.currentTarget);
+          // formValues drops an empty string, which is right for a field left
+          // blank and wrong for one deliberately cleared: a PATCH without the
+          // key leaves the old complex attached. null is how the API is told
+          // to detach it.
+          if (editing && record?.complex_id && values.complex === undefined) {
+            values.complex = null;
+          }
+          submit(values as unknown as BuildingWrite);
         }}
       >
         {state.message && (
@@ -122,6 +143,37 @@ export function BuildingFormScreen() {
               value: String(customer.id),
               label: customer.legal_name,
             }))}
+          />
+        </Field>
+
+        <Field
+          label={t("building.fields.complex")}
+          htmlFor="bf-complex"
+          hint={t("complex.pickerHint")}
+          error={state.fields.complex}
+          bindChild={false}
+        >
+          <SearchableSelect
+            id="bf-complex"
+            name="complex"
+            // Remounted when the customer changes, which clears a complex that
+            // belonged to the previous one. Leaving it selected would send the
+            // server a pair it is bound to reject.
+            key={selectedCustomer}
+            defaultValue={record?.complex_id ?? ""}
+            disabled={!selectedCustomer || complexes.isPending}
+            invalid={Boolean(state.fields.complex)}
+            placeholder={t("complex.none")}
+            // An explicit empty row, so a building can be taken back out of a
+            // complex. Without one the field is a trap: choosable, never
+            // unchoosable.
+            options={[
+              { value: "", label: t("complex.none") },
+              ...(complexes.data?.results ?? []).map((complex) => ({
+                value: complex.id,
+                label: complex.name,
+              })),
+            ]}
           />
         </Field>
 
