@@ -33,7 +33,8 @@
     "resultRange": "{{from}}-{{to}} / {{total}} kayıt",
     "untranslatedValue": "Bu değerin Türkçe karşılığı henüz tanımlı değil",
     "retry": "Tekrar dene",
-    "sending": "Gönderiliyor…"
+    "sending": "Gönderiliyor…",
+    "change": "Değiştir"
   },
   "elevator": {
     "title": "Asansörler",
@@ -263,7 +264,9 @@
       "addressNote": "Adres tarifi",
       "floorCount": "Kat sayısı",
       "unitCount": "Daire / ofis sayısı",
-      "isActive": "Aktif"
+      "isActive": "Aktif",
+      "street": "Sokak / Cadde",
+      "buildingNumber": "Kapı no"
     },
     "type": {
       "residential": "Konut",
@@ -276,7 +279,9 @@
       "school": "Okul",
       "industrial": "Sanayi"
     },
-    "add": "Bina ekle"
+    "add": "Bina ekle",
+    "selectCustomer": "Müşteri seçin",
+    "addressNoteHint": "Tarif: hangi girişten, hangi kat, nereye bakan"
   },
   "complex": {
     "title": "Siteler",
@@ -351,7 +356,16 @@
       "neighborhoodNotFound": "Mahalle bulunamadı — adres tarifi alanına yazın",
       "locationMissing": "Konum girilmedi",
       "geocodeSuggestion": "Harita önerisi — kontrol edip düzeltebilirsiniz"
-    }
+    },
+    "province": "İl",
+    "district": "İlçe",
+    "neighborhood": "Mahalle",
+    "selectProvince": "İl seçin",
+    "selectDistrict": "İlçe seçin",
+    "selectProvinceFirst": "Önce il seçin",
+    "neighborhoodHint": "En az {{count}} harf yazın",
+    "neighborhoodPlaceholder": "Mahalle ara",
+    "noMatch": "Eşleşen mahalle yok"
   },
   "attachment": {
     "title": "Ekler",

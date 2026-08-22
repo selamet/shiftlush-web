@@ -19,10 +19,10 @@ import {
   elevatorListQuery,
   elevatorQuery,
   invitationPreviewQuery,
+  buildingQuery,
 } from "@/api/queries";
 import { SessionProvider, type SessionOverride } from "@/lib/session";
 import type { Role } from "@/components/layout/nav-config";
-import { AddressPicker } from "@/components/forms/AddressPicker";
 import { LoginScreen } from "@/screens/LoginScreen";
 import { ElevatorListScreen } from "@/screens/ElevatorListScreen";
 import { ElevatorDetailScreen } from "@/screens/ElevatorDetailScreen";
@@ -32,6 +32,7 @@ import { CustomerFormScreen } from "@/screens/CustomerFormScreen";
 import { CustomerDetailScreen } from "@/screens/CustomerDetailScreen";
 import { ComplexListScreen } from "@/screens/ComplexListScreen";
 import { BuildingListScreen } from "@/screens/BuildingListScreen";
+import { BuildingFormScreen } from "@/screens/BuildingFormScreen";
 import { ContractListScreen } from "@/screens/ContractListScreen";
 import { ContractDetailScreen } from "@/screens/ContractDetailScreen";
 import { UserListScreen } from "@/screens/UserListScreen";
@@ -188,14 +189,13 @@ export const routeTree = rootRoute.addChildren([
       ]);
     }),
     shellChild("/complexes", ComplexListScreen),
-    shellChild("/buildings", BuildingListScreen),
-    // The address picker is the third step of the building form; until the
-    // rest of that form exists it is reachable on its own.
-    shellChild("/buildings/new", () => (
-      <div className="p-6">
-        <AddressPicker />
-      </div>
-    )),
+    shellChild("/buildings", BuildingListScreen, () =>
+      queryClient.ensureQueryData(buildingListQuery({ page: 1, page_size: 25 })),
+    ),
+    shellChild("/buildings/$id/edit", BuildingFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(buildingQuery(params.id)),
+    ),
+    shellChild("/buildings/new", BuildingFormScreen),
     shellChild("/contracts", ContractListScreen),
     shellChild("/contracts/$id", ContractDetailScreen),
     shellChild("/qr-labels", QrLabelScreen),
