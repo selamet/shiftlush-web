@@ -718,7 +718,8 @@
     "renewCreateDraft": "Taslağı oluştur",
     "renewReversible": "Sonuç bir taslak olduğu için geri dönülebilir.",
     "moreElevators": "{{count}} asansör daha",
-    "seeAll": "tümünü gör"
+    "seeAll": "tümünü gör",
+    "numberOnRenewal": "Yenilemede atanır"
   },
   "qrLabels": {
     "title": "QR etiket yazdır",
