@@ -324,14 +324,24 @@ export function ListPage<T>({
                 <thead className="border-b border-border bg-background">
                   <tr>
                     {selectable && (
-                      <th className="sticky left-0 z-10 w-10 bg-background px-3">
-                        <input
-                          type="checkbox"
-                          aria-label={t("common.actions")}
-                          checked={selected.allOnPage}
-                          onChange={selected.toggleAll}
-                          className="size-4 rounded-xs accent-primary"
-                        />
+                      <th className="sticky left-0 z-10 w-10 bg-background p-0">
+                        {/* The <label> is the hit target. A pseudo element
+                            cannot be attached to an input, so `.hit-40` is no
+                            help here and the target has to be a real element
+                            wrapped around the box. It is sized to the cell
+                            rather than padded out from the checkbox, so the
+                            column stays exactly 40px and the `left-10` offset
+                            the pinned column sticks to stays true when the box
+                            grows for a coarse pointer. */}
+                        <label className="flex h-8 w-10 items-center justify-center">
+                          <input
+                            type="checkbox"
+                            aria-label={t("list.selectPage")}
+                            checked={selected.allOnPage}
+                            onChange={selected.toggleAll}
+                            className="checkbox"
+                          />
+                        </label>
                       </th>
                     )}
                     {shown.map((column) => {
@@ -365,14 +375,25 @@ export function ListPage<T>({
                         className="group h-14 border-b border-border-subtle transition-colors last:border-0 hover:bg-muted data-[selected]:bg-selected md:h-control-md"
                       >
                         {selectable && (
-                          <td className="sticky left-0 z-10 bg-card px-3 group-hover:bg-muted md:static md:bg-transparent">
-                            <input
-                              type="checkbox"
-                              aria-label={id}
-                              checked={checked}
-                              onChange={() => selected.toggleRow(id)}
-                              className="size-4 rounded-xs accent-primary"
-                            />
+                          <td className="sticky left-0 z-10 bg-card p-0 group-hover:bg-muted md:static md:bg-transparent">
+                            {/* Matched to the row height so the target fills
+                                the cell without spilling into the row above or
+                                below — where, being later in the document, it
+                                would win the tap. This is the control the whole
+                                bulk-action workflow runs through; it was a bare
+                                16x16 box. */}
+                            <label className="flex h-14 w-10 items-center justify-center md:h-control-md">
+                              <input
+                                type="checkbox"
+                                // Was the row's UUID, which a screen reader
+                                // read out digit by digit and which named
+                                // nothing a person could act on.
+                                aria-label={t("list.selectRow")}
+                                checked={checked}
+                                onChange={() => selected.toggleRow(id)}
+                                className="checkbox"
+                              />
+                            </label>
                           </td>
                         )}
                         {shown.map((column) => {

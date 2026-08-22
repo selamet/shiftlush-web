@@ -710,7 +710,9 @@
     "allOption": "Tümü",
     "pinColumn": "Kolonu sabitle",
     "removeFilter": "Filtreyi kaldır",
-    "searchTerm": "Arama"
+    "searchTerm": "Arama",
+    "selectPage": "Bu sayfadaki kayıtları seç",
+    "selectRow": "Kaydı seç"
   },
   "bulk": {
     "apply": "Uygula",

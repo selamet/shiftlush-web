@@ -60,6 +60,11 @@
   --font-mono: "Source Code Pro", ui-monospace, monospace;
 
   --radius: 0.375rem; /* 6px base */
+
+  /* The target a visually small control is enlarged to by `.hit-40`. Named
+     because two rules depend on it: the size of the overlay, and the minimum
+     separation between two of them. */
+  --sl-hit-target: 40px;
 }
 
 .dark {
@@ -78,9 +83,17 @@
   --input: #333846;
   --sl-border-strong: #4d5464; /* 2.3 */
 
-  --primary: #6c4bf5; /* 5.3 */
-  --primary-foreground: #ffffff;
-  --sl-primary-hover: #7c5cff; /* 4.5 */
+  /* The accent carries two jobs — the button fill and the link/accent text —
+     and in dark theme one hue cannot do both. #6c4bf5 measured 5.3 for white
+     ink on the fill, which is what the old comment recorded, but the same
+     token is `text-primary`: 3.35 on card, 3.56 on background, 3.05 on
+     primary-soft. All three fail AA, and brightening the violet far enough to
+     fix them takes white-on-fill down to 3.3.
+     So the fill flips to a light tone with dark ink, the way `--destructive`
+     in this block already does. Ratios below are measured, not estimated.  */
+  --primary: #8f7bff; /* 5.4 on card, 5.8 on background, 5.0 on primary-soft */
+  --primary-foreground: #16171c; /* 5.5 on the primary fill */
+  --sl-primary-hover: #a892ff; /* 6.9 as text on card, 7.0 as ink on the hover fill */
   --sl-primary-soft: #221a44; /* 8.6 */
   --ring: #a78bfa; /* 6.9 */
 
@@ -258,9 +271,64 @@
     content: "";
     position: absolute;
     inset: 50% auto auto 50%;
-    width: 40px;
-    height: 40px;
+    /* `max()` rather than a flat 40px: on a control that is already wider than
+       the target, a 40px-wide overlay centred on it enlarged only the middle
+       band and left the corners at the control's own size. It also means a
+       wide text button no longer spills sideways into its neighbour at all. */
+    width: max(100%, var(--sl-hit-target));
+    height: max(100%, var(--sl-hit-target));
     transform: translate(-50%, -50%);
+  }
+
+  /* The target overflows a 28px control by (40 - 28) / 2 = 6px on every side,
+     so two of them side by side overlap by 12px — and since the later sibling
+     paints on top, that overlap sits over the *earlier* button's visible box.
+     In this app the later sibling is reliably the destructive one, so the
+     rightmost 6px of "make primary" dispatched to "delete".
+     12px is therefore the minimum separation, and it lives here rather than as
+     a `gap-*` at each call site because a call site can forget it and this
+     cannot. `gap-*` on the parent adds to it, so the separation is never less
+     than the minimum — call sites that already space these buttons should drop
+     their own gap rather than stack a second one on top. */
+  .hit-40 + .hit-40 {
+    margin-inline-start: calc(var(--sl-hit-target) - var(--spacing-control-xs));
+  }
+
+  /* Checkboxes were the one control family with no `pointer: coarse` step, and
+     the row checkbox in a list *is* the bulk workflow. The box itself grows to
+     20px for gloves; the 40px target is the caller's job, because a pseudo
+     element cannot be attached to a replaced element like an input — every
+     checkbox needs a real <label> around it instead. */
+  .checkbox {
+    @apply size-4 rounded-xs accent-primary pointer-coarse:size-5;
+  }
+}
+
+/* Not decorative, and not optional: this app runs a spinner while a request is
+   in flight and a skeleton while rows load. Unlayered and !important so a
+   utility class cannot put the motion back. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* The two exceptions carry information rather than decoration. Stopping them
+     outright would leave a frozen icon and a static grey bar both claiming
+     nothing is happening, so they are slowed instead — well outside the rate
+     that triggers motion sensitivity, still clearly alive. */
+  .animate-spin {
+    animation-duration: 1.5s !important;
+    animation-iteration-count: infinite !important;
+  }
+
+  .animate-pulse {
+    animation-duration: 3s !important;
+    animation-iteration-count: infinite !important;
   }
 }
 

@@ -306,7 +306,7 @@ export function ContractFormScreen() {
             name="auto_renew"
             type="checkbox"
             defaultChecked={record?.auto_renew ?? false}
-            className="mt-0.5 size-4 rounded-xs accent-primary"
+            className="checkbox mt-0.5"
           />
           <span className="flex flex-col leading-tight">
             <span className="text-body">{t("contract.fields.autoRenew")}</span>
