@@ -3,13 +3,11 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { registerCompany, type TokenResponse } from "@/api/queries";
 import { setAccessToken } from "@/api/client";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
+import { MIN_PASSWORD_LENGTH } from "@/lib/password";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { PublicShell } from "@/screens/PublicShell";
-
-/** The server's floor. Repeated here only to save a round trip on an obvious miss. */
-const MIN_PASSWORD_LENGTH = 10;
 
 /**
  * Opening a firm's account.

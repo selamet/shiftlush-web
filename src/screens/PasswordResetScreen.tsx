@@ -4,12 +4,11 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { MailCheck } from "lucide-react";
 import { confirmPasswordReset, requestPasswordReset } from "@/api/queries";
 import { formValues, useSubmit } from "@/lib/form";
+import { MIN_PASSWORD_LENGTH } from "@/lib/password";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { PublicShell } from "@/screens/PublicShell";
-
-const MIN_PASSWORD_LENGTH = 10;
 
 /**
  * Asking for a reset link.
