@@ -336,3 +336,59 @@ export function createElevator(body: ElevatorWrite, idempotencyKey: string) {
 export function updateElevator(id: string, body: Partial<ElevatorWrite>) {
   return api.patch<Elevator>(`/elevators/${id}/`, body);
 }
+
+// --------------------------------------------------------------------------
+// Contracts
+// --------------------------------------------------------------------------
+
+export type ContractWrite = Schemas["ContractWriteRequest"];
+export type ContractLine = Schemas["ContractLine"];
+
+export const contractKeys = {
+  all: ["contracts"] as const,
+  detail: (id: string) => ["contracts", "detail", id] as const,
+} as const;
+
+export function contractQuery(id: string) {
+  return queryOptions({
+    queryKey: contractKeys.detail(id),
+    queryFn: ({ signal }) => api.get<Contract>(`/contracts/${id}/`, { signal }),
+  });
+}
+
+export function createContract(body: ContractWrite, idempotencyKey: string) {
+  return api.post<Contract>("/contracts/", body, { idempotencyKey });
+}
+
+export function updateContract(id: string, body: Partial<ContractWrite>) {
+  return api.patch<Contract>(`/contracts/${id}/`, body);
+}
+
+/**
+ * Ending a contract early.
+ *
+ * Its own endpoint rather than a status field, because it touches three tables:
+ * the contract, its lines, and every elevator that falls back to uncontracted.
+ * A client sending `status: "terminated"` would be taking responsibility for
+ * side effects it cannot perform.
+ */
+export function terminateContract(id: string, terminatedAt: string, reason: string) {
+  return api.post<Contract>(`/contracts/${id}/terminate/`, {
+    terminated_at: terminatedAt,
+    reason,
+  });
+}
+
+export function renewContract(id: string, body: { start_date: string; end_date: string }) {
+  return api.post<Contract>(`/contracts/${id}/renew/`, body);
+}
+
+/** Lines grouped by the building they are in, which is how the screen reads them. */
+export function linesByBuilding(contract: Pick<Contract, "lines">): Map<string, ContractLine[]> {
+  const grouped = new Map<string, ContractLine[]>();
+  for (const line of contract.lines ?? []) {
+    const key = line.building_name || "";
+    grouped.set(key, [...(grouped.get(key) ?? []), line]);
+  }
+  return grouped;
+}

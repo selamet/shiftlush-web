@@ -20,6 +20,7 @@ import {
   elevatorQuery,
   invitationPreviewQuery,
   buildingQuery,
+  contractQuery,
 } from "@/api/queries";
 import { SessionProvider, type SessionOverride } from "@/lib/session";
 import type { Role } from "@/components/layout/nav-config";
@@ -35,6 +36,7 @@ import { BuildingListScreen } from "@/screens/BuildingListScreen";
 import { BuildingFormScreen } from "@/screens/BuildingFormScreen";
 import { ContractListScreen } from "@/screens/ContractListScreen";
 import { ContractDetailScreen } from "@/screens/ContractDetailScreen";
+import { ContractFormScreen } from "@/screens/ContractFormScreen";
 import { UserListScreen } from "@/screens/UserListScreen";
 import { AuditLogListScreen } from "@/screens/AuditLogListScreen";
 import { SettingsScreen } from "@/screens/SettingsScreen";
@@ -199,8 +201,16 @@ export const routeTree = rootRoute.addChildren([
       queryClient.ensureQueryData(buildingQuery(params.id)),
     ),
     shellChild("/buildings/new", BuildingFormScreen),
-    shellChild("/contracts", ContractListScreen),
-    shellChild("/contracts/$id", ContractDetailScreen),
+    shellChild("/contracts", ContractListScreen, () =>
+      queryClient.ensureQueryData(contractListQuery({ page: 1, page_size: 25 })),
+    ),
+    shellChild("/contracts/new", ContractFormScreen),
+    shellChild("/contracts/$id/edit", ContractFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(contractQuery(params.id)),
+    ),
+    shellChild("/contracts/$id", ContractDetailScreen, ({ params }) =>
+      queryClient.ensureQueryData(contractQuery(params.id)),
+    ),
     shellChild("/qr-labels", QrLabelScreen),
     shellChild("/users", UserListScreen),
     shellChild("/audit-logs", AuditLogListScreen),

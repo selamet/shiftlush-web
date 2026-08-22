@@ -131,6 +131,14 @@ function resolve(path, search, method, body) {
     return page(customer ? rows.filter((row) => row.customer_id === customer) : rows);
   }
 
+  const contract = /^\/api\/v1\/contracts\/([^/]+)\/$/.exec(path);
+  if (contract && method === "GET") {
+    return { ...fixture("demo-contract"), id: contract[1] };
+  }
+  if (method === "POST" && path === "/api/v1/contracts/") {
+    return { ...fixture("demo-contract"), ...body, id: "k-new" };
+  }
+
   if (path === "/api/v1/contracts/") {
     const customer = search.get("customer");
     const rows = fixture("demo-contracts");
