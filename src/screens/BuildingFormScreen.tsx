@@ -19,12 +19,10 @@ import { AddressSelect } from "@/components/forms/AddressSelect";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 
 const TYPES = ["residential", "commercial", "mixed", "public", "industrial"] as const;
-
-const selectClass =
-  "h-control-md w-full rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg";
 
 export function BuildingFormScreen() {
   const { t } = useTranslation();
@@ -100,22 +98,20 @@ export function BuildingFormScreen() {
           error={state.fields.customer}
           bindChild={false}
         >
-          <select
+          <SearchableSelect
             id="bf-customer"
             name="customer"
             required
-            className={selectClass}
-            defaultValue={selectedCustomer}
+            defaultValue={String(selectedCustomer ?? "")}
             disabled={customers.isPending}
-            onChange={(event) => setCustomerId(event.target.value)}
-          >
-            <option value="">{t("building.selectCustomer")}</option>
-            {(customers.data?.results ?? []).map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.legal_name}
-              </option>
-            ))}
-          </select>
+            invalid={Boolean(state.fields.customer)}
+            placeholder={t("building.selectCustomer")}
+            onChange={setCustomerId}
+            options={(customers.data?.results ?? []).map((customer) => ({
+              value: String(customer.id),
+              label: customer.legal_name,
+            }))}
+          />
         </Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -141,19 +137,17 @@ export function BuildingFormScreen() {
             error={state.fields.type}
             bindChild={false}
           >
-            <select
+            <SearchableSelect
               id="bf-type"
               name="type"
               required
-              className={selectClass}
               defaultValue={record?.type ?? "residential"}
-            >
-              {TYPES.map((value) => (
-                <option key={value} value={value}>
-                  {enumLabel("building.type", value)}
-                </option>
-              ))}
-            </select>
+              invalid={Boolean(state.fields.type)}
+              options={TYPES.map((value) => ({
+                value,
+                label: enumLabel("building.type", value),
+              }))}
+            />
           </Field>
         </div>
 

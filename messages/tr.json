@@ -34,7 +34,10 @@
     "untranslatedValue": "Bu değerin Türkçe karşılığı henüz tanımlı değil",
     "retry": "Tekrar dene",
     "sending": "Gönderiliyor…",
-    "change": "Değiştir"
+    "change": "Değiştir",
+    "noMatch": "Eşleşen kayıt yok",
+    "selectRequired": "Listeden bir kayıt seçin",
+    "searchMinChars": "Aramak için en az {{count}} karakter yazın"
   },
   "elevator": {
     "title": "Asansörler",
