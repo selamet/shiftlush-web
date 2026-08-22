@@ -702,3 +702,14 @@ export function deactivateUser(id: string) {
 export function setAssignedCustomers(id: string, customerIds: string[]) {
   return api.put<TeamUser>(`/users/${id}/customers/`, { customer_ids: customerIds });
 }
+
+/**
+ * Soft delete, and refused while the complex still holds buildings.
+ *
+ * The server raises RECORD_IN_USE rather than orphaning the blocks or taking
+ * them down with it, so the caller has to be ready for a refusal even when the
+ * count it is looking at says zero — that count was read when the page loaded.
+ */
+export function deleteComplex(id: string) {
+  return api.delete<void>(`/complexes/${id}/`);
+}

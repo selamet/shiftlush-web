@@ -320,7 +320,10 @@
     "add": "Site ekle",
     "selectCustomer": "Müşteri seçin",
     "none": "Siteye bağlı değil",
-    "pickerHint": "Bina bir sitenin içindeyse seçin — site, müşterininkiyle aynı olmalı"
+    "pickerHint": "Bina bir sitenin içindeyse seçin — site, müşterininkiyle aynı olmalı",
+    "deleteTitle": "Site silinsin mi?",
+    "deleteBody": "{{name}} kaydı silinir. Listelerde görünmez, geçmiş kayıtlar korunur.",
+    "deleteBlocked": "Bu sitede {{count}} bina var. Site ancak boşaldığında silinebilir."
   },
   "user": {
     "title": "Kullanıcılar",
