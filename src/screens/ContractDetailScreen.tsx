@@ -34,6 +34,7 @@ import {
   openLines,
   proposedRenewal,
   reminderDate,
+  vatUnstated,
 } from "@/lib/contract";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { cn } from "@/lib/utils";
@@ -51,6 +52,7 @@ import {
   type SearchableOption,
 } from "@/components/ui/searchable-select";
 import { ContractStatusChip, StatusChip } from "@/components/ui/status-chip";
+import { Alert } from "@/components/ui/alert";
 
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -60,6 +62,35 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
       <span className="min-w-0 text-right text-cell break-words">{value ?? "—"}</span>
     </div>
   );
+}
+
+/**
+ * A VAT-derived amount, or the reason there is not one.
+ *
+ * `formatMoney(null)` is the empty string, which is a fair answer to "render
+ * nothing" and the wrong thing to leave in a money column. A blank is what a
+ * half-loaded screen looks like, so a reader slides past it on the way to a
+ * number they trust and never learns that this contract has no VAT rate on it.
+ * The reason takes the cell instead, and takes it in muted type so it reads as
+ * an explanation rather than as a figure.
+ *
+ * Only `unset` gets this treatment. Zero-rated has an amount — zero — and it is
+ * printed like any other, because it is a decision somebody made and not a gap.
+ */
+function VatFigure({
+  contract,
+  amount,
+}: {
+  contract: Pick<ContractRecord, "vat_status" | "currency">;
+  amount: string | null;
+}) {
+  const { t } = useTranslation();
+  if (vatUnstated(contract)) {
+    return (
+      <span className="text-muted-foreground">{t("contractDetail.vatUnstatedAmount")}</span>
+    );
+  }
+  return <span className="tnum">{formatMoney(amount, contract.currency)}</span>;
 }
 
 function Card({
@@ -318,6 +349,11 @@ export function ContractDetailScreen() {
   const canSeeTechnical = role !== "accountant";
   const canWrite = role === "owner" || role === "admin" || role === "operations";
   const isAccountant = role === "accountant";
+  /* Nobody has stated a rate, so the server refused to invent a total. Read
+     once because three places on this screen turn on it, and never confused
+     with a rate of zero — see `vatUnstated`. Meaningless without the money, so
+     it is only ever consulted inside `canSeeFinancials`. */
+  const noVatRate = canSeeFinancials && vatUnstated(contract);
 
   /* Open lines first, then the closed ones underneath when they are asked for.
      They are one table rather than two, because they are one register: a lift
@@ -411,12 +447,53 @@ export function ContractDetailScreen() {
           label={t("contract.fields.monthlyFee")}
           value={formatMoney(contract.monthly_fee, contract.currency)}
         />
-        <Row label={t("contract.fields.vatRate")} value={formatPercent(contract.vat_rate)} />
+        <Row
+          label={t("contract.fields.vatRate")}
+          value={
+            noVatRate ? (
+              <span className="text-muted-foreground">{t("contractDetail.vatUnstatedValue")}</span>
+            ) : contract.vat_status === "zero_rated" ? (
+              // Stated, and stated as nothing. The chip is what stops "%0" from
+              // reading as a box somebody forgot to fill in — the two look
+              // identical without it, and only one of them is finished.
+              <span className="inline-flex items-center gap-2">
+                <span className="tnum">{formatPercent(contract.vat_rate)}</span>
+                <StatusChip weight="recessed">{t("contractDetail.vatZeroRated")}</StatusChip>
+              </span>
+            ) : (
+              formatPercent(contract.vat_rate)
+            )
+          }
+        />
+        {/* Both of these are null whenever the rate is, which is the whole
+            reason they are rendered through VatFigure rather than formatMoney. */}
+        <Row
+          label={t("contract.fields.vatAmount")}
+          value={<VatFigure contract={contract} amount={contract.vat_amount} />}
+        />
+        <Row
+          label={t("contract.fields.monthlyTotal")}
+          value={<VatFigure contract={contract} amount={contract.monthly_total} />}
+        />
         <Row
           label={t("contract.fields.billingPeriod")}
           value={enumLabel("contract.billingPeriod", contract.billing_period)}
         />
       </div>
+      {noVatRate && (
+        <Alert
+          tone="warning"
+          block
+          className="mt-3"
+          title={t("contractDetail.vatUnstatedTitle")}
+        >
+          <p className="text-help">
+            {canWrite
+              ? t("contractDetail.vatUnstatedBody")
+              : t("contractDetail.vatUnstatedBodyReadOnly")}
+          </p>
+        </Alert>
+      )}
     </Card>
   ) : null;
 
@@ -791,10 +868,18 @@ export function ContractDetailScreen() {
           <span className="text-muted-foreground">
             {t("contractDetail.subtotal")} {formatMoney(contract.monthly_subtotal)}
           </span>
+          {/* The VAT-inclusive figure, which is `monthly_total` — it used to be
+              the subtotal printed under a label saying VAT was in it, which is
+              the same number short by the tax. When no rate was stated the
+              server sends null rather than repeating the subtotal, and the
+              reason takes the place of the amount so the gap is visible on the
+              one screen whose whole job is the money. */}
           <span className="font-medium">
-            {t("contractDetail.vatIncludedMonthly", {
-              amount: formatMoney(contract.monthly_subtotal),
-            })}
+            {noVatRate
+              ? t("contractDetail.vatUnstatedTotal")
+              : t("contractDetail.vatIncludedMonthly", {
+                  amount: formatMoney(contract.monthly_total, contract.currency),
+                })}
           </span>
         </div>
       </div>

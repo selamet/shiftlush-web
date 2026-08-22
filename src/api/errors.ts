@@ -37,13 +37,32 @@ export function supportReference(error: unknown): string {
   return error.status >= 500 || error.code === "INTERNAL_ERROR" ? error.requestId : "";
 }
 
+/**
+ * The sentence for one field's refusal.
+ *
+ * Tried most specific first, because a code means a different thing depending
+ * on the field it lands on. `max_value` on `vat_rate` is "a VAT rate cannot be
+ * above 100" — a bound the reader can act on the moment they see it. The same
+ * code on another field is a different number entirely, so one shared sentence
+ * for it could only be vague enough to be useless. The generic entry is the
+ * middle rung and `VALIDATION_ERROR` stays the floor.
+ */
+function fieldMessage(field: string, code: string, t: TFunction): string {
+  for (const key of [`errors.fields.${field}.${code}`, `errors.${code}`]) {
+    const message = t(key);
+    // i18next echoes the key back when there is no entry, which is how a rung
+    // that is missing is told from one that is there.
+    if (message !== key) return message;
+  }
+  return t("errors.VALIDATION_ERROR");
+}
+
 /** Field name → message, for putting errors next to the inputs that caused them. */
 export function fieldErrors(error: unknown, t: TFunction): Record<string, string> {
   if (!(error instanceof ApiError)) return {};
   const messages: Record<string, string> = {};
   for (const [field, code] of Object.entries(error.byField())) {
-    const message = t(`errors.${code}`);
-    messages[field] = message === `errors.${code}` ? t("errors.VALIDATION_ERROR") : message;
+    messages[field] = fieldMessage(field, code, t);
   }
   return messages;
 }

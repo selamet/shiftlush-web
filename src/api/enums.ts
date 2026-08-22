@@ -8,6 +8,11 @@ export type ContactRole = Schemas["ContactRole"];
 export type ContractScope = Schemas["ContractScope"];
 export type PricingType = Schemas["PricingTypeEnum"];
 export type BillingPeriod = Schemas["BillingPeriodEnum"];
+/* `VatStatusEnum` is deliberately not listed here. Every type above names a set
+   of options a form offers, which is what `allOf` below exists to bind. VAT
+   status is nobody's choice — the server derives it from `vat_rate` and sends
+   it read-only — so it is read off the record as `contract.vat_status` and
+   never picked from a list. See `vatUnstated` in lib/contract.ts. */
 
 /**
  * Binds a hand-written option list to the enum the API declares.

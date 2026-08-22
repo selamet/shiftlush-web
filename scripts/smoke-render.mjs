@@ -79,6 +79,12 @@ const PATHS = [
   "/contracts/new",
   "/contracts/k1",
   "/contracts/k1/edit",
+  // A contract nobody stated a VAT rate on, and one deliberately at 0%. The
+  // server sends null totals for the first and real ones for the second, and
+  // the two must not arrive on screen looking alike — see the assertions.
+  "/contracts/k-novat",
+  "/contracts/k-novat/edit",
+  "/contracts/k-zerovat",
   "/qr-labels",
   "/scan",
   // Both halves of the scanned-label route, because they are different screens
@@ -172,6 +178,21 @@ const EXPECT = {
   // because the two tables on this screen — the technical register and the
   // billing ledger — are different components and each states it separately.
   "/contracts/k1": "1 kapatılmış satır",
+  // The null totals have to arrive as a sentence, not as an empty cell. Both
+  // halves are asserted: the reason in place of each amount, and the heading of
+  // the notice that says what to do about it. Asserted for every role, because
+  // the alert's body differs by whether the reader may edit the contract while
+  // the fact it reports does not.
+  "/contracts/k-novat": ["Hesaplanamıyor (KDV oranı girilmemiş)", "Aylık toplam hesaplanamıyor"],
+  // The edit form must describe the record in front of the user rather than
+  // repeat the old permanent warning, which said the same thing on every
+  // contract whether or not it had a rate.
+  "/contracts/k-novat/edit": "Bir oran girip kaydedin",
+  // And the other half of the distinction: a contract settled at 0% shows its
+  // rate and its totals like any other, marked as a decision rather than a gap.
+  // If this ever renders the "unstated" sentence the two states have collapsed
+  // into one, which is the failure the server added `vat_status` to prevent.
+  "/contracts/k-zerovat": ["KDV uygulanmıyor", "1.800,00"],
   // The edit form must arrive with the record in its inputs, on the tab that
   // is showing and on the ones that are not.
   "/elevators/e1/edit": "34-2019",
@@ -206,6 +227,10 @@ const EXPECT = {
 const EXPECT_ABSENT = {
   "/users/u1": "Pasifleştir",
   "/users/u2": "Pasifleştir",
+  // A contract at 0% is settled, not unfinished. The moment this sentence
+  // appears on it, the two VAT states have collapsed into one and a rate
+  // somebody agreed reads as a rate somebody forgot.
+  "/contracts/k-zerovat": "Hesaplanamıyor",
 };
 
 const server = await createServer({

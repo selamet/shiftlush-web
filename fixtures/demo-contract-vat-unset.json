@@ -1,0 +1,51 @@
+{
+  "id": "k-novat",
+  "contract_number": "2025-0091",
+  "customer_id": "c2",
+  "customer_name": "Ataşehir Ofis Kule A.Ş.",
+  "status": "active",
+  "scope": "maintenance_only",
+  "start_date": "2025-09-01",
+  "end_date": "2026-08-31",
+  "pricing_type": "per_elevator",
+  "monthly_fee": "0.00",
+  "currency": "TRY",
+  "vat_rate": null,
+  "billing_period": "monthly",
+  "auto_renew": false,
+  "renewal_notice_days": 30,
+  "previous_contract_id": null,
+  "previous_contract_number": "",
+  "terminated_at": null,
+  "termination_reason": "",
+  "notes": "",
+  "elevator_count": 2,
+  "monthly_subtotal": "2400.00",
+  "vat_status": "unset",
+  "vat_amount": null,
+  "monthly_total": null,
+  "lines": [
+    {
+      "id": "line-nv-1",
+      "elevator_id": "e1",
+      "registration_number": "34-2019-004511",
+      "elevator_name": "Sol Kabin",
+      "building_name": "Kule A",
+      "unit_price": "1200.00",
+      "added_at": "2025-09-01",
+      "removed_at": null
+    },
+    {
+      "id": "line-nv-2",
+      "elevator_id": "e2",
+      "registration_number": "34-2019-004512",
+      "elevator_name": "Sağ Kabin",
+      "building_name": "Kule A",
+      "unit_price": "1200.00",
+      "added_at": "2025-09-01",
+      "removed_at": null
+    }
+  ],
+  "created_at": "2025-09-01T09:00:00Z",
+  "updated_at": "2025-09-01T09:00:00Z"
+}

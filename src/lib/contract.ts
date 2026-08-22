@@ -63,6 +63,27 @@ export function proposedRenewal(contract: Pick<Contract, "start_date" | "end_dat
   return { start, end: addDays(start, lengthInDays) };
 }
 
+/**
+ * Whether the contract's VAT-derived amounts exist at all.
+ *
+ * `vat_amount` and `monthly_total` come back null exactly when no rate was ever
+ * stated, and `formatMoney` renders null as an empty string. So without asking
+ * this question first, the two most consequential numbers on a contract screen
+ * are simply missing — and a missing number reads as a screen that did not
+ * finish loading, not as a contract nobody has finished writing.
+ *
+ * `zero_rated` is deliberately not this. A contract at 0% has a VAT amount of
+ * zero and a total equal to its subtotal: both known, both printable, both
+ * settled. Folding the two states together here would throw away the very
+ * distinction the server added `vat_status` to make.
+ *
+ * No arithmetic happens here or anywhere else in the client — this reads the
+ * server's own verdict and nothing more.
+ */
+export function vatUnstated(contract: Pick<Contract, "vat_status">): boolean {
+  return contract.vat_status === "unset";
+}
+
 /** How many distinct buildings the contract covers, from its lines. */
 export function buildingNames(contract: Pick<Contract, "lines">): string[] {
   const names = new Set<string>();
