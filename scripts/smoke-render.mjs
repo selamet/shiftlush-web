@@ -3,6 +3,12 @@
  * Renders every route of the real router, for every role, and fails on any
  * error thrown during render.
  *
+ * The role is passed into the router, which hands the shell a session without
+ * calling the server. That matters: sidebars, table columns and whole sections
+ * are hidden per role, so rendering one role four times — which is what this
+ * did before the role was threaded through — tested a quarter of what it
+ * claimed to.
+ *
  * The build only proves the code type-checks and bundles. This proves the app
  * actually renders and that every route in the tree resolves — including the
  * ones you can only get to by clicking a link, which is exactly where dead
@@ -73,7 +79,7 @@ try {
     const errors = [];
     for (const role of ROLES) {
       try {
-        const router = createRouterForPath(path);
+        const router = createRouterForPath(path, role);
         await router.load();
         const html = renderToString(React.createElement(RouterProvider, { router }));
         if (!html || html.length < 40) throw new Error(`rendered ${html.length} characters`);
