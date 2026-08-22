@@ -146,6 +146,11 @@ const EXPECT = {
   // blocks in it and renders the refusal instead, so without this the
   // button is never rendered by anything.
   "/complexes/s4": "Sil",
+  // A line closed in June is still part of this contract, and the count says so
+  // whether or not the closed rows are expanded. Asserted for every role,
+  // because the two tables on this screen — the technical register and the
+  // billing ledger — are different components and each states it separately.
+  "/contracts/k1": "1 kapatılmış satır",
   // The edit form must arrive with the record in its inputs, on the tab that
   // is showing and on the ones that are not.
   "/elevators/e1/edit": "34-2019",
