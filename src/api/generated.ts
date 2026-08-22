@@ -131,6 +131,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/email/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Send the verification link again.
+         *
+         *     The only way out for somebody who mistyped their address at registration or
+         *     lost the message. Answers the same way whether or not there was anything to
+         *     send: an authenticated caller asking about their own address learns nothing
+         *     either way, and a verified account should not be told it is verified by a
+         *     different status code.
+         */
+        post: operations["auth_email_resend_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/email/verify": {
         parameters: {
             query?: never;
@@ -2811,6 +2836,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PaginatedAuditLogList"];
                 };
+            };
+        };
+    };
+    auth_email_resend_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

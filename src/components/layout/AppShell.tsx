@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search, Menu, X, Moon, Sun, FlaskConical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VerificationBanner } from "@/components/layout/VerificationBanner";
 import { useSession, initials } from "@/lib/session";
 import { useTheme } from "@/lib/theme";
 import { enumLabel } from "@/lib/i18n";
@@ -144,6 +145,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {restoring ? <TopbarSkeleton /> : <Topbar onOpenMenu={() => setDrawerOpen(true)} />}
+        {/* Below the topbar and above the content: it belongs to the account,
+            not to the page, and it must not move when the page changes. */}
+        {!restoring && <VerificationBanner />}
         <main data-app-main className="min-h-0 flex-1 overflow-y-auto">
           {children}
         </main>
