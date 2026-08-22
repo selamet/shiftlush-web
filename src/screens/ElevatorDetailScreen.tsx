@@ -26,6 +26,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { describeAuditEntry } from "@/lib/audit";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
+import { elevatorFileStem } from "@/lib/elevator";
 import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/i18n";
 import {
@@ -296,7 +297,7 @@ export function ElevatorDetailScreen() {
   // Named after the lift rather than "download.pdf": the sheet is printed on
   // one day and stuck to a wall on another, and in between it sits in a folder
   // with the other four somebody saved this week.
-  const sheetFilename = `qr-${elevator.registration_number}.pdf`;
+  const sheetFilename = `qr-${elevatorFileStem(elevator)}.pdf`;
   // The record is flat: `classification`, `technical` and the rest were groups
   // in the fixture, invented before the schema existed. The field names were
   // always the contract's.

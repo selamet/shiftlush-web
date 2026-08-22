@@ -27,6 +27,7 @@ import {
   buildingListQuery,} from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { prerequisiteMissing } from "@/lib/prerequisite";
+import { registrationNumber } from "@/lib/elevator";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate } from "@/lib/format";
 import { useSession } from "@/lib/session";
@@ -1045,7 +1046,16 @@ export function ElevatorListScreen() {
         <Link to="/elevators/$id" params={{ id: row.id }} className="hover:underline">
           {/* The building rides along here below md, where its own column drops. */}
           <span className="flex flex-col leading-tight">
-            <span className="font-mono tnum text-cell">{row.registration_number}</span>
+            {/* Nothing identifying about a lift is required, so this can be
+                empty — and an anchor with no text is a row that cannot be
+                opened. Saying the number is missing is both true and clickable. */}
+            {registrationNumber(row) ? (
+              <span className="font-mono tnum text-cell">{registrationNumber(row)}</span>
+            ) : (
+              <span className="text-cell text-muted-foreground italic">
+                {t("elevator.hints.registrationMissing")}
+              </span>
+            )}
             <span className="truncate text-help text-muted-foreground md:hidden">
               {row.building_name}
             </span>
