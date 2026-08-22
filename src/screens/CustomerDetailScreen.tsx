@@ -1,14 +1,27 @@
+import { useState } from "react";
 import { useParams, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { ChevronRight, Pencil, Plus, Phone, Mail } from "lucide-react";
+import { ChevronRight, Pencil, Plus, Phone, Mail, Star, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { buildingListQuery, contractListQuery, customerQuery } from "@/api/queries";
+import {
+  buildingListQuery,
+  contractListQuery,
+  customerQuery,
+  deleteCustomerContact,
+  keys,
+  updateCustomerContact,
+  type Customer,
+  type CustomerContact,
+} from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
+import { useSubmit } from "@/lib/form";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useSession } from "@/lib/session";
-import { buttonVariants } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { StatusChip, ContractStatusChip } from "@/components/ui/status-chip";
 
 function Card({
@@ -54,6 +67,138 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
     <div className="flex items-baseline justify-between gap-4 border-b border-border-subtle py-2 last:border-0">
       <span className="text-help text-muted-foreground">{label}</span>
       <span className="text-cell text-right">{value ?? "—"}</span>
+    </div>
+  );
+}
+
+/**
+ * The contacts card's body.
+ *
+ * Split out because it owns what the rest of the screen does not: two writes
+ * and the contact awaiting a deletion prompt.
+ */
+function ContactList({ customer, canWrite }: { customer: Customer; canWrite: boolean }) {
+  const { t } = useTranslation();
+  const [confirming, setConfirming] = useState<CustomerContact | null>(null);
+
+  /**
+   * Promoting is two writes, and the order is not a preference.
+   *
+   * `is_primary` is a plain column behind a partial unique constraint
+   * (one primary per customer, among undeleted rows) and nothing on the server
+   * moves it: no serializer hook, no signal, no transition endpoint. Promoting
+   * first would violate the constraint, and an IntegrityError is not translated
+   * into a field error anywhere in the API — it would surface as a 500. So the
+   * seat is emptied, then filled.
+   *
+   * The gap between the two writes is real: a failure in between leaves the
+   * customer with no primary at all. That is the recoverable half — the screens
+   * fall back to the first contact and the user can try again — where the other
+   * order leaves a 500 and nothing to act on.
+   */
+  const promote = useSubmit<CustomerContact, CustomerContact>({
+    mutationFn: async (contact) => {
+      const held = customer.contacts.find(
+        (other) => other.is_primary && other.id !== contact.id,
+      );
+      if (held) await updateCustomerContact(held.id, { is_primary: false });
+      return updateCustomerContact(contact.id, { is_primary: true });
+    },
+    // The contacts arrive inside the customer record, and the customer list
+    // shows the primary one too. Invalidating only the detail would leave the
+    // list naming somebody who is no longer the contact.
+    invalidate: [keys.customers.all],
+  });
+
+  const remove = useSubmit<CustomerContact, void>({
+    mutationFn: (contact) => deleteCustomerContact(contact.id),
+    invalidate: [keys.customers.all],
+    onSuccess: () => setConfirming(null),
+  });
+
+  const failure = promote.state.message || remove.state.message;
+
+  if (customer.contacts.length === 0) {
+    return <p className="text-help text-subtle">{t("customerDetail.noContacts")}</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {failure && <Alert tone="error" block title={failure} />}
+
+      {customer.contacts.map((contact) => (
+        <div key={contact.id} className="flex flex-col gap-1.5">
+          <span className="flex flex-wrap items-center gap-2 text-cell">
+            {canWrite ? (
+              <Link
+                to="/customers/$id/contacts/$contactId"
+                params={{ id: customer.id, contactId: contact.id }}
+                className="hover:underline"
+                aria-label={t("customerDetail.editContact")}
+              >
+                {contact.full_name}
+              </Link>
+            ) : (
+              contact.full_name
+            )}
+            <span className="text-help text-muted-foreground">
+              {enumLabel("customer.contactRole", contact.role)}
+            </span>
+            {contact.is_primary && (
+              <span className="rounded-sm border border-border-strong px-1.5 text-help text-muted-foreground">
+                {t("customerDetail.primaryBadge")}
+              </span>
+            )}
+            {canWrite && (
+              <span className="ml-auto flex shrink-0 items-center">
+                {!contact.is_primary && (
+                  <Button
+                    size="iconXs"
+                    variant="ghost"
+                    aria-label={t("customerDetail.makePrimary")}
+                    disabled={promote.state.pending}
+                    onClick={() => promote.submit(contact)}
+                  >
+                    <Star />
+                  </Button>
+                )}
+                <Button
+                  size="iconXs"
+                  variant="ghost"
+                  aria-label={t("customerDetail.deleteContact")}
+                  onClick={() => setConfirming(contact)}
+                >
+                  <Trash2 />
+                </Button>
+              </span>
+            )}
+          </span>
+          {contact.phone && (
+            <span className="flex items-center gap-1.5 text-help text-muted-foreground">
+              <Phone className="size-3.5 shrink-0" aria-hidden="true" />
+              {contact.phone}
+            </span>
+          )}
+          {/* The contact's own address, not the customer's. */}
+          {contact.email && (
+            <span className="flex items-center gap-1.5 text-help text-muted-foreground">
+              <Mail className="size-3.5 shrink-0" aria-hidden="true" />
+              {contact.email}
+            </span>
+          )}
+        </div>
+      ))}
+
+      <ConfirmDialog
+        open={confirming !== null}
+        title={t("customerDetail.deleteContactTitle")}
+        body={t("customerDetail.deleteContactBody", { name: confirming?.full_name ?? "" })}
+        confirmLabel={t("common.delete")}
+        onConfirm={() => {
+          if (confirming) remove.submit(confirming);
+        }}
+        onCancel={() => setConfirming(null)}
+      />
     </div>
   );
 }
@@ -205,52 +350,7 @@ export function CustomerDetailScreen() {
               )
             }
           >
-            {customer.contacts.length > 0 ? (
-              <div className="flex flex-col gap-3">
-                {customer.contacts.map((contact) => (
-                  <div key={contact.id} className="flex flex-col gap-1.5">
-                    <span className="flex flex-wrap items-center gap-2 text-cell">
-                      {canWrite ? (
-                        <Link
-                          to="/customers/$id/contacts/$contactId"
-                          params={{ id: customer.id, contactId: contact.id }}
-                          className="hover:underline"
-                          aria-label={t("customerDetail.editContact")}
-                        >
-                          {contact.full_name}
-                        </Link>
-                      ) : (
-                        contact.full_name
-                      )}
-                      <span className="text-help text-muted-foreground">
-                        {enumLabel("customer.contactRole", contact.role)}
-                      </span>
-                      {contact.is_primary && (
-                        <span className="rounded-sm border border-border-strong px-1.5 text-help text-muted-foreground">
-                          {t("customerDetail.primaryBadge")}
-                        </span>
-                      )}
-                    </span>
-                    {contact.phone && (
-                      <span className="flex items-center gap-1.5 text-help text-muted-foreground">
-                        <Phone className="size-3.5 shrink-0" aria-hidden="true" />
-                        {contact.phone}
-                      </span>
-                    )}
-                    {/* Was showing customer.phone next to a mail icon. The
-                        contact's own address is what belongs here. */}
-                    {contact.email && (
-                      <span className="flex items-center gap-1.5 text-help text-muted-foreground">
-                        <Mail className="size-3.5 shrink-0" aria-hidden="true" />
-                        {contact.email}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-help text-subtle">{t("customerDetail.noContacts")}</p>
-            )}
+            <ContactList customer={customer} canWrite={canWrite} />
           </Card>
 
           <Card title={t("customerDetail.contracts")}>

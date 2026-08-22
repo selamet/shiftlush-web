@@ -849,6 +849,10 @@
     "noContacts": "Henüz iletişim kişisi yok",
     "primaryBadge": "Birincil",
     "editContact": "İletişim kişisini düzenle",
+    "deleteContact": "İletişim kişisini sil",
+    "deleteContactTitle": "İletişim kişisi silinsin mi?",
+    "deleteContactBody": "{{name}} kaydı silinir; bakım ekibi bu kişiyi müşteri kartında artık göremez.",
+    "makePrimary": "Birincil yap",
     "billingAddress": "Fatura adresi",
     "noAddress": "Fatura adresi girilmemiş"
   },

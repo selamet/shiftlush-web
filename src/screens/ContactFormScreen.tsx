@@ -11,22 +11,24 @@ import {
   type CustomerContact,
   type CustomerContactWrite,
 } from "@/api/queries";
+import { allOf, type ContactRole } from "@/api/enums";
 import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 
-const ROLES = [
+const ROLES = allOf<ContactRole>()([
   "manager",
   "auditor",
   "caretaker",
   "technical_lead",
   "accounting",
   "other",
-] as const;
+]);
 
 /**
  * The person to call about a customer.
@@ -74,10 +76,26 @@ function ContactForm({ customer, record }: { customer: Customer; record?: Custom
   const idempotencyKey = useIdempotencyKey();
 
   const { submit, state } = useSubmit<Partial<CustomerContactWrite>, CustomerContact>({
-    mutationFn: (body) =>
-      record
+    mutationFn: async (body) => {
+      // Nothing on the server moves this flag. `is_primary` is a plain column
+      // behind a partial unique constraint, with no serializer hook, no signal
+      // and no transition endpoint — so promoting before demoting violates the
+      // constraint, and an IntegrityError is not translated into a field error.
+      // It would reach the user as a 500. The seat is emptied first.
+      if (body.is_primary) {
+        const held = (customer.contacts ?? []).find(
+          (contact) => contact.is_primary && contact.id !== record?.id,
+        );
+        if (held) await updateCustomerContact(held.id, { is_primary: false });
+      }
+      return record
         ? updateCustomerContact(record.id, body)
-        : createCustomerContact(customer.id, body as CustomerContactWrite, idempotencyKey),
+        : createCustomerContact(
+            customer.id,
+            body as Omit<CustomerContactWrite, "customer">,
+            idempotencyKey,
+          );
+    },
     // The contacts are read off the customer record, so that is what has to be
     // refetched — invalidating a contact key nothing reads would leave the
     // detail page showing the old list.
@@ -151,18 +169,16 @@ function ContactForm({ customer, record }: { customer: Customer; record?: Custom
         </Field>
 
         <Field label={t("contact.fields.role")} htmlFor="kf-role" error={state.fields.role}>
-          <select
+          <SearchableSelect
             id="kf-role"
             name="role"
             defaultValue={record?.role ?? "other"}
-            className="h-control-md rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg"
-          >
-            {ROLES.map((value) => (
-              <option key={value} value={value}>
-                {enumLabel("customer.contactRole", value)}
-              </option>
-            ))}
-          </select>
+            invalid={Boolean(state.fields.role)}
+            options={ROLES.map((value) => ({
+              value,
+              label: enumLabel("customer.contactRole", value),
+            }))}
+          />
         </Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -198,8 +214,9 @@ function ContactForm({ customer, record }: { customer: Customer; record?: Custom
           />
           <span className="flex flex-col leading-tight">
             <span className="text-body">{t("contact.fields.isPrimary")}</span>
-            {/* The server moves the flag rather than refusing, so this says
-                what will happen instead of leaving it to be discovered. */}
+            {/* True because this form makes it true: the previous holder is
+                demoted first, in the submit above. The server itself would
+                refuse the second primary rather than move it. */}
             <span className="text-help text-muted-foreground">{t("contact.isPrimaryHint")}</span>
           </span>
         </label>
