@@ -1,0 +1,109 @@
+/*
+ * Leaflet's own chrome, brought into this design system.
+ *
+ * Loaded from LeafletMap.tsx, immediately after leaflet's own stylesheet and
+ * inside the same async chunk. That ordering is the point: in the entry
+ * stylesheet these rules would be parsed before leaflet.css arrives and lose
+ * every tie on specificity.
+ */
+
+/* The pane behind the tiles, visible while they load and around the edges of
+   the world. Leaflet's default is a light grey that glares in dark theme.
+
+   `.sl-map.leaflet-container`, not `.sl-map .leaflet-container`: Leaflet adds
+   its class to the element it was handed, so the two land on the same node and
+   a descendant selector matches nothing at all. */
+.sl-map.leaflet-container {
+  background: var(--color-muted);
+  font: inherit;
+  outline-offset: 2px;
+}
+
+/* Leaflet ships 30x30 zoom buttons, which is under the 40px this system uses
+   for a mouse and nowhere near the 44px WCAG 2.5.5 asks for on touch. The
+   technician uses this outdoors, one-handed, sometimes gloved. */
+.sl-map .leaflet-control-zoom a {
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  color: var(--color-foreground);
+  background: var(--color-card);
+  border-bottom-color: var(--color-border-subtle);
+}
+
+.sl-map .leaflet-control-zoom a:hover {
+  background: var(--color-muted);
+}
+
+.sl-map .leaflet-bar {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: none;
+  border: 1px solid var(--color-border);
+}
+
+.sl-map .leaflet-control-attribution {
+  background: color-mix(in srgb, var(--color-card) 85%, transparent);
+  color: var(--color-muted-foreground);
+  font-size: 11px;
+}
+
+.sl-map .leaflet-control-attribution a {
+  color: var(--color-muted-foreground);
+  text-decoration: underline;
+}
+
+@media (pointer: coarse) {
+  .sl-map .leaflet-control-zoom a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+    font-size: 22px;
+  }
+}
+
+/*
+ * The marker.
+ *
+ * A ring around a filled centre rather than a teardrop: a teardrop claims its
+ * tip is the point, which is a lie about a 28px graphic, and the tip is the
+ * worst possible place to put a finger. The centre dot *is* the coordinate and
+ * the whole ring is the drag target.
+ */
+.sl-pin {
+  display: grid;
+  place-items: center;
+  cursor: grab;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  box-shadow: 0 0 0 2px var(--color-card);
+}
+
+.sl-pin:active {
+  cursor: grabbing;
+}
+
+.sl-pin::after {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-card);
+}
+
+.sl-pin:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  /* Leaflet sets the size inline from `iconSize`, so overriding it needs the
+     extra weight. 36px is the gloved-finger floor for something you drag. */
+  .sl-map .sl-pin {
+    width: 36px !important;
+    height: 36px !important;
+    margin-left: -18px !important;
+    margin-top: -18px !important;
+  }
+}
