@@ -281,6 +281,19 @@ try {
         const html = renderToString(React.createElement(RouterProvider, { router }));
         if (!html || html.length < 40) throw new Error(`rendered ${html.length} characters`);
 
+        // The error boundary must never be what this check renders.
+        //
+        // `renderToString` does not invoke error boundaries — a component that
+        // throws still takes the render down, which is what the catch below
+        // reports — so today this can only fire if a screen renders the
+        // fallback deliberately. It is asserted anyway because the day that
+        // changes, every broken screen in this list would start passing as a
+        // tidily handled apology instead of failing, and the check would go on
+        // printing OK while protecting nothing.
+        if (html.includes("data-error-boundary")) {
+          throw new Error("the error boundary rendered — something on this screen threw");
+        }
+
         // One string or several. A screen assembled from two independent
         // sections needs an assertion per section, or half of it can stop
         // rendering without the check noticing.

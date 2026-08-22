@@ -50,6 +50,14 @@ jobs:
           npm run api:generate
           git diff --exit-code src/api/generated.ts
 
+      # An error report is the one place this application's data can leave it
+      # without anybody deciding that it should. Sentry's own quickstart leaves
+      # collection on; this plants a national identity number, a password and
+      # two live tokens in the channels the SDK collects through and fails if
+      # any of them reaches the transport.
+      - name: Nothing sensitive leaves in a crash report
+        run: npm run test:privacy
+
       - name: Build
         run: npm run build
 

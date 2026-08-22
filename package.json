@@ -15,12 +15,14 @@
     "lint:password": "node scripts/check-password-length.mjs",
     "lint:buttons": "node scripts/check-dead-buttons.mjs",
     "typecheck": "tsc -b --noEmit",
-    "verify": "npm run lint:tr && npm run lint:i18n && npm run lint:errors && npm run lint:paths && npm run lint:password && npm run lint:buttons && npm run typecheck && npm run test:dates && npm run test:dialogs && npm run build && npm run smoke",
+    "verify": "npm run lint:tr && npm run lint:i18n && npm run lint:errors && npm run lint:paths && npm run lint:password && npm run lint:buttons && npm run typecheck && npm run test:dates && npm run test:dialogs && npm run test:privacy && npm run build && npm run smoke",
     "test:dates": "node scripts/check-dates.mjs",
     "test:dialogs": "node scripts/check-dialogs.mjs",
+    "test:privacy": "node scripts/check-sentry-privacy.mjs",
     "smoke": "node scripts/smoke-render.mjs"
   },
   "dependencies": {
+    "@sentry/react": "^10.70.0",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-router": "^1.170.31",
     "class-variance-authority": "^0.7.1",

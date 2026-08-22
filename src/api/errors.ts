@@ -31,6 +31,10 @@ export function errorMessage(error: unknown, t: TFunction): string {
  *
  * Shown next to unexpected failures only. Printing it under a validation error
  * the user can fix themselves is noise that trains people to ignore it.
+ *
+ * Not the same question as `errorReference` in `@/lib/observability`, which
+ * asks what id belongs to a failure — including one that never touched the
+ * server — rather than whether this particular failure deserves to show one.
  */
 export function supportReference(error: unknown): string {
   if (!(error instanceof ApiError)) return "";

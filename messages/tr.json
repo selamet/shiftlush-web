@@ -781,6 +781,12 @@
   "boot": {
     "refreshingSession": "Oturum tazeleniyor…"
   },
+  "crash": {
+    "title": "Bu ekran açılamadı",
+    "body": "Beklenmeyen bir hata oluştu. Hata kaydedildi; aşağıdaki numarayı destek ekibine iletirseniz doğrudan bu kaydı bulurlar.",
+    "goHome": "Başlangıç ekranına dön",
+    "reload": "Sayfayı yenile"
+  },
   "login": {
     "heading": "Giriş yapın",
     "lockoutNotice": "5 hatalı denemeden sonra hesap 15 dakika kilitlenir.",
