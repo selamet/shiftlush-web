@@ -546,7 +546,9 @@
     "companySettingsReadOnly": "Firma ayarları salt okunur",
     "companySettingsEditable": "Firma ayarlarını düzenleyebilir",
     "openMenu": "Menüyü aç",
-    "closeMenu": "Menüyü kapat"
+    "closeMenu": "Menüyü kapat",
+    "userMenu": "Hesap menüsü",
+    "settings": "Ayarlar"
   },
   "list": {
     "export": "Dışa aktar",

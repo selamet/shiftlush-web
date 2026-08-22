@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import { Search, Menu, X, Moon, Sun, FlaskConical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VerificationBanner } from "@/components/layout/VerificationBanner";
-import { useSession, initials } from "@/lib/session";
+import { useSession } from "@/lib/session";
 import { useTheme } from "@/lib/theme";
 import { enumLabel } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { UserMenu } from "./UserMenu";
 import { Sidebar, SidebarNav, SidebarSkeleton } from "./Sidebar";
 import { ROLES, type Role } from "./nav-config";
 
@@ -67,19 +68,7 @@ function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
         <Button size="icon" variant="ghost" onClick={toggle} aria-label={t("styleguide.toggleTheme")}>
           {theme === "dark" ? <Sun /> : <Moon />}
         </Button>
-        {fullName && role && (
-          <div className="flex items-center gap-2.5 pl-1">
-            <div className="hidden flex-col items-end leading-tight sm:flex">
-              <span className="text-label">{fullName}</span>
-              <span className="text-help text-muted-foreground">
-                {enumLabel("user.role", role)}
-              </span>
-            </div>
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary-soft text-label font-semibold text-primary">
-              {initials(fullName)}
-            </span>
-          </div>
-        )}
+        {fullName && role && <UserMenu fullName={fullName} role={role} />}
       </div>
     </header>
   );
@@ -111,6 +100,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { status, role } = useSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Someone who has just signed out, or whose session expired on a screen the
+  // guard cannot re-check, is on their way to /login. Rendering the skeletons
+  // in the meantime puts `boot.refreshingSession` on screen, which tells them
+  // the opposite of what is happening.
+  if (status === "anonymous") return null;
+
   const restoring = status === "restoring" || role === null;
 
   return (
