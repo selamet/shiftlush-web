@@ -897,6 +897,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/geocode/reverse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve a map point to province, district and neighborhood ids
+         * @description `GET /geocode/reverse?lat=&lng=` — a point, as ids from our own tables.
+         *
+         *     The lookup goes through this API rather than from the browser so answers
+         *     can be cached, the provider's quota stays under one roof, and changing
+         *     provider is a change here (8.6). The throttle is the second half of that:
+         *     caching bounds repeat lookups, but nothing bounds a client walking the
+         *     coordinate space except a rate limit.
+         *
+         *     A level that could not be resolved comes back null and named in
+         *     `unmatched`. That is the whole point of the endpoint rather than a
+         *     shortcoming of it — see `apps.address.matching`.
+         */
+        get: operations["geocode_reverse_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invitations/": {
         parameters: {
             query?: never;
@@ -2087,6 +2117,18 @@ export interface components {
         EmailVerifyRequest: {
             token: string;
         };
+        /** @description One level of the address, resolved to a row the client can select. */
+        GeocodeMatch: {
+            /** @description Feeds straight back into the province/district/neighborhood endpoints. */
+            readonly id: number;
+            /** @description The name as this API stores it. */
+            readonly name: string;
+            /**
+             * Format: double
+             * @description Trigram similarity between the provider's name and ours, 0-1. 1.0 means the two agree once folded; anything at or above the server's threshold is a match, and anything below is reported as no match rather than as a low score.
+             */
+            readonly confidence: number;
+        };
         /**
          * @description * `green` - Green
          *     * `blue` - Blue
@@ -2571,6 +2613,20 @@ export interface components {
             /** @default true */
             copy_terms: boolean;
         };
+        /**
+         * @description What a dropped pin resolves to.
+         *
+         *     Ids rather than names, because the form the client is filling in is a
+         *     cascade of selects over the address tables — a name would only send it back
+         *     to look the row up, and would leave it guessing when the lookup found two.
+         */
+        ReverseGeocode: {
+            readonly province: components["schemas"]["GeocodeMatch"] | null;
+            readonly district: components["schemas"]["GeocodeMatch"] | null;
+            readonly neighborhood: components["schemas"]["GeocodeMatch"] | null;
+            /** @description Levels that could not be resolved and must be chosen by the user. Stated explicitly rather than left as three nulls: a client that reads null as 'not filled in yet' behaves differently from one that reads it as 'we looked and found nothing', and only one of those asks the user. */
+            readonly unmatched: components["schemas"]["UnmatchedEnum"][];
+        };
         TerminateRequest: {
             /** Format: date */
             terminated_at: string;
@@ -2587,6 +2643,13 @@ export interface components {
             readonly access: string;
             readonly user: components["schemas"]["CurrentUser"];
         };
+        /**
+         * @description * `province` - province
+         *     * `district` - district
+         *     * `neighborhood` - neighborhood
+         * @enum {string}
+         */
+        UnmatchedEnum: "province" | "district" | "neighborhood";
         UploadUrlRequestRequest: {
             object_type: components["schemas"]["AttachmentObjectType"];
             /** Format: uuid */
@@ -4217,6 +4280,28 @@ export interface operations {
                 };
                 content: {
                     "application/pdf": string;
+                };
+            };
+        };
+    };
+    geocode_reverse_retrieve: {
+        parameters: {
+            query: {
+                lat: number;
+                lng: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReverseGeocode"];
                 };
             };
         };
