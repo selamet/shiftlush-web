@@ -6,13 +6,14 @@
     "category": "freight",
     "stop_count": 6,
     "has_car_door": false,
-    "building": "Çamlıca Konakları B Blok",
-    "customer": "Çamlıca Konakları Site Yönetimi",
     "status": "active",
     "inspection_label": "yellow",
     "next_inspection_date": "2026-11-02T00:00:00Z",
     "brand": "Merih Asansör",
-    "model": "MY-1600"
+    "model": "MY-1600",
+    "building_name": "Çamlıca Konakları B Blok",
+    "customer_name": "Çamlıca Konakları Site Yönetimi",
+    "building_id": "b-e1"
   },
   {
     "id": "e2",
@@ -21,13 +22,14 @@
     "category": "passenger",
     "stop_count": 8,
     "has_car_door": true,
-    "building": "Çamlıca Konakları A Blok",
-    "customer": "Çamlıca Konakları Site Yönetimi",
     "status": "active",
     "inspection_label": "green",
     "next_inspection_date": "2027-03-14T00:00:00Z",
     "brand": "Schindler",
-    "model": "3300 AP"
+    "model": "3300 AP",
+    "building_name": "Çamlıca Konakları A Blok",
+    "customer_name": "Çamlıca Konakları Site Yönetimi",
+    "building_id": "b-e2"
   },
   {
     "id": "e3",
@@ -36,13 +38,14 @@
     "category": "passenger",
     "stop_count": 8,
     "has_car_door": true,
-    "building": "Çamlıca Konakları A Blok",
-    "customer": "Çamlıca Konakları Site Yönetimi",
     "status": "suspended",
     "inspection_label": "green",
     "next_inspection_date": "2026-09-28T00:00:00Z",
     "brand": "Schindler",
-    "model": "3300 AP"
+    "model": "3300 AP",
+    "building_name": "Çamlıca Konakları A Blok",
+    "customer_name": "Çamlıca Konakları Site Yönetimi",
+    "building_id": "b-e3"
   },
   {
     "id": "e4",
@@ -51,13 +54,14 @@
     "category": "passenger_freight",
     "stop_count": 14,
     "has_car_door": true,
-    "building": "Ofis Kule 1",
-    "customer": "Ataşehir Ofis Kule A.Ş.",
     "status": "sealed",
     "inspection_label": "red",
     "next_inspection_date": "2026-06-19T00:00:00Z",
     "brand": "Kone",
-    "model": "MonoSpace 500"
+    "model": "MonoSpace 500",
+    "building_name": "Ofis Kule 1",
+    "customer_name": "Ataşehir Ofis Kule A.Ş.",
+    "building_id": "b-e4"
   },
   {
     "id": "e5",
@@ -66,13 +70,14 @@
     "category": null,
     "stop_count": null,
     "has_car_door": true,
-    "building": "Yıldız Apartmanı",
-    "customer": "Yıldız Apartmanı Yönetimi",
     "status": "uncontracted",
     "inspection_label": "none",
     "next_inspection_date": null,
     "brand": null,
-    "model": null
+    "model": null,
+    "building_name": "Yıldız Apartmanı",
+    "customer_name": "Yıldız Apartmanı Yönetimi",
+    "building_id": "b-e5"
   },
   {
     "id": "e6",
@@ -81,13 +86,14 @@
     "category": "dumbwaiter",
     "stop_count": 4,
     "has_car_door": true,
-    "building": "Nurtepe Sitesi C Blok",
-    "customer": "Nurtepe Sitesi Yönetimi",
     "status": "active",
     "inspection_label": "blue",
     "next_inspection_date": "2027-01-07T00:00:00Z",
     "brand": "Akış Asansör",
-    "model": "AK-320"
+    "model": "AK-320",
+    "building_name": "Nurtepe Sitesi C Blok",
+    "customer_name": "Nurtepe Sitesi Yönetimi",
+    "building_id": "b-e6"
   },
   {
     "id": "e7",
@@ -96,13 +102,14 @@
     "category": "passenger",
     "stop_count": 22,
     "has_car_door": true,
-    "building": "Ofis Kule 1",
-    "customer": "Ataşehir Ofis Kule A.Ş.",
     "status": "active",
     "inspection_label": "green",
     "next_inspection_date": "2027-05-30T00:00:00Z",
     "brand": "Otis",
-    "model": "Gen2 Switch"
+    "model": "Gen2 Switch",
+    "building_name": "Ofis Kule 1",
+    "customer_name": "Ataşehir Ofis Kule A.Ş.",
+    "building_id": "b-e7"
   },
   {
     "id": "e8",
@@ -111,13 +118,14 @@
     "category": "freight",
     "stop_count": 3,
     "has_car_door": false,
-    "building": "Bahçelievler Kültür Merkezi",
-    "customer": "Bahçelievler Belediyesi",
     "status": "out_of_service",
     "inspection_label": "none",
     "next_inspection_date": "2026-02-11T00:00:00Z",
     "brand": "ThyssenKrupp",
-    "model": "Synergy 100"
+    "model": "Synergy 100",
+    "building_name": "Bahçelievler Kültür Merkezi",
+    "customer_name": "Bahçelievler Belediyesi",
+    "building_id": "b-e8"
   },
   {
     "id": "e9",
@@ -126,13 +134,14 @@
     "category": "accessibility_platform",
     "stop_count": 2,
     "has_car_door": true,
-    "building": "Bahçelievler Kültür Merkezi",
-    "customer": "Bahçelievler Belediyesi",
     "status": "active",
     "inspection_label": "blue",
     "next_inspection_date": "2026-12-21T00:00:00Z",
     "brand": null,
-    "model": "MP-250"
+    "model": "MP-250",
+    "building_name": "Bahçelievler Kültür Merkezi",
+    "customer_name": "Bahçelievler Belediyesi",
+    "building_id": "b-e9"
   },
   {
     "id": "e10",
@@ -141,13 +150,14 @@
     "category": "dumbwaiter",
     "stop_count": 4,
     "has_car_door": true,
-    "building": "Çamlıca Konakları B Blok",
-    "customer": "Çamlıca Konakları Site Yönetimi",
     "status": "active",
     "inspection_label": "none",
     "next_inspection_date": "2027-01-15T00:00:00Z",
     "brand": "Akış Asansör",
-    "model": "AK-320"
+    "model": "AK-320",
+    "building_name": "Çamlıca Konakları B Blok",
+    "customer_name": "Çamlıca Konakları Site Yönetimi",
+    "building_id": "b-e10"
   },
   {
     "id": "e11",
@@ -156,13 +166,14 @@
     "category": "dumbwaiter",
     "stop_count": 4,
     "has_car_door": true,
-    "building": "Çamlıca Konakları B Blok",
-    "customer": "Çamlıca Konakları Site Yönetimi",
     "status": "out_of_service",
     "inspection_label": "none",
     "next_inspection_date": "2027-02-15T00:00:00Z",
     "brand": "Akış Asansör",
-    "model": "AK-250"
+    "model": "AK-250",
+    "building_name": "Çamlıca Konakları B Blok",
+    "customer_name": "Çamlıca Konakları Site Yönetimi",
+    "building_id": "b-e11"
   },
   {
     "id": "e12",
@@ -171,13 +182,14 @@
     "category": "passenger",
     "stop_count": 18,
     "has_car_door": true,
-    "building": "Ofis Kule 1",
-    "customer": "Ataşehir Ofis Kule A.Ş.",
     "status": "active",
     "inspection_label": "green",
     "next_inspection_date": "2027-03-15T00:00:00Z",
     "brand": "Otis",
-    "model": "Gen2 Switch"
+    "model": "Gen2 Switch",
+    "building_name": "Ofis Kule 1",
+    "customer_name": "Ataşehir Ofis Kule A.Ş.",
+    "building_id": "b-e12"
   },
   {
     "id": "e13",
@@ -186,12 +198,13 @@
     "category": "passenger",
     "stop_count": 10,
     "has_car_door": true,
-    "building": "Nurtepe Sitesi C Blok",
-    "customer": "Nurtepe Sitesi Yönetimi",
     "status": "active",
     "inspection_label": "yellow",
     "next_inspection_date": "2027-04-15T00:00:00Z",
     "brand": "Kone",
-    "model": "MonoSpace 300"
+    "model": "MonoSpace 300",
+    "building_name": "Nurtepe Sitesi C Blok",
+    "customer_name": "Nurtepe Sitesi Yönetimi",
+    "building_id": "b-e13"
   }
 ]

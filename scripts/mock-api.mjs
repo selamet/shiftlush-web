@@ -42,6 +42,18 @@ function resolve(path, search) {
 
   if (path === "/api/v1/customers") return page(customers);
 
+  const elevator = /^\/api\/v1\/elevators\/([^/]+)$/.exec(path);
+  if (elevator) {
+    const detail = fixture("demo-elevator-detail");
+    return { ...detail, id: elevator[1] };
+  }
+
+  if (path === "/api/v1/elevators") return page(fixture("demo-elevators"));
+
+  if (path === "/api/v1/attachments") return page(fixture("demo-attachments"));
+
+  if (path === "/api/v1/audit-logs") return page(fixture("demo-audit-logs-elevator"));
+
   if (path === "/api/v1/buildings") {
     const customer = search.get("customer");
     const rows = fixture("demo-buildings");

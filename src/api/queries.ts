@@ -118,3 +118,62 @@ export function contractListQuery(params: ListParams = {}) {
       api.get<Paginated<Contract>>("/contracts", { query: params, signal }),
   });
 }
+
+export type ElevatorRow = Schemas["ElevatorList"];
+export type Elevator = Schemas["ElevatorDetail"];
+export type AuditEntry = Schemas["AuditLog"];
+export type Attachment = Schemas["Attachment"];
+
+export const elevatorKeys = {
+  all: ["elevators"] as const,
+  list: (params: ListParams) => ["elevators", "list", params] as const,
+  detail: (id: string) => ["elevators", "detail", id] as const,
+  history: (id: string) => ["elevators", "history", id] as const,
+  attachments: (id: string) => ["elevators", "attachments", id] as const,
+} as const;
+
+export function elevatorListQuery(params: ListParams = {}) {
+  return queryOptions({
+    queryKey: elevatorKeys.list(params),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<ElevatorRow>>("/elevators", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function elevatorQuery(id: string) {
+  return queryOptions({
+    queryKey: elevatorKeys.detail(id),
+    queryFn: ({ signal }) => api.get<Elevator>(`/elevators/${id}`, { signal }),
+  });
+}
+
+/**
+ * What happened to this elevator, from the audit trail.
+ *
+ * There is no history endpoint on the elevator itself, and there should not be:
+ * the trail is one table with one shape, and a per-resource view of it would be
+ * a second thing to keep in step. Only owners and admins may read it, so the
+ * screen asks for it conditionally rather than swallowing a 403 on every visit.
+ */
+export function elevatorHistoryQuery(id: string) {
+  return queryOptions({
+    queryKey: elevatorKeys.history(id),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<AuditEntry>>("/audit-logs", {
+        query: { table_name: "elevator", record_id: id, page_size: 20 },
+        signal,
+      }),
+  });
+}
+
+export function elevatorAttachmentsQuery(id: string) {
+  return queryOptions({
+    queryKey: elevatorKeys.attachments(id),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<Attachment>>("/attachments", {
+        query: { object_type: "elevator", object_id: id, page_size: 50 },
+        signal,
+      }),
+  });
+}

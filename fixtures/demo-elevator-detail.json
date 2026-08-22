@@ -1,81 +1,53 @@
 {
+  "id": "e1",
+  "building_id": "b1",
+  "building_name": "Çamlıca Konakları A Blok",
+  "customer_id": "c1",
+  "customer_name": "Çamlıca Konakları Site Yönetimi",
+  "complex_name": "Çamlıca Konakları",
+  "category": "passenger",
+  "drive_type": "gearless_electric",
+  "control_type": "full_collective",
+  "door_type": "automatic_center",
+  "has_car_door": false,
+  "machine_room": "present",
+  "capacity_kg": 630,
+  "capacity_persons": 8,
+  "stop_count": 8,
+  "entrance_count": 8,
+  "speed_mps": "1.0",
+  "pit_depth_mm": 1400,
+  "headroom_mm": null,
+  "car_weight_kg": null,
+  "brand": "Schindler",
+  "model": "3300 AP",
+  "serial_number": "SCH-9F4-04512",
+  "installation_date": "2019-06-14T00:00:00Z",
+  "commissioning_date": null,
+  "manufacturer": "Schindler Türkiye",
+  "installer": "Yükseliş Asansör",
+  "ce_certificate_number": "CE-TR-19-8842",
+  "warranty_end_date": "2021-06-14T00:00:00Z",
+  "last_inspection_date": "2026-03-14T00:00:00Z",
+  "next_inspection_date": "2027-03-14T00:00:00Z",
+  "inspection_body": "TÜV Austria Türk",
+  "inspection_report_number": "PK-2026-18442",
+  "current_contract": {
+    "id": "k1",
+    "contract_number": "2026-0043",
+    "scope": "maintenance_and_repair",
+    "end_date": "2027-01-31",
+    "unit_price": "1250.00"
+  },
   "registration_number": "34-2019-004512",
   "name": "Sol asansör",
-  "internal_code_example": "CK-A-01",
-  "building": "Çamlıca Konakları A Blok",
-  "complex": "Çamlıca Konakları",
-  "customer": "Çamlıca Konakları Site Yönetimi",
-  "neighborhood": "Barbaros Mah.",
-  "district": "Ataşehir",
+  "qr_token": "7Kd93Pm2",
   "status": "active",
   "inspection_label": "green",
   "maintenance_interval_days": 30,
-  "qr_token": "7Kd93Pm2",
-  "classification": {
-    "category": "passenger",
-    "drive_type": "gearless_electric",
-    "control_type": "full_collective",
-    "door_type": "automatic_center",
-    "has_car_door": false,
-    "machine_room": "present"
-  },
-  "technical": {
-    "capacity_kg": 630,
-    "capacity_persons": 8,
-    "stop_count": 8,
-    "entrance_count": 8,
-    "speed_mps": "1.0",
-    "pit_depth_mm": 1400,
-    "headroom_mm": null,
-    "car_weight_kg": null
-  },
-  "inspection": {
-    "last_inspection_date": "2026-03-14T00:00:00Z",
-    "next_inspection_date": "2027-03-14T00:00:00Z",
-    "inspection_body": "TÜV Austria Türk",
-    "inspection_report_number": "PK-2026-18442"
-  },
-  "manufacturing": {
-    "brand": "Schindler",
-    "model": "3300 AP",
-    "serial_number": "SCH-9F4-04512",
-    "installation_date": "2019-06-14T00:00:00Z",
-    "commissioning_date": null,
-    "manufacturer": "Schindler Türkiye",
-    "installer": "Yükseliş Asansör",
-    "ce_certificate_number": "CE-TR-19-8842",
-    "warranty_end_date": "2021-06-14T00:00:00Z"
-  },
-  "contract": {
-    "contract_number": "2026-0043",
-    "scope": "maintenance_and_repair",
-    "end_date": "2027-01-31T00:00:00Z",
-    "unit_price": "1250.00"
-  },
-  "attachments": [
-    { "name": "Kabin içi fotoğraf", "category": "photo", "size": "2,4 MB" },
-    { "name": "CE belgesi", "category": "ce_certificate", "size": "PDF" },
-    { "name": "Uygunluk beyanı", "category": "declaration_of_conformity", "size": "PDF" },
-    { "name": "Periyodik kontrol raporu", "category": "inspection_report", "size": "PDF" }
-  ],
-  "history": [
-    {
-      "field": "Etiket rengi",
-      "change": "Sarı → Yeşil",
-      "actor": "Mehmet Yılmaz",
-      "at": "2026-03-14T08:24:00Z"
-    },
-    {
-      "field": "Kontrol rapor no eklendi",
-      "change": "",
-      "actor": "Mehmet Yılmaz",
-      "at": "2026-03-14T08:23:00Z"
-    },
-    {
-      "field": "2026-0043 sözleşmesine eklendi",
-      "change": "",
-      "actor": "Ayşe Demir",
-      "at": "2026-02-01T06:12:00Z"
-    }
-  ]
+  "internal_code": "",
+  "notes": "",
+  "qr_token_generated_at": "2026-01-12T09:00:00Z",
+  "created_at": "2026-01-12T09:00:00Z",
+  "updated_at": "2026-03-14T08:24:00Z"
 }

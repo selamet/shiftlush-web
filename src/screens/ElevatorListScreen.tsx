@@ -1,7 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { Printer, TriangleAlert } from "lucide-react";
-import demoElevators from "@fixtures/demo-elevators.json";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { elevatorListQuery, type ElevatorRow } from "@/api/queries";
+import { errorMessage, supportReference } from "@/api/errors";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate } from "@/lib/format";
 import { useSession } from "@/lib/session";
@@ -9,8 +12,6 @@ import { Button } from "@/components/ui/button";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
 import { InspectionLabel } from "@/components/ui/inspection-label";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
-
-type Elevator = (typeof demoElevators)[number];
 
 /**
  * Seven columns, chosen for what someone scanning 500 rows actually needs:
@@ -28,8 +29,15 @@ export function ElevatorListScreen() {
   const { t } = useTranslation();
   const { role } = useSession();
   const readOnly = role === "technician";
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
-  const columns: ListColumn<Elevator>[] = [
+  // The technician sees the elevators of the customers assigned to them; that
+  // narrowing is the server's, decided by their token.
+  const query = useQuery(elevatorListQuery({ page, page_size: pageSize }));
+  const rows = query.data?.results ?? [];
+
+  const columns: ListColumn<ElevatorRow>[] = [
     {
       key: "elevator.fields.registrationNumber",
       sticky: true,
@@ -39,7 +47,7 @@ export function ElevatorListScreen() {
           <span className="flex flex-col leading-tight">
             <span className="font-mono tnum text-cell">{row.registration_number}</span>
             <span className="truncate text-help text-muted-foreground md:hidden">
-              {row.building}
+              {row.building_name}
             </span>
           </span>
         </Link>
@@ -68,7 +76,7 @@ export function ElevatorListScreen() {
     {
       key: "building.singular",
       hideOnMobile: true,
-      cell: (row) => <Stacked primary={row.building} secondary={row.customer} />,
+      cell: (row) => <Stacked primary={row.building_name} secondary={row.customer_name} />,
     },
     {
       key: "elevator.fields.status",
@@ -101,7 +109,7 @@ export function ElevatorListScreen() {
     {
       key: "elevator.fields.brand",
       hideOnMobile: true,
-      cell: (row) => <Stacked primary={row.brand ?? "—"} secondary={row.model ?? ""} />,
+      cell: (row) => <Stacked primary={row.brand || "—"} secondary={row.model} />,
     },
   ];
 
@@ -118,21 +126,31 @@ export function ElevatorListScreen() {
         { labelKey: "customer.singular", count: 1 },
         { labelKey: "elevator.fields.category" },
       ]}
-      activeFilters={[
-        {
-          labelKey: "elevator.fields.inspectionLabel",
-          value: enumLabel("elevator.inspectionLabel", "yellow"),
-        },
-        {
-          labelKey: "elevator.fields.inspectionLabel",
-          value: enumLabel("elevator.inspectionLabel", "red"),
-        },
-        { labelKey: "customer.singular", value: demoElevators[3].customer },
-      ]}
+      // No active-filter chips until the filter controls exist. They used to be
+      // hardcoded to two inspection labels and a customer, which was fine
+      // against fixtures and becomes a lie the moment the list is real: chips
+      // claiming a filter is applied above an unfiltered list.
       columns={columns}
-      rows={demoElevators}
+      rows={rows}
       rowKey={(row) => row.id}
-      total={342}
+      total={query.data?.pagination.total ?? 0}
+      page={page}
+      pageSize={pageSize}
+      onPageChange={setPage}
+      onPageSizeChange={(size) => {
+        setPageSize(size);
+        setPage(1);
+      }}
+      loading={query.isPending}
+      error={
+        query.isError
+          ? {
+              message: errorMessage(query.error, t),
+              reference: supportReference(query.error),
+              onRetry: () => void query.refetch(),
+            }
+          : undefined
+      }
       selectable={!readOnly}
       bulkActions={() => (
         <>

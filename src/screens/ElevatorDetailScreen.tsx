@@ -11,10 +11,24 @@ import {
   FileText,
   Image as ImageIcon,
 } from "lucide-react";
-import elevator from "@fixtures/demo-elevator-detail.json";
+import { useQuery } from "@tanstack/react-query";
+import {
+  elevatorAttachmentsQuery,
+  elevatorHistoryQuery,
+  elevatorQuery,
+} from "@/api/queries";
+import { errorMessage, supportReference } from "@/api/errors";
+import { describeAuditEntry } from "@/lib/audit";
+import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/i18n";
-import { formatDate, formatDateTime, formatMoney, formatNumber } from "@/lib/format";
+import {
+  formatDate,
+  formatDateTime,
+  formatFileSize,
+  formatMoney,
+  formatNumber,
+} from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
@@ -94,10 +108,46 @@ export function ElevatorDetailScreen() {
   const { role } = useSession();
   const [tab, setTab] = useState<"record" | "attachments" | "history">("record");
 
-  const { classification: cls, technical: tech, inspection: insp, manufacturing: man } = elevator;
-  // Contract money is scoped by role: operations runs the fleet, accounting
-  // runs the money, and neither needs the other's column.
-  const canSeeFinancials = role === "owner" || role === "admin" || role === "accountant";
+  const elevatorId = id ?? "";
+  const query = useQuery({ ...elevatorQuery(elevatorId), enabled: Boolean(elevatorId) });
+  const attachmentsQuery = useQuery({
+    ...elevatorAttachmentsQuery(elevatorId),
+    enabled: Boolean(elevatorId),
+  });
+  // Only owners and admins may read the trail, so the request is not made for
+  // anyone else — asking and swallowing a 403 on every visit would put a red
+  // line in the console of every technician's browser.
+  const canSeeHistory = role === "owner" || role === "admin";
+  const historyQuery = useQuery({
+    ...elevatorHistoryQuery(elevatorId),
+    enabled: Boolean(elevatorId) && canSeeHistory,
+  });
+
+  if (query.isPending) return <DetailSkeleton />;
+  if (query.isError || !query.data) {
+    return (
+      <ListError
+        message={errorMessage(query.error, t)}
+        reference={supportReference(query.error)}
+        onRetry={() => void query.refetch()}
+      />
+    );
+  }
+
+  const elevator = query.data;
+  const attachments = attachmentsQuery.data?.results ?? [];
+  const history = historyQuery.data?.results ?? [];
+  // The record is flat: `classification`, `technical` and the rest were groups
+  // in the fixture, invented before the schema existed. The field names were
+  // always the contract's.
+  const cls = elevator;
+  const tech = elevator;
+  const insp = elevator;
+  const man = elevator;
+  // The server drops the unit price for roles that may not see money, so its
+  // presence is the permission. Repeating the role check here would be a second
+  // rule to keep in step with the first.
+  const contract = elevator.current_contract;
 
   return (
     <>
@@ -105,7 +155,11 @@ export function ElevatorDetailScreen() {
           arriving here from a QR scan is a different task from reading the
           register at a desk. */}
       <div className="md:hidden">
-        <ElevatorDetailMobile viaQr={role === "technician"} />
+        <ElevatorDetailMobile
+          elevator={elevator}
+          attachmentCount={attachments.length}
+          viaQr={role === "technician"}
+        />
       </div>
 
       <div className="hidden flex-col gap-4 p-6 md:flex">
@@ -116,12 +170,12 @@ export function ElevatorDetailScreen() {
               {t("customer.title")}
             </Link>
             <ChevronRight className="size-3" aria-hidden="true" />
-            <Link to="/customers/$id" params={{ id: "c1" }} className="hover:underline">
-              {elevator.customer}
+            <Link to="/customers/$id" params={{ id: elevator.customer_id }} className="hover:underline">
+              {elevator.customer_name}
             </Link>
             <ChevronRight className="size-3" aria-hidden="true" />
             <Link to="/buildings" className="hover:underline">
-              {elevator.building}
+              {elevator.building_name}
             </Link>
             <ChevronRight className="size-3" aria-hidden="true" />
             <span className="text-foreground">{elevator.name}</span>
@@ -139,8 +193,14 @@ export function ElevatorDetailScreen() {
             <span>
               {man.brand} {man.model}
             </span>
-            <span>·</span>
-            <span>{t("elevator.hints.stopCount", { count: tech.stop_count })}</span>
+            {/* Nullable in the record: a lift can be registered before anyone
+                has counted its stops, and the fixture never had that case. */}
+            {tech.stop_count != null && (
+              <>
+                <span>·</span>
+                <span>{t("elevator.hints.stopCount", { count: tech.stop_count })}</span>
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -179,7 +239,7 @@ export function ElevatorDetailScreen() {
             {t(`detail.tabs.${key}`)}
             {key === "attachments" && (
               <span className="tnum rounded-full bg-muted px-1.5 text-help text-muted-foreground">
-                {elevator.attachments.length}
+                {attachments.length}
               </span>
             )}
           </button>
@@ -286,22 +346,22 @@ export function ElevatorDetailScreen() {
 
           {tab === "attachments" && (
             <Group title={t("detail.tabs.attachments")}>
-              {elevator.attachments.map((file) => {
+              {attachments.map((file) => {
                 const Icon =
                   ATTACHMENT_ICON[file.category as keyof typeof ATTACHMENT_ICON] ?? FileText;
                 return (
                   <div
-                    key={file.name}
+                    key={file.id}
                     className="flex items-center gap-3 border-b border-border-subtle py-2.5 last:border-0"
                   >
                     <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                     <div className="flex min-w-0 flex-col leading-tight">
-                      <span className="text-cell">{file.name}</span>
+                      <span className="text-cell">{file.original_filename}</span>
                       <span className="text-help text-muted-foreground">
                         {enumLabel("attachment.category", file.category)}
                       </span>
                     </div>
-                    <span className="ml-auto text-help text-subtle">{file.size}</span>
+                    <span className="ml-auto text-help text-subtle">{formatFileSize(file.size_bytes)}</span>
                   </div>
                 );
               })}
@@ -310,19 +370,14 @@ export function ElevatorDetailScreen() {
 
           {tab === "history" && (
             <Group title={t("detail.tabs.history")}>
-              {elevator.history.map((entry, index) => (
+              {history.map((entry, index) => (
                 <div
                   key={index}
                   className="flex flex-col gap-0.5 border-b border-border-subtle py-2.5 last:border-0"
                 >
-                  <span className="text-cell">
-                    {entry.field}
-                    {entry.change && (
-                      <span className="ml-2 text-muted-foreground">{entry.change}</span>
-                    )}
-                  </span>
+                  <span className="text-cell">{describeAuditEntry(entry, t)}</span>
                   <span className="text-help text-muted-foreground">
-                    {entry.actor} · {formatDateTime(entry.at)}
+                    {entry.user_name || t("audit.system")} · {formatDateTime(entry.created_at)}
                   </span>
                 </div>
               ))}
@@ -334,49 +389,54 @@ export function ElevatorDetailScreen() {
         <div className="flex flex-col gap-4">
           <RailCard title={t("detail.relatedRecords")}>
             <div className="flex flex-col">
-              <FieldRow label={t("building.singular")} value={elevator.building} to="/buildings" />
-              <FieldRow label={t("complex.singular")} value={elevator.complex} to="/complexes" />
+              <FieldRow label={t("building.singular")} value={elevator.building_name} to="/buildings" />
+              <FieldRow label={t("complex.singular")} value={elevator.complex_name} to="/complexes" />
               <FieldRow
                 label={t("customer.singular")}
-                value={elevator.customer}
+                value={elevator.customer_name}
                 to="/customers/$id"
-                params={{ id: "c1" }}
+                params={{ id: elevator.customer_id }}
               />
               <FieldRow
                 label={t("address.fields.neighborhood")}
-                value={`${elevator.neighborhood} · ${elevator.district}`}
+                value={elevator.building_name}
               />
             </div>
           </RailCard>
 
           <RailCard title={t("detail.activeContract")}>
-            <div className="flex flex-col">
-              <FieldRow
-                label={t("contract.fields.contractNumber")}
-                value={elevator.contract.contract_number}
-                to="/contracts/$id"
-                params={{ id: "k1" }}
-              />
-              <FieldRow
-                label={t("contract.fields.scope")}
-                value={enumLabel("contract.scope", elevator.contract.scope)}
-              />
-              <FieldRow
-                label={t("contract.fields.endDate")}
-                value={formatDate(elevator.contract.end_date)}
-              />
-              {canSeeFinancials ? (
+            {contract ? (
+              <div className="flex flex-col">
                 <FieldRow
-                  label={t("contract.fields.unitPrice")}
-                  value={formatMoney(elevator.contract.unit_price)}
+                  label={t("contract.fields.contractNumber")}
+                  value={contract.contract_number}
+                  to="/contracts/$id"
+                  params={{ id: contract.id }}
                 />
-              ) : (
-                // Stated rather than silently dropped: the user should know the
-                // field exists and that the boundary is their role, not a gap
-                // in the record.
-                <p className="pt-2 text-help text-subtle italic">{t("detail.hiddenForRole")}</p>
-              )}
-            </div>
+                <FieldRow
+                  label={t("contract.fields.scope")}
+                  value={enumLabel("contract.scope", contract.scope)}
+                />
+                <FieldRow
+                  label={t("contract.fields.endDate")}
+                  value={formatDate(contract.end_date)}
+                />
+                {"unit_price" in contract ? (
+                  <FieldRow
+                    label={t("contract.fields.unitPrice")}
+                    value={formatMoney(contract.unit_price)}
+                  />
+                ) : (
+                  // Stated rather than silently dropped: the user should know
+                  // the field exists and that the boundary is their role, not a
+                  // gap in the record. The server decided this — the field is
+                  // absent from the response, not hidden here.
+                  <p className="pt-2 text-help text-subtle italic">{t("detail.hiddenForRole")}</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-help text-subtle">{t("elevator.hints.noContract")}</p>
+            )}
           </RailCard>
 
           <RailCard title={t("detail.qrCode")}>
@@ -406,14 +466,19 @@ export function ElevatorDetailScreen() {
 
           <RailCard title={t("detail.tabs.history")}>
             <div className="flex flex-col gap-2">
-              {elevator.history.slice(0, 3).map((entry, index) => (
+              {history.slice(0, 3).map((entry, index) => (
                 <div key={index} className="flex flex-col leading-tight">
-                  <span className="text-help">{entry.field}</span>
+                  <span className="text-help">{describeAuditEntry(entry, t)}</span>
                   <span className="text-help text-subtle">
-                    {entry.actor} · {formatDateTime(entry.at)}
+                    {entry.user_name || t("audit.system")} · {formatDateTime(entry.created_at)}
                   </span>
                 </div>
               ))}
+              {history.length === 0 && (
+                <p className="text-help text-subtle">
+                  {canSeeHistory ? t("audit.empty") : t("detail.hiddenForRole")}
+                </p>
+              )}
               <button type="button" className="self-start text-help text-primary hover:underline">
                 {t("detail.viewAllHistory")}
               </button>
