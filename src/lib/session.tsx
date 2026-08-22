@@ -13,10 +13,14 @@ export interface Session {
   role: Role | null;
   fullName: string | null;
   companyName: string | null;
+  /** False until the address is confirmed. Gates inviting colleagues, nothing else. */
+  emailVerified: boolean;
 }
 
 interface SessionContextValue extends Session {
   signIn: (email: string, password: string) => Promise<void>;
+  /** Called after the address is confirmed, so the banner goes without a reload. */
+  markVerified: () => void;
   signOut: () => Promise<void>;
   /** Styleguide affordance: walks through each role's sidebar. Never the real role. */
   setRole: (role: Role) => void;
@@ -35,6 +39,7 @@ export interface SessionOverride {
   role: Role;
   fullName: string;
   companyName: string;
+  emailVerified?: boolean;
 }
 
 function toSession(user: CurrentUser): Omit<Session, "status"> {
@@ -45,6 +50,7 @@ function toSession(user: CurrentUser): Omit<Session, "status"> {
     // topbar shows it on every screen, and a separate call on the boot path
     // leaves that space empty while it is in flight.
     companyName: user.company_name,
+    emailVerified: user.is_email_verified,
   };
 }
 
@@ -62,7 +68,9 @@ export function SessionProvider({
   override?: SessionOverride;
 }) {
   const [status, setStatus] = useState<SessionStatus>(override ? "authenticated" : "restoring");
-  const [user, setUser] = useState<Omit<Session, "status"> | null>(override ?? null);
+  const [user, setUser] = useState<Omit<Session, "status"> | null>(
+    override ? { ...override, emailVerified: override.emailVerified ?? true } : null,
+  );
 
   useEffect(() => {
     if (override) return;
@@ -129,6 +137,10 @@ export function SessionProvider({
     }
   }, []);
 
+  const markVerified = useCallback(() => {
+    setUser((current) => (current ? { ...current, emailVerified: true } : current));
+  }, []);
+
   const setRole = useCallback((role: Role) => {
     setUser((current) => (current ? { ...current, role } : current));
   }, []);
@@ -139,11 +151,13 @@ export function SessionProvider({
       role: status === "authenticated" ? (user?.role ?? null) : null,
       fullName: status === "authenticated" ? (user?.fullName ?? null) : null,
       companyName: status === "authenticated" ? (user?.companyName ?? null) : null,
+      emailVerified: user?.emailVerified ?? false,
       signIn,
       signOut,
+      markVerified,
       setRole,
     }),
-    [status, user, signIn, signOut, setRole],
+    [status, user, signIn, signOut, markVerified, setRole],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

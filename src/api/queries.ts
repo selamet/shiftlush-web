@@ -202,3 +202,53 @@ export function updateCustomer(id: string, body: Partial<CustomerWrite>) {
   // model grows a column, old clients start wiping it.
   return api.patch<Customer>(`/customers/${id}/`, body);
 }
+
+// --------------------------------------------------------------------------
+// Public authentication flows
+//
+// None of these carry a token: the caller has no session yet, which is the
+// point of every one of them.
+// --------------------------------------------------------------------------
+
+export type TokenResponse = Schemas["TokenResponse"];
+export type InvitationPreview = Schemas["InvitationPreview"];
+
+export function registerCompany(body: Schemas["RegisterRequest"], idempotencyKey: string) {
+  return api.post<TokenResponse>("/auth/register", body, { anonymous: true, idempotencyKey });
+}
+
+export function requestPasswordReset(email: string) {
+  return api.post<void>("/auth/password-reset", { email }, { anonymous: true });
+}
+
+export function confirmPasswordReset(token: string, password: string) {
+  return api.post<void>("/auth/password-reset/confirm", { token, password }, { anonymous: true });
+}
+
+export function verifyEmail(token: string) {
+  return api.post<void>("/auth/email/verify", { token }, { anonymous: true });
+}
+
+export function resendVerification() {
+  // The one call here that does need a session: it re-sends to the address of
+  // whoever is signed in, which is why it takes no address at all.
+  return api.post<void>("/auth/email/resend");
+}
+
+export function invitationPreviewQuery(token: string) {
+  return queryOptions({
+    queryKey: ["invitation", token] as const,
+    queryFn: ({ signal }) =>
+      api.get<InvitationPreview>(`/invitations/verify/${token}`, { anonymous: true, signal }),
+    // A bad or expired token is a final answer, not a transient failure.
+    retry: false,
+  });
+}
+
+export function acceptInvitation(token: string, password: string) {
+  return api.post<TokenResponse>(
+    "/invitations/accept",
+    { token, password },
+    { anonymous: true },
+  );
+}

@@ -40,6 +40,21 @@ function resolve(path, search, method, body) {
   // Writes are answered, not just reads. A form that submits during the smoke
   // test must get a record back, or the screen renders its error state and the
   // test passes while proving the opposite of what it claims.
+  // Public authentication. These are the paths a signed-out person reaches,
+  // and the smoke test renders every one of them.
+  const invitation = /^\/api\/v1\/invitations\/verify\/([^/]+)$/.exec(path);
+  if (invitation) {
+    return {
+      email: "yeni@example.com",
+      first_name: "Nur",
+      last_name: "Yeni",
+      role: "operations",
+      company_name: "Yükseliş Asansör",
+      expires_at: "2026-12-31T23:59:59Z",
+    };
+  }
+  if (method === "POST" && path === "/api/v1/auth/email/verify") return {};
+
   if (method === "POST" && path === "/api/v1/customers/") {
     return { ...fixture("demo-customers")[0], ...body, id: "c-new" };
   }

@@ -18,6 +18,7 @@ import {
   elevatorAttachmentsQuery,
   elevatorListQuery,
   elevatorQuery,
+  invitationPreviewQuery,
 } from "@/api/queries";
 import { SessionProvider, type SessionOverride } from "@/lib/session";
 import type { Role } from "@/components/layout/nav-config";
@@ -38,6 +39,12 @@ import { AuditLogListScreen } from "@/screens/AuditLogListScreen";
 import { SettingsScreen } from "@/screens/SettingsScreen";
 import { QrLabelScreen } from "@/screens/QrLabelScreen";
 import { StyleGuide } from "@/styleguide/StyleGuide";
+import { RegisterScreen } from "@/screens/RegisterScreen";
+import {
+  PasswordResetConfirmScreen,
+  PasswordResetRequestScreen,
+} from "@/screens/PasswordResetScreen";
+import { InvitationScreen, VerifyEmailScreen } from "@/screens/InvitationScreen";
 
 /**
  * Set only by createRouterForPath, so the smoke test and the styleguide can
@@ -114,6 +121,16 @@ const loginRoute = createRoute({
   component: LoginScreen,
 });
 
+/** Reachable with no session — these are how a person gets one. */
+function publicRoute(path: string, component: () => React.ReactNode, loader?: Loader) {
+  return createRoute({
+    getParentRoute: () => rootRoute,
+    path,
+    component,
+    loader: loader ? (context) => loader(context).catch(() => undefined) : undefined,
+  });
+}
+
 const styleguideRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/styleguide",
@@ -124,6 +141,18 @@ export const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   styleguideRoute,
+  publicRoute("/register", RegisterScreen),
+  publicRoute("/password-reset", PasswordResetRequestScreen),
+  publicRoute("/password-reset/$token", PasswordResetConfirmScreen),
+  // The three paths the e-mails point at. Until these existed an invitation
+  // arrived, the person clicked, and the product answered with a 404.
+  publicRoute("/verify-email/$token", VerifyEmailScreen),
+  publicRoute("/invitation/$token", InvitationScreen, ({ params }) =>
+    // Prefetched so the page arrives naming the firm that sent it. Somebody
+    // deciding whether to trust a link asking for a password should not be
+    // looking at a skeleton while they decide.
+    queryClient.ensureQueryData(invitationPreviewQuery(params.token)),
+  ),
   shellRoute.addChildren([
     shellChild("/elevators", ElevatorListScreen, () =>
       queryClient.ensureQueryData(elevatorListQuery({ page: 1, page_size: 25 })),

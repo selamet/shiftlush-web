@@ -48,6 +48,13 @@ installMockApi();
 
 const PATHS = [
   "/login",
+  "/register",
+  "/password-reset",
+  "/password-reset/some-token",
+  // The three the e-mails point at. Before these existed an invitation arrived,
+  // the person clicked, and the product answered with a 404.
+  "/verify-email/some-token",
+  "/invitation/some-token",
   "/styleguide",
   "/elevators",
   "/elevators/e1",
@@ -85,6 +92,9 @@ const EXPECT = {
   // The edit form must arrive with the record already in its inputs; an empty
   // form here would mean the loader or the defaultValue wiring is broken.
   "/customers/c1/edit": "Çamlıca",
+  // The invitation must name who is inviting; a link asking for a password
+  // without saying who sent it is indistinguishable from phishing.
+  "/invitation/some-token": "Yükseliş",
   "/elevators": "34-2018",
   "/elevators/e1": "34-2019",
 };
