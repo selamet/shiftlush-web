@@ -25,16 +25,5 @@
     "name and has to be deleted — a baseline nobody is forced to shrink stops being a debt and",
     "becomes a permission. Nothing may be added here that was not already dead on 2026-08-23."
   ],
-  "entries": [
-    {
-      "button": "src/components/list/EmptyState.tsx :: actionKey",
-      "owner": "#66",
-      "note": "The create-the-first-record call to action, shown when a list is empty and has no prerequisite. Should be the Link the list header now uses. Survived the #50 merge, which wired the header but not this."
-    },
-    {
-      "button": "src/components/list/ListPage.tsx :: primaryActionKey",
-      "owner": "#66",
-      "note": "The header primary action, taken when the caller passes no primaryActionTo. Every caller should pass one so this dead branch stops existing. Also survived the #50 merge."
-    }
-  ]
+  "entries": []
 }
