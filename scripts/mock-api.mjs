@@ -84,6 +84,44 @@ function resolve(path, search, method, body) {
 
   if (path === "/api/v1/audit-logs/") return page(fixture("demo-audit-logs-elevator"));
 
+  if (path === "/api/v1/provinces/") {
+    return [
+      { id: 34, name: "İstanbul", legal_name: "İstanbul", display_name: "İstanbul" },
+      { id: 6, name: "Ankara", legal_name: "Ankara", display_name: "Ankara" },
+    ];
+  }
+  if (path === "/api/v1/districts/") {
+    const province = Number(search.get("province"));
+    // Mirrors the server: no province, no answer. A mock that returned the
+    // whole list would let the client skip a step the API refuses to skip.
+    if (!province) return [];
+    return [{ id: 3401, province_id: province, name: "Kadıköy" }];
+  }
+  if (path === "/api/v1/neighborhoods/") {
+    const district = Number(search.get("district"));
+    const term = (search.get("search") ?? "").trim();
+    if (!district || term.length < 2) return [];
+    return [
+      {
+        id: 340101,
+        district_id: district,
+        district_name: "Kadıköy",
+        province_name: "İstanbul",
+        name: "Caferağa",
+        postal_code: "34710",
+        type: "neighborhood",
+      },
+    ];
+  }
+
+  const building = /^\/api\/v1\/buildings\/([^/]+)\/$/.exec(path);
+  if (building && method === "GET") {
+    return { ...fixture("demo-buildings")[0], id: building[1] };
+  }
+  if (method === "POST" && path === "/api/v1/buildings/") {
+    return { ...fixture("demo-buildings")[0], ...body, id: "b-new" };
+  }
+
   if (path === "/api/v1/buildings/") {
     const customer = search.get("customer");
     const rows = fixture("demo-buildings");

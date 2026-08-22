@@ -66,6 +66,7 @@ const PATHS = [
   "/complexes",
   "/buildings",
   "/buildings/new",
+  "/buildings/b1/edit",
   "/contracts",
   "/contracts/k1",
   "/qr-labels",
@@ -95,6 +96,7 @@ const EXPECT = {
   // The invitation must name who is inviting; a link asking for a password
   // without saying who sent it is indistinguishable from phishing.
   "/invitation/some-token": "Yükseliş",
+  "/buildings": "Blok",
   "/elevators": "34-2018",
   "/elevators/e1": "34-2019",
 };

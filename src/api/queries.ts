@@ -252,3 +252,77 @@ export function acceptInvitation(token: string, password: string) {
     { anonymous: true },
   );
 }
+
+// --------------------------------------------------------------------------
+// Address
+//
+// A chain, and each link is required by the server rather than merely
+// suggested: districts refuse to answer without a province, neighbourhoods
+// without a district and two characters of search. Fifty thousand
+// neighbourhoods are never served whole, so there is no version of this the
+// client can shortcut.
+// --------------------------------------------------------------------------
+
+export type Province = Schemas["Province"];
+export type District = Schemas["District"];
+export type Neighborhood = Schemas["Neighborhood"];
+
+export function provinceQuery() {
+  return queryOptions({
+    queryKey: ["provinces"] as const,
+    queryFn: ({ signal }) => api.get<Province[]>("/provinces/", { signal }),
+    // Eighty-one rows that change when a law does. Refetching them per visit
+    // is a request that can never return anything new.
+    staleTime: Infinity,
+  });
+}
+
+export function districtQuery(provinceId: number | null) {
+  return queryOptions({
+    queryKey: ["districts", provinceId] as const,
+    queryFn: ({ signal }) =>
+      api.get<District[]>("/districts/", { query: { province: provinceId }, signal }),
+    enabled: provinceId !== null,
+    staleTime: Infinity,
+  });
+}
+
+export function neighborhoodQuery(districtId: number | null, search: string) {
+  return queryOptions({
+    queryKey: ["neighborhoods", districtId, search] as const,
+    queryFn: ({ signal }) =>
+      api.get<Neighborhood[]>("/neighborhoods/", {
+        query: { district: districtId, search },
+        signal,
+      }),
+    // The server wants two characters; asking with fewer returns nothing and
+    // spends a request to find that out.
+    enabled: districtId !== null && search.trim().length >= 2,
+  });
+}
+
+// --------------------------------------------------------------------------
+// Buildings
+// --------------------------------------------------------------------------
+
+export type BuildingWrite = Schemas["BuildingWriteRequest"];
+
+export const buildingKeys = {
+  all: ["buildings"] as const,
+  detail: (id: string) => ["buildings", "detail", id] as const,
+} as const;
+
+export function buildingQuery(id: string) {
+  return queryOptions({
+    queryKey: buildingKeys.detail(id),
+    queryFn: ({ signal }) => api.get<Building>(`/buildings/${id}/`, { signal }),
+  });
+}
+
+export function createBuilding(body: BuildingWrite, idempotencyKey: string) {
+  return api.post<Building>("/buildings/", body, { idempotencyKey });
+}
+
+export function updateBuilding(id: string, body: Partial<BuildingWrite>) {
+  return api.patch<Building>(`/buildings/${id}/`, body);
+}
