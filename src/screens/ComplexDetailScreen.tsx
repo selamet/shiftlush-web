@@ -1,12 +1,15 @@
-import { Link, useParams } from "@tanstack/react-router";
+import { useState } from "react";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Pencil } from "lucide-react";
-import { buildingListQuery, complexQuery } from "@/api/queries";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { buildingListQuery, complexKeys, complexQuery, deleteComplex } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { enumLabel } from "@/lib/i18n";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 function Card({ title, action, children }: {
   title: string;
@@ -48,6 +51,26 @@ export function ComplexDetailScreen() {
     enabled: Boolean(complexId),
   });
 
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  async function remove() {
+    setConfirming(false);
+    setDeleteError("");
+    try {
+      await deleteComplex(complexId);
+      await queryClient.invalidateQueries({ queryKey: complexKeys.all });
+      void navigate({ to: "/complexes" });
+    } catch (error) {
+      // Most often RECORD_IN_USE: a block was added to this complex between
+      // the page loading and the button being pressed, so the count the screen
+      // decided on is no longer true.
+      setDeleteError(errorMessage(error, t));
+    }
+  }
+
   if (query.isPending) return <DetailSkeleton />;
 
   if (query.isError || !query.data) {
@@ -76,15 +99,32 @@ export function ComplexDetailScreen() {
           </nav>
           <h1 className="text-title">{complex.name}</h1>
         </div>
-        <Link
-          to="/complexes/$id/edit"
-          params={{ id: complex.id }}
-          className={buttonVariants({ size: "sm" })}
-        >
-          <Pencil />
-          {t("common.edit")}
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/complexes/$id/edit"
+            params={{ id: complex.id }}
+            className={buttonVariants({ size: "sm" })}
+          >
+            <Pencil />
+            {t("common.edit")}
+          </Link>
+          {/* Offered only when the complex is empty. The server refuses while
+              it still holds buildings, and a button whose only possible answer
+              is an error is worse than no button. */}
+          {complex.building_count === 0 ? (
+            <Button variant="destructive" size="sm" onClick={() => setConfirming(true)}>
+              <Trash2 />
+              {t("common.delete")}
+            </Button>
+          ) : (
+            <p className="max-w-56 text-help text-muted-foreground">
+              {t("complex.deleteBlocked", { count: complex.building_count })}
+            </p>
+          )}
+        </div>
       </div>
+
+      {deleteError && <Alert tone="error" block title={deleteError} />}
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <Card
@@ -150,6 +190,15 @@ export function ComplexDetailScreen() {
           </div>
         </Card>
       </div>
+
+      <ConfirmDialog
+        open={confirming}
+        title={t("complex.deleteTitle")}
+        body={t("complex.deleteBody", { name: complex.name })}
+        confirmLabel={t("common.delete")}
+        onConfirm={() => void remove()}
+        onCancel={() => setConfirming(false)}
+      />
     </div>
   );
 }

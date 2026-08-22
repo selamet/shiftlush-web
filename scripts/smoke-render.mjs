@@ -71,6 +71,7 @@ const PATHS = [
   "/complexes/new",
   "/complexes/s1",
   "/complexes/s1/edit",
+  "/complexes/s4",
   "/buildings",
   "/buildings/new",
   "/buildings/b1/edit",
@@ -141,6 +142,10 @@ const EXPECT = {
   // card falling through to its empty state.
   "/complexes/s1": "Blok",
   "/complexes/s1/edit": "Çamlıca Konakları",
+  // An empty complex, which is the only kind that may be deleted. s1 has
+  // blocks in it and renders the refusal instead, so without this the
+  // button is never rendered by anything.
+  "/complexes/s4": "Sil",
   // The edit form must arrive with the record in its inputs, on the tab that
   // is showing and on the ones that are not.
   "/elevators/e1/edit": "34-2019",
