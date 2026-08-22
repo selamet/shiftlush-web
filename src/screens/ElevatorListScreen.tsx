@@ -118,6 +118,7 @@ export function ElevatorListScreen() {
       breadcrumbKey="nav.groups.records"
       titleKey="elevator.title"
       primaryActionKey={readOnly ? undefined : "elevator.add"}
+      primaryActionTo={readOnly ? undefined : "/elevators/new"}
       exportable
       filters={[
         { labelKey: "elevator.fields.status" },

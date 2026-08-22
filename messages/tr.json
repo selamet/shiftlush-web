@@ -139,9 +139,11 @@
       "noCarDoor": "Kabin kapısı yok — ağır uygunsuzluk",
       "noCarDoorShort": "Kabin kapısı yok",
       "qrRegenerateWarning": "QR kodu yenilendiğinde basılı etiketler geçersiz olur.",
-      "noContract": "Bu asansör bir sözleşme kapsamında değil"
+      "noContract": "Bu asansör bir sözleşme kapsamında değil",
+      "hasCarDoorHint": "Kabin kapısı yoksa muayenede ciddi uygunsuzluk sayılır"
     },
-    "add": "Asansör ekle"
+    "add": "Asansör ekle",
+    "selectBuilding": "Bina seçin"
   },
   "contract": {
     "title": "Sözleşmeler",
@@ -592,7 +594,8 @@
     "sessionRestoreNote": "Oturum düşerse aynı sekmede, aynı alanda devam edersiniz.",
     "changedTo": "{{from}} → {{to}}",
     "changed": "değiştirildi",
-    "internalCodePlaceholder": "A-01"
+    "internalCodePlaceholder": "A-01",
+    "errorOnOtherTab": "Bir hata {{tab}} sekmesinde"
   },
   "boot": {
     "refreshingSession": "Oturum tazeleniyor…"

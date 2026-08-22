@@ -58,6 +58,7 @@ const PATHS = [
   "/styleguide",
   "/elevators",
   "/elevators/e1",
+  "/elevators/new",
   "/elevators/e1/edit",
   "/customers",
   "/customers/new",
@@ -87,6 +88,19 @@ const ROLES = ["owner", "operations", "technician", "accountant"];
  *
  * Add an entry as each screen moves off fixtures.
  */
+/**
+ * Text that must appear even though the tab holding it is not the one showing.
+ *
+ * The elevator form keeps every panel mounted and hides the inactive ones,
+ * because unmounting an uncontrolled input throws away what was typed in it.
+ * That is invisible from the outside — the page looks identical either way —
+ * so it is asserted rather than trusted.
+ */
+const EXPECT_HIDDEN = {
+  // Schindler is on the manufacturing tab; the form opens on identity.
+  "/elevators/e1/edit": "Schindler",
+};
+
 const EXPECT = {
   "/customers": "Çamlıca",
   "/customers/c1": "Çamlıca",
@@ -97,6 +111,9 @@ const EXPECT = {
   // without saying who sent it is indistinguishable from phishing.
   "/invitation/some-token": "Yükseliş",
   "/buildings": "Blok",
+  // The edit form must arrive with the record in its inputs, on the tab that
+  // is showing and on the ones that are not.
+  "/elevators/e1/edit": "34-2019",
   "/elevators": "34-2018",
   "/elevators/e1": "34-2019",
 };
@@ -127,6 +144,14 @@ try {
         const expected = EXPECT[path];
         if (expected && !html.includes(expected)) {
           throw new Error(`data never reached the page — no "${expected}" in the markup`);
+        }
+
+        const hidden = EXPECT_HIDDEN[path];
+        if (hidden && !html.includes(hidden)) {
+          throw new Error(
+            `a field on a hidden tab is not in the form — no "${hidden}" in the markup. ` +
+              `Unmounting inactive panels loses whatever was typed on them.`,
+          );
         }
       } catch (error) {
         errors.push(`${role}: ${error.message}`);

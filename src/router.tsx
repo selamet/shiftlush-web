@@ -169,7 +169,10 @@ export const routeTree = rootRoute.addChildren([
         queryClient.ensureQueryData(elevatorAttachmentsQuery(id)),
       ]);
     }),
-    shellChild("/elevators/$id/edit", ElevatorFormScreen),
+    shellChild("/elevators/new", ElevatorFormScreen),
+    shellChild("/elevators/$id/edit", ElevatorFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(elevatorQuery(params.id)),
+    ),
     shellChild("/customers/new", CustomerFormScreen),
     shellChild("/customers/$id/edit", CustomerFormScreen, ({ params }) =>
       queryClient.ensureQueryData(customerQuery(params.id)),

@@ -326,3 +326,13 @@ export function createBuilding(body: BuildingWrite, idempotencyKey: string) {
 export function updateBuilding(id: string, body: Partial<BuildingWrite>) {
   return api.patch<Building>(`/buildings/${id}/`, body);
 }
+
+export type ElevatorWrite = Schemas["ElevatorWriteRequest"];
+
+export function createElevator(body: ElevatorWrite, idempotencyKey: string) {
+  return api.post<Elevator>("/elevators/", body, { idempotencyKey });
+}
+
+export function updateElevator(id: string, body: Partial<ElevatorWrite>) {
+  return api.patch<Elevator>(`/elevators/${id}/`, body);
+}
