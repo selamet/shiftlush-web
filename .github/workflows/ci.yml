@@ -34,6 +34,14 @@ jobs:
       - name: Every API path the client calls exists
         run: npm run lint:paths
 
+      # Thirty-one buttons shipped that did nothing when pressed. They type-check,
+      # they build, they render, and the only signal is a user pressing one — the
+      # most expensive place in the pipeline to find out. Buttons already dead when
+      # this landed are listed in scripts/dead-button-baseline.json against the
+      # branch fixing each; that list is only allowed to shrink.
+      - name: Every button does something
+        run: npm run lint:buttons
+
       # The same guarantee the backend gives its own schema: the types are
       # generated, so a hand-edited generated.ts would silently disagree with
       # the contract every screen is written against.
