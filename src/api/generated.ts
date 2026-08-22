@@ -1485,6 +1485,14 @@ export interface components {
             readonly notes: string;
             /** @default 0 */
             readonly elevator_count: number;
+            /** @default  */
+            readonly previous_contract_number: string;
+            /** Format: decimal */
+            readonly monthly_subtotal: string;
+            /** Format: decimal */
+            readonly vat_amount: string;
+            /** Format: decimal */
+            readonly monthly_total: string;
             readonly lines: components["schemas"]["ContractLine"][];
             /** Format: date-time */
             readonly created_at: string;

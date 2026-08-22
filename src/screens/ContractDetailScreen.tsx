@@ -1,17 +1,34 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, FileText, Ban, RefreshCw, Lock, Pencil, Download } from "lucide-react";
-import contract from "@fixtures/demo-contract.json";
+import { ChevronRight, Ban, RefreshCw, Lock, Pencil, Download } from "lucide-react";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import {
+  contractKeys,
+  contractQuery,
+  renewContract,
+  terminateContract,
+  type Contract as ContractRecord,
+} from "@/api/queries";
+import { errorMessage, supportReference } from "@/api/errors";
+import { useSubmit } from "@/lib/form";
+import {
+  buildingNames,
+  daysUntil,
+  openLines,
+  proposedRenewal,
+  reminderDate,
+} from "@/lib/contract";
+import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney, formatPercent } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
-import { ContractStatusChip, ElevatorStatusChip, StatusChip } from "@/components/ui/status-chip";
+import { ContractStatusChip, StatusChip } from "@/components/ui/status-chip";
 
-const TOTAL_ELEVATORS = 12;
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -75,10 +92,51 @@ function HiddenSection({ title, note }: { title: string; note: string }) {
 export function ContractDetailScreen() {
   const { t } = useTranslation();
   const { role } = useSession();
+  const navigate = useNavigate();
+  const { id } = useParams({ strict: false }) as { id?: string };
   const [dialog, setDialog] = useState<"terminate" | "renew" | null>(null);
   const [typed, setTyped] = useState("");
+  const [reason, setReason] = useState("");
 
-  const canSeeFinancials = role === "owner" || role === "admin" || role === "accountant";
+  const query = useQuery({ ...contractQuery(id ?? ""), enabled: Boolean(id) });
+
+  const terminate = useSubmit<{ reason: string }, ContractRecord>({
+    mutationFn: ({ reason }) =>
+      terminateContract(id as string, new Date().toISOString().slice(0, 10), reason),
+    invalidate: [contractKeys.all],
+    onSuccess: () => setDialog(null),
+  });
+
+  const renew = useSubmit<{ start_date: string; end_date: string }, ContractRecord>({
+    mutationFn: (body) => renewContract(id as string, body),
+    invalidate: [contractKeys.all],
+    onSuccess: (successor) => {
+      setDialog(null);
+      void navigate({ to: "/contracts/$id", params: { id: successor.id } });
+    },
+  });
+
+  if (query.isPending) return <DetailSkeleton />;
+  if (query.isError || !query.data) {
+    return (
+      <ListError
+        message={errorMessage(query.error, t)}
+        reference={supportReference(query.error)}
+        onRetry={() => void query.refetch()}
+      />
+    );
+  }
+
+  const contract = query.data;
+  const lines = openLines(contract);
+  const buildings = buildingNames(contract);
+  const daysToEnd = daysUntil(contract.end_date);
+  const reminder = reminderDate(contract);
+  const proposal = proposedRenewal(contract);
+
+  // The server omits the money for roles that may not see it, so its absence
+  // is the permission. The role checks below decide layout, not access.
+  const canSeeFinancials = "monthly_total" in contract;
   const canSeeTechnical = role !== "accountant";
   const canWrite = role === "owner" || role === "admin" || role === "operations";
   const isAccountant = role === "accountant";
@@ -97,8 +155,8 @@ export function ContractDetailScreen() {
         {infoRows.map((key) => {
           const value =
             key === "customer" ? (
-              <Link to="/customers/$id" params={{ id: "c1" }} className="text-primary hover:underline">
-                {contract.customer}
+              <Link to="/customers/$id" params={{ id: contract.customer_id }} className="text-primary hover:underline">
+                {contract.customer_name}
               </Link>
             ) : key === "scope" ? (
               enumLabel("contract.scope", contract.scope)
@@ -119,16 +177,7 @@ export function ContractDetailScreen() {
         })}
         {!isAccountant && (
           <>
-            <Row label={t("contract.fields.previousContract")} value={contract.previous_contract} />
-            <Row
-              label={t("contract.fields.signedDocument")}
-              value={
-                <span className="inline-flex items-center gap-1.5">
-                  <FileText className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                  {contract.signed_document}
-                </span>
-              }
-            />
+            <Row label={t("contract.fields.previousContract")} value={contract.previous_contract_number} />
           </>
         )}
       </div>
@@ -163,7 +212,7 @@ export function ContractDetailScreen() {
       title={t("contractDetail.coveredElevators")}
       meta={
         <span className="text-help text-muted-foreground">
-          {t("contractDetail.recordCount", { count: TOTAL_ELEVATORS })}
+          {t("contractDetail.recordCount", { count: lines.length })}
         </span>
       }
       action={
@@ -208,7 +257,7 @@ export function ContractDetailScreen() {
             </tr>
           </thead>
           <tbody>
-            {contract.elevators.map((elevator) => (
+            {lines.map((elevator) => (
               <tr
                 key={elevator.registration_number}
                 className={cn(
@@ -227,16 +276,14 @@ export function ContractDetailScreen() {
                 </td>
                 <td className="px-2">
                   <div className="flex flex-col leading-tight">
-                    <span className="flex items-center gap-2">
-                      {elevator.name}
-                      {elevator.status === "suspended" && (
-                        <ElevatorStatusChip value={elevator.status} />
-                      )}
-                    </span>
-                    <span className="text-help text-muted-foreground">{elevator.spec}</span>
+                    {/* The line carries the elevator's name and nothing about
+                        its operational state. That belongs on the elevator, and
+                        fetching every lift to draw a chip here would be a query
+                        per contract for a fact this screen is not about. */}
+                    <span>{elevator.elevator_name || elevator.registration_number}</span>
                   </div>
                 </td>
-                <td className="px-2">{elevator.building}</td>
+                <td className="px-2">{elevator.building_name}</td>
                 <td className="px-2 tnum whitespace-nowrap">
                   {elevator.removed_at ? (
                     <span className="flex flex-col leading-tight">
@@ -262,7 +309,7 @@ export function ContractDetailScreen() {
         <p className="text-help text-muted-foreground">{t("contractDetail.removedNote")}</p>
         <span className="tnum text-help text-muted-foreground">
           {canSeeFinancials
-            ? `${t("contractDetail.subtotal")} ${formatMoney(contract.monthly_total)}`
+            ? `${t("contractDetail.subtotal")} ${formatMoney(contract.monthly_subtotal)}`
             : t("contractDetail.amountHiddenForRole")}
         </span>
       </div>
@@ -274,7 +321,7 @@ export function ContractDetailScreen() {
       meta={
         <>
           <span className="text-help text-muted-foreground">
-            {t("contractDetail.itemCount", { count: TOTAL_ELEVATORS })}
+            {t("contractDetail.itemCount", { count: lines.length })}
           </span>
           <StatusChip weight="dashed">{t("contractDetail.readOnly")}</StatusChip>
         </>
@@ -310,7 +357,7 @@ export function ContractDetailScreen() {
             </tr>
           </thead>
           <tbody>
-            {contract.elevators.map((elevator) => (
+            {lines.map((elevator) => (
               <tr
                 key={elevator.registration_number}
                 className="h-control-md border-b border-border-subtle last:border-0"
@@ -331,10 +378,10 @@ export function ContractDetailScreen() {
                     <span className="text-muted-foreground">{t("contractDetail.ongoing")}</span>
                   )}
                 </td>
+                {/* VAT is stated once, on the contract total. Per line it would
+                    be the same rate applied over and over, and rounding it per
+                    line then adding them up does not reach the same number. */}
                 <td className="px-2 tnum text-right">{formatMoney(elevator.unit_price)}</td>
-                <td className="px-2 tnum text-right">
-                  {formatMoney(elevator.unit_price_with_vat)}
-                </td>
               </tr>
             ))}
           </tbody>
@@ -342,11 +389,11 @@ export function ContractDetailScreen() {
       </div>
       <div className="mt-3 flex flex-wrap justify-end gap-4 tnum text-help">
         <span className="text-muted-foreground">
-          {t("contractDetail.subtotal")} {formatMoney(contract.monthly_total)}
+          {t("contractDetail.subtotal")} {formatMoney(contract.monthly_subtotal)}
         </span>
         <span className="font-medium">
           {t("contractDetail.vatIncludedMonthly", {
-            amount: formatMoney(contract.monthly_total_with_vat),
+            amount: formatMoney(contract.monthly_subtotal),
           })}
         </span>
       </div>
@@ -370,7 +417,7 @@ export function ContractDetailScreen() {
             <h1 className="text-title font-mono tnum">{contract.contract_number}</h1>
             <ContractStatusChip value={contract.status} />
           </div>
-          <p className="text-help text-muted-foreground">{contract.customer}</p>
+          <p className="text-help text-muted-foreground">{contract.customer_name}</p>
         </div>
 
         {canWrite && (
@@ -416,22 +463,22 @@ export function ContractDetailScreen() {
           <section className="rounded-lg border border-border-subtle bg-card p-4">
             <div className="flex flex-col gap-1.5">
               <span className="text-cardtitle tnum">
-                {t("contractDetail.elevatorCount", { count: TOTAL_ELEVATORS })}
+                {t("contractDetail.elevatorCount", { count: lines.length })}
               </span>
               {canSeeFinancials && (
                 <span className="tnum text-body text-muted-foreground">
                   {t("contractDetail.monthlyAmount", {
-                    amount: formatMoney(contract.monthly_total),
+                    amount: formatMoney(contract.monthly_subtotal),
                   })}
                 </span>
               )}
               <span className="text-help text-muted-foreground">
-                {t("contractDetail.daysToEnd", { count: contract.days_to_end })}
+                {t("contractDetail.daysToEnd", { count: daysToEnd ?? 0 })}
               </span>
               {contract.auto_renew && (
                 <span className="text-help text-muted-foreground">
                   {t("contractDetail.autoRenewOn")} ·{" "}
-                  {t("contractDetail.reminderOn", { date: formatDate(contract.reminder_date) })}
+                  {t("contractDetail.reminderOn", { date: formatDate(reminder ?? "") })}
                 </span>
               )}
             </div>
@@ -453,7 +500,7 @@ export function ContractDetailScreen() {
                 {t("contractDetail.terminateIrreversible")}
               </p>
               <p className="mt-1 text-help text-destructive">
-                {t("contractDetail.terminateSummary", { count: TOTAL_ELEVATORS })}
+                {t("contractDetail.terminateSummary", { count: lines.length })}
               </p>
               <Button
                 variant="destructive"
@@ -500,14 +547,14 @@ export function ContractDetailScreen() {
                 {t("contractDetail.terminateHeading")}
               </span>
               <ul className="flex flex-col gap-1.5 text-help text-destructive">
-                <li>{t("contractDetail.terminateEffectElevators", { count: TOTAL_ELEVATORS })}</li>
+                <li>{t("contractDetail.terminateEffectElevators", { count: lines.length })}</li>
                 <li>
-                  {t("contractDetail.terminateEffectBuildings", { count: contract.building_count })}{" "}
-                  ({contract.buildings.join(", ")})
+                  {t("contractDetail.terminateEffectBuildings", { count: buildings.length })}{" "}
+                  ({buildings.join(", ")})
                 </li>
                 <li>
                   {t("contractDetail.terminateEffectRevenue", {
-                    amount: formatMoney(contract.monthly_total),
+                    amount: formatMoney(contract.monthly_subtotal),
                   })}
                 </li>
                 <li>{t("contractDetail.terminateEffectReminder")}</li>
@@ -526,12 +573,15 @@ export function ContractDetailScreen() {
                 hint={t("contractDetail.terminationReasonRequired")}
                 bindChild={false}
               >
-                <select
+                {/* Free text rather than a list. This is what the audit trail
+                    is read for a year later, and five canned options cannot say
+                    why this particular contract ended. */}
+                <Input
                   id="tr-reason"
-                  className="h-control-md w-full rounded-md border border-input bg-card px-3 text-body focus-ring"
-                >
-                  <option>{t("contractDetail.terminationReasonPlaceholder")}</option>
-                </select>
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                  placeholder={t("contractDetail.terminationReasonPlaceholder")}
+                />
               </Field>
             </div>
 
@@ -544,6 +594,10 @@ export function ContractDetailScreen() {
               />
             </Field>
 
+            {terminate.state.message && (
+              <p className="text-help text-destructive">{terminate.state.message}</p>
+            )}
+
             <div className="flex justify-end gap-2">
               <Button variant="ghost" size="sm" onClick={() => setDialog(null)}>
                 {t("common.cancel")}
@@ -551,13 +605,16 @@ export function ContractDetailScreen() {
               <Button
                 variant="destructive"
                 size="sm"
-                disabled={typed.trim() !== contract.contract_number}
-                onClick={() => {
-                  setDialog(null);
-                  setTyped("");
-                }}
+                disabled={
+                  typed.trim() !== contract.contract_number ||
+                  !reason.trim() ||
+                  terminate.state.pending
+                }
+                onClick={() => terminate.submit({ reason: reason.trim() })}
               >
-                {t("contract.actions.terminate")}
+                {terminate.state.pending
+                  ? t("common.saving")
+                  : t("contract.actions.terminate")}
               </Button>
             </div>
           </div>
@@ -592,25 +649,25 @@ export function ContractDetailScreen() {
                 label={t("contractDetail.renewNewNumber")}
                 value={
                   <span className="inline-flex items-center gap-2">
-                    <span className="font-mono tnum">{contract.next_contract_number}</span>
+                    <span className="font-mono tnum">{t("contractDetail.numberOnRenewal")}</span>
                     <ContractStatusChip value="draft" />
                   </span>
                 }
               />
               <Row
                 label={t("contractDetail.renewNewStart")}
-                value={formatDate(contract.next_start_date)}
+                value={formatDate(proposal?.start ?? "")}
               />
               <Row
                 label={t("contractDetail.renewNewEnd")}
-                value={formatDate(contract.next_end_date)}
+                value={formatDate(proposal?.end ?? "")}
               />
             </div>
 
             <div className="flex flex-col gap-2">
               <label className="flex items-center gap-2 text-body">
                 <input type="checkbox" defaultChecked className="size-4 rounded-xs accent-primary" />
-                {t("contractDetail.renewCarryElevators", { count: TOTAL_ELEVATORS })}
+                {t("contractDetail.renewCarryElevators", { count: lines.length })}
               </label>
               <label className="flex items-center gap-2 text-body">
                 <input type="checkbox" defaultChecked className="size-4 rounded-xs accent-primary" />
@@ -620,12 +677,25 @@ export function ContractDetailScreen() {
 
             <p className="text-help text-muted-foreground">{t("contractDetail.renewReversible")}</p>
 
+            {renew.state.message && (
+              <p className="text-help text-destructive">{renew.state.message}</p>
+            )}
+
             <div className="flex justify-end gap-2">
               <Button variant="ghost" size="sm" onClick={() => setDialog(null)}>
                 {t("common.cancel")}
               </Button>
-              <Button size="sm" onClick={() => setDialog(null)}>
-                {t("contractDetail.renewCreateDraft")}
+              <Button
+                size="sm"
+                disabled={!proposal || renew.state.pending}
+                onClick={() =>
+                  proposal &&
+                  renew.submit({ start_date: proposal.start, end_date: proposal.end })
+                }
+              >
+                {renew.state.pending
+                  ? t("common.saving")
+                  : t("contractDetail.renewCreateDraft")}
               </Button>
             </div>
           </div>

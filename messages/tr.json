@@ -200,7 +200,10 @@
       "removeElevator": "Asansörü çıkar"
     },
     "financialsHidden": "Mali bilgileri görme yetkiniz yok",
-    "add": "Sözleşme ekle"
+    "add": "Sözleşme ekle",
+    "monthlyFeeHint": "Sabit fiyatlandırmada aylık toplam; asansör başında boş bırakın",
+    "vatRateHint": "Boş bırakılırsa KDV hesaplanmaz",
+    "autoRenewHint": "Bitiş tarihinde otomatik yenilenir"
   },
   "customer": {
     "title": "Müşteriler",
