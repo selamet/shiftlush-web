@@ -29,6 +29,14 @@ jobs:
       - name: Every API error code has a Turkish message
         run: npm run lint:errors
 
+      # The same guarantee the backend gives its own schema: the types are
+      # generated, so a hand-edited generated.ts would silently disagree with
+      # the contract every screen is written against.
+      - name: Generated types match the contract
+        run: |
+          npm run api:generate
+          git diff --exit-code src/api/generated.ts
+
       - name: Build
         run: npm run build
 

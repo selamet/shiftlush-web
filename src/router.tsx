@@ -8,7 +8,8 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
-import { SessionProvider } from "@/lib/session";
+import { SessionProvider, type SessionOverride } from "@/lib/session";
+import type { Role } from "@/components/layout/nav-config";
 import { AddressPicker } from "@/components/forms/AddressPicker";
 import { LoginScreen } from "@/screens/LoginScreen";
 import { ElevatorListScreen } from "@/screens/ElevatorListScreen";
@@ -26,9 +27,16 @@ import { SettingsScreen } from "@/screens/SettingsScreen";
 import { QrLabelScreen } from "@/screens/QrLabelScreen";
 import { StyleGuide } from "@/styleguide/StyleGuide";
 
+/**
+ * Set only by createRouterForPath, so the smoke test and the styleguide can
+ * render the shell for a given role without a server. In the running
+ * application this stays undefined and the provider restores the real session.
+ */
+let sessionOverride: SessionOverride | undefined;
+
 const rootRoute = createRootRoute({
   component: () => (
-    <SessionProvider>
+    <SessionProvider override={sessionOverride}>
       <Outlet />
     </SessionProvider>
   ),
@@ -101,11 +109,18 @@ export const router = createRouter({ routeTree });
 export { RouterProvider };
 
 /**
- * Builds a router pinned to one path. Used by the render smoke test so every
- * route is exercised through the real tree — and so router internals come from
- * this module graph rather than a second copy, which would break React context.
+ * Builds a router pinned to one path, optionally as a given role. Used by the
+ * render smoke test so every route is exercised through the real tree — and so
+ * router internals come from this module graph rather than a second copy, which
+ * would break React context.
+ *
+ * The role matters: sidebars, columns and whole sections are hidden per role,
+ * so rendering only one of them leaves the others untested.
  */
-export function createRouterForPath(path: string) {
+export function createRouterForPath(path: string, role?: Role) {
+  sessionOverride = role
+    ? { role, fullName: "Test User", companyName: "Test Company" }
+    : undefined;
   return createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [path] }),

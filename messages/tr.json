@@ -363,6 +363,7 @@
   },
   "auth": {
     "login": "Giriş yap",
+    "loggingIn": "Giriş yapılıyor…",
     "logout": "Çıkış yap",
     "register": "Kayıt ol",
     "forgotPassword": "Şifremi unuttum",

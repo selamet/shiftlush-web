@@ -93,7 +93,7 @@
     "id": "e7",
     "registration_number": "34-2022-011408",
     "name": "Panoramik asansör",
-    "category": "panoramic_lift",
+    "category": "passenger",
     "stop_count": 22,
     "has_car_door": true,
     "building": "Ofis Kule 1",
