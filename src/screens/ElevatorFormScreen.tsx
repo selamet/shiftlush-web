@@ -1,401 +1,347 @@
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronRight, CircleAlert, Check } from "lucide-react";
-import buildings from "@fixtures/demo-buildings.json";
-import { cn } from "@/lib/utils";
+import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronRight } from "lucide-react";
+import {
+  buildingListQuery,
+  createElevator,
+  elevatorKeys,
+  elevatorQuery,
+  updateElevator,
+  type Elevator,
+  type ElevatorWrite,
+} from "@/api/queries";
+import { errorMessage, supportReference } from "@/api/errors";
+import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Textarea } from "@/components/ui/field";
-import elevator from "@fixtures/demo-elevator-detail.json";
+import { Field, Input } from "@/components/ui/field";
+import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { ALL_FIELDS, TABS, TAB_OF_FIELD, type FieldSpec } from "@/screens/elevator-form-fields";
 
-interface TabSpec {
-  key: string;
-  labelKey: string;
-  /** Empty optional fields. Neutral: missing data is not an error. */
-  empty: number;
-  /** Values that fail validation. These do block saving. */
-  errors: number;
-}
+const selectClass =
+  "h-control-md w-full rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg";
 
-const TABS: TabSpec[] = [
-  { key: "identity", labelKey: "elevator.tabs.identity", empty: 0, errors: 0 },
-  { key: "classification", labelKey: "elevator.tabs.classification", empty: 2, errors: 0 },
-  { key: "technical", labelKey: "elevator.tabs.technical", empty: 5, errors: 0 },
-  { key: "manufacturing", labelKey: "elevator.tabs.manufacturing", empty: 3, errors: 0 },
-  { key: "inspection", labelKey: "elevator.tabs.inspection", empty: 0, errors: 1 },
-  { key: "attachments", labelKey: "elevator.tabs.attachments", empty: 4, errors: 0 },
-];
-
-const FILLED = 21;
-const TOTAL_FIELDS = 31;
-
-const ELEVATOR_STATUSES = ["active", "suspended", "sealed", "out_of_service"];
-
-function TabButton({
-  tab,
-  active,
-  onClick,
-}: {
-  tab: TabSpec;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "relative flex h-control-md items-center gap-2 whitespace-nowrap px-3 text-body transition-colors focus-ring",
-        active
-          ? "border-b-2 border-primary font-medium text-foreground"
-          : "border-b-2 border-transparent text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {t(tab.labelKey)}
-      {/* Empty-field counts stay neutral grey. Red is reserved for values that
-          are actually wrong — a half-filled record is normal in the field. */}
-      {tab.empty > 0 && (
-        <span className="tnum rounded-full bg-muted px-1.5 text-help text-muted-foreground">
-          {tab.empty}
-        </span>
-      )}
-      {tab.errors > 0 && (
-        <CircleAlert className="size-3.5 text-destructive" aria-hidden="true" />
-      )}
-    </button>
-  );
-}
-
-function RecordStatusPanel({ onGoToError }: { onGoToError: () => void }) {
-  const { t } = useTranslation();
-  const percent = Math.round((FILLED / TOTAL_FIELDS) * 100);
-  const errorTabs = TABS.filter((tab) => tab.errors > 0);
-
-  return (
-    <aside className="flex w-72 shrink-0 flex-col gap-5 overflow-y-auto border-l border-border-subtle bg-card p-5">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-cardtitle">{t("form.recordStatus")}</h2>
-        <div className="flex items-baseline gap-1.5">
-          <span className="tnum text-title">{FILLED}</span>
-          <span className="text-help text-muted-foreground">
-            {t("form.fieldsFilled", { filled: FILLED, total: TOTAL_FIELDS })}
-          </span>
-        </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
-        </div>
-        <p className="text-help text-muted-foreground">{t("form.missingIsNotAnError")}</p>
-      </div>
-
-      {errorTabs.length > 0 && (
-        <div className="flex flex-col gap-2 rounded-md border-l-[3px] border-destructive bg-destructive-bg px-3 py-2.5">
-          <span className="text-label text-destructive">
-            {t("form.errorCount", { count: errorTabs.length })}
-          </span>
-          <span className="text-help text-destructive">
-            {t("elevator.fields.nextInspectionDate")}
-          </span>
-          <button
-            type="button"
-            onClick={onGoToError}
-            className="self-start text-help text-destructive underline"
-          >
-            {t("form.goToError")}
-          </button>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-1.5">
-        <span className="text-colhead uppercase text-subtle">{t("form.tabsHeading")}</span>
-        {TABS.map((tab) => (
-          <div key={tab.key} className="flex items-center justify-between text-help">
-            <span className="text-muted-foreground">{t(tab.labelKey)}</span>
-            {tab.errors > 0 ? (
-              <span className="text-destructive">{t("form.errorCount", { count: tab.errors })}</span>
-            ) : tab.empty === 0 ? (
-              <span className="inline-flex items-center gap-1 text-success">
-                <Check className="size-3" aria-hidden="true" />
-                {t("form.complete")}
-              </span>
-            ) : (
-              <span className="tnum text-subtle">{tab.empty}</span>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-1.5 border-t border-border-subtle pt-4">
-        <span className="text-colhead uppercase text-subtle">{t("form.validationTiming")}</span>
-        <p className="text-help text-muted-foreground">{t("form.onBlur")}</p>
-        <p className="text-help text-muted-foreground">{t("form.onTabChange")}</p>
-        <p className="text-help text-muted-foreground">{t("form.onSave")}</p>
-      </div>
-    </aside>
-  );
+function initialValue(record: Elevator | undefined, field: FieldSpec): string | boolean {
+  if (!record) return field.kind === "checkbox" ? true : "";
+  const value = (record as unknown as Record<string, unknown>)[field.name];
+  if (field.kind === "checkbox") return value !== false;
+  return value === null || value === undefined ? "" : String(value);
 }
 
 /**
- * What the status rail becomes below xl.
+ * The elevator record: thirty-one fields across six tabs.
  *
- * The rail is the only place that says where the error is and offers a way to
- * it; hiding it on narrow screens left the user unable to save with no visible
- * reason why. The completeness figure compresses to one line, but the error
- * block keeps its weight and its "go to error" action.
+ * Every panel stays mounted and the tabs only change what is visible. That is
+ * the whole reason this works: the inputs are uncontrolled, so unmounting a
+ * panel would throw away everything typed on the tab being left — silently, and
+ * noticed only after saving.
+ *
+ * Two things follow. Submit sends the entire record whichever tab is open. And
+ * a server error on a hidden tab has to be counted there and reachable, or the
+ * form refuses to save while showing nothing wrong.
  */
-function RecordStatusStrip({ onGoToError }: { onGoToError: () => void }) {
+export function ElevatorFormScreen() {
   const { t } = useTranslation();
-  const errorTabs = TABS.filter((tab) => tab.errors > 0);
+  const navigate = useNavigate();
+  const { id } = useParams({ strict: false }) as { id?: string };
+  const search = useSearch({ strict: false }) as { building?: string };
+  const editing = Boolean(id);
+
+  const existing = useQuery({ ...elevatorQuery(id ?? ""), enabled: editing });
+  const buildings = useQuery(buildingListQuery({ page_size: 100 }));
+  const idempotencyKey = useIdempotencyKey();
+
+  const [activeTab, setActiveTab] = useState(TABS[0].key);
+  const [dirty, setDirty] = useState(false);
+  const [filled, setFilled] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const { submit, state } = useSubmit<ElevatorWrite, Elevator>({
+    mutationFn: (body) =>
+      editing ? updateElevator(id as string, body) : createElevator(body, idempotencyKey),
+    invalidate: [elevatorKeys.all],
+    onSuccess: (elevator) => {
+      setDirty(false);
+      void navigate({ to: "/elevators/$id", params: { id: elevator.id } });
+    },
+  });
+
+  /** Server errors grouped by tab, so each tab can say how many it holds. */
+  const errorsByTab = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const name of Object.keys(state.fields)) {
+      const tab = TAB_OF_FIELD[name];
+      if (tab) counts[tab] = (counts[tab] ?? 0) + 1;
+    }
+    return counts;
+  }, [state.fields]);
+
+  const firstErrorTab = TABS.find((tab) => errorsByTab[tab.key])?.key;
+
+  function recount() {
+    if (!formRef.current) return;
+    setFilled(Object.keys(formValues(formRef.current)).length);
+    setDirty(true);
+  }
+
+  if (editing && existing.isPending) return <DetailSkeleton />;
+  if (editing && (existing.isError || !existing.data)) {
+    return (
+      <ListError
+        message={errorMessage(existing.error, t)}
+        reference={supportReference(existing.error)}
+        onRetry={() => void existing.refetch()}
+      />
+    );
+  }
+
+  const record = existing.data;
+  const heading = editing ? record?.name || record?.registration_number : t("elevator.add");
 
   return (
-    <div className="flex flex-col gap-2 border-b border-border-subtle px-6 py-3 xl:hidden">
-      <div className="flex items-center gap-2">
-        <span className="tnum text-label">
-          {t("form.fieldsFilled", { filled: FILLED, total: TOTAL_FIELDS })}
-        </span>
-        <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary"
-            style={{ width: `${Math.round((FILLED / TOTAL_FIELDS) * 100)}%` }}
-          />
+    <div className="flex flex-col">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-6 pt-6 pb-4">
+        <div className="flex flex-col gap-1">
+          <nav className="flex items-center gap-1.5 text-help text-muted-foreground">
+            <Link to="/elevators" className="hover:underline">
+              {t("elevator.title")}
+            </Link>
+            <ChevronRight className="size-3" aria-hidden="true" />
+            <span className="text-foreground">{heading}</span>
+          </nav>
+          <h1 className="text-title">{heading}</h1>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Counted from what is actually in the inputs. The previous version
+              printed a constant, which is worse than printing nothing: a number
+              reads as a fact. */}
+          <span className="tnum text-label text-muted-foreground">
+            {t("form.fieldsFilled", { filled, total: ALL_FIELDS.length })}
+          </span>
+          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-[width]"
+              style={{ width: `${Math.round((filled / ALL_FIELDS.length) * 100)}%` }}
+            />
+          </div>
         </div>
       </div>
-      {errorTabs.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border-l-[3px] border-destructive bg-destructive-bg px-3 py-2">
-          <span className="text-label text-destructive">
-            {t("form.errorCount", { count: errorTabs.length })}
-          </span>
-          <span className="text-help text-destructive">
-            {t("elevator.fields.nextInspectionDate")}
-          </span>
-          <button
-            type="button"
-            onClick={onGoToError}
-            className="ml-auto text-help text-destructive underline"
-          >
-            {t("form.goToError")}
-          </button>
+
+      <form
+        ref={formRef}
+        className="flex flex-col"
+        onChange={recount}
+        onSubmit={(event) => {
+          event.preventDefault();
+          const values = formValues(event.currentTarget) as Record<string, unknown>;
+          // An unchecked box is absent from FormData, and absent means "not
+          // provided" rather than false. Whether a car has a door is a fact
+          // about the lift, and its absence is the serious case.
+          values.has_car_door = Boolean(
+            (event.currentTarget.elements.namedItem("has_car_door") as HTMLInputElement)?.checked,
+          );
+          submit(values as ElevatorWrite);
+        }}
+      >
+        {state.message && (
+          <div className="px-6 pb-4">
+            <Alert tone="error" block title={state.message}>
+              {state.reference && (
+                <p className="text-help">
+                  {t("errors.requestIdLabel")}:{" "}
+                  <span className="font-mono">{state.reference}</span>
+                </p>
+              )}
+            </Alert>
+          </div>
+        )}
+
+        {firstErrorTab && firstErrorTab !== activeTab && (
+          <div className="mx-6 mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border-l-[3px] border-destructive bg-destructive-bg px-3 py-2">
+            <span className="text-label text-destructive">
+              {t("form.errorOnOtherTab", {
+                tab: t(TABS.find((tab) => tab.key === firstErrorTab)?.labelKey ?? ""),
+              })}
+            </span>
+            {/* Without this the form refuses to save and shows nothing wrong,
+                because the field that failed is on a tab nobody is looking at. */}
+            <button
+              type="button"
+              onClick={() => setActiveTab(firstErrorTab)}
+              className="ml-auto text-help text-destructive underline"
+            >
+              {t("form.goToError")}
+            </button>
+          </div>
+        )}
+
+        <div className="flex gap-1 overflow-x-auto border-b border-border px-6">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "flex h-control-md shrink-0 items-center gap-2 px-3 text-body transition-colors focus-ring",
+                activeTab === tab.key
+                  ? "border-b-2 border-primary font-medium text-foreground"
+                  : "border-b-2 border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t(tab.labelKey)}
+              {errorsByTab[tab.key] ? (
+                <span className="tnum rounded-full bg-destructive px-1.5 text-help text-destructive-foreground">
+                  {errorsByTab[tab.key]}
+                </span>
+              ) : null}
+            </button>
+          ))}
         </div>
-      )}
+
+        <div className="px-6 py-5">
+          <Field
+            label={t("building.singular")}
+            htmlFor="ef-building"
+            required
+            error={state.fields.building}
+            className="mb-5 max-w-md"
+            bindChild={false}
+          >
+            <select
+              id="ef-building"
+              name="building"
+              required
+              className={selectClass}
+              defaultValue={record?.building_id ?? search.building ?? ""}
+              disabled={buildings.isPending}
+            >
+              <option value="">{t("elevator.selectBuilding")}</option>
+              {(buildings.data?.results ?? []).map((building) => (
+                <option key={building.id} value={building.id}>
+                  {building.name} — {building.customer_name}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          {/* Hidden, not unmounted: an uncontrolled input that leaves the tree
+              takes its value with it. */}
+          {TABS.map((tab) => (
+            <div
+              key={tab.key}
+              hidden={tab.key !== activeTab}
+              className="grid max-w-3xl gap-5 sm:grid-cols-2"
+            >
+              {tab.fields.map((field) => (
+                <FormField
+                  key={field.name}
+                  field={field}
+                  record={record}
+                  error={state.fields[field.name]}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 border-t border-border-subtle px-6 py-4">
+          <Button type="submit" disabled={state.pending}>
+            {state.pending ? t("common.saving") : t("common.save")}
+          </Button>
+          <Link
+            to={editing ? "/elevators/$id" : "/elevators"}
+            params={editing ? { id: id as string } : undefined}
+            className="text-body text-muted-foreground hover:underline"
+            onClick={(event) => {
+              // Only when something would be lost. Asking on the way out of a
+              // form nobody touched trains people to click through the question.
+              if (dirty && !window.confirm(t("form.unsavedChangesBody"))) {
+                event.preventDefault();
+              }
+            }}
+          >
+            {t("common.cancel")}
+          </Link>
+        </div>
+      </form>
     </div>
   );
 }
 
-export function ElevatorFormScreen() {
+function FormField({
+  field,
+  record,
+  error,
+}: {
+  field: FieldSpec;
+  record: Elevator | undefined;
+  error?: string;
+}) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState("identity");
-  const [dirtyCount] = useState(4);
-  const [confirmingExit, setConfirmingExit] = useState(false);
+  const id = `ef-${field.name}`;
+  const value = initialValue(record, field);
+
+  if (field.kind === "checkbox") {
+    return (
+      <label className="flex items-start gap-2.5 sm:col-span-2" htmlFor={id}>
+        <input
+          id={id}
+          name={field.name}
+          type="checkbox"
+          defaultChecked={value === true}
+          className="mt-0.5 size-4 rounded-xs accent-primary"
+        />
+        <span className="flex flex-col leading-tight">
+          <span className="text-body">{t(field.labelKey)}</span>
+          {field.hintKey && (
+            <span className="text-help text-muted-foreground">{t(field.hintKey)}</span>
+          )}
+        </span>
+      </label>
+    );
+  }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-start justify-between gap-3 px-6 pt-6 pb-4">
-        <div className="flex flex-col gap-1">
-          <nav className="flex items-center gap-1.5 text-help text-muted-foreground">
-            <span>{t("elevator.title")}</span>
-            <ChevronRight className="size-3" aria-hidden="true" />
-            <span className="text-foreground">{elevator.name}</span>
-          </nav>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-title">{elevator.name}</h1>
-            {dirtyCount > 0 && (
-              <span className="rounded-sm border border-border-strong px-2 py-0.5 text-help text-muted-foreground">
-                {t("form.unsavedChanges")}
-              </span>
-            )}
-          </div>
-          <p className="flex items-center gap-2 text-help text-muted-foreground">
-            <span className="font-mono tnum">{elevator.registration_number}</span>
-            <span>·</span>
-            <span>{elevator.building_name}</span>
-          </p>
-        </div>
-      </div>
-
-      <div className="flex gap-1 overflow-x-auto border-b border-border px-6">
-        {TABS.map((tab) => (
-          <TabButton
-            key={tab.key}
-            tab={tab}
-            active={activeTab === tab.key}
-            onClick={() => setActiveTab(tab.key)}
-          />
-        ))}
-      </div>
-
-      <RecordStatusStrip onGoToError={() => setActiveTab("inspection")} />
-
-      <div className="flex min-h-0 flex-1">
-        <div className="min-w-0 flex-1 overflow-y-auto p-6">
-          <div className="flex max-w-2xl flex-col gap-5">
-            <div className="flex items-baseline gap-2">
-              <h2 className="text-section">{t(`elevator.tabs.${activeTab}`)}</h2>
-              <span className="text-help text-muted-foreground">
-                {t("form.fieldCount", { count: 6 })} · {t("form.requiredCount", { count: 2 })}
-              </span>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label={t("elevator.fields.building")}
-                htmlFor="ef-building"
-                required
-              >
-                <select
-                  id="ef-building"
-                  defaultValue={elevator.building_name}
-                  className="h-control-md w-full rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg"
-                >
-                  {buildings.map((building) => (
-                    <option key={building.id}>{building.name}</option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field
-                label={t("elevator.fields.registrationNumber")}
-                htmlFor="ef-reg"
-                required
-                hint={t("form.uniqueWithinCompany")}
-              >
-                <Input defaultValue={elevator.registration_number} className="font-mono tnum" />
-              </Field>
-
-              <Field label={t("elevator.fields.name")} htmlFor="ef-name">
-                <Input defaultValue={elevator.name} />
-              </Field>
-
-              <Field
-                label={`${t("elevator.fields.internalCode")} ${t("form.optionalSuffix")}`}
-                htmlFor="ef-code"
-                hint={t("form.internalCodeExample")}
-              >
-                {/* A literal example, not a field. It was on the fixture, which the
-                    schema never had — the placeholder is copy, and copy lives
-                    in the translation file. */}
-                <Input placeholder={t("form.internalCodePlaceholder")} />
-              </Field>
-
-              <Field label={t("elevator.fields.status")} htmlFor="ef-status">
-                <select
-                  id="ef-status"
-                  defaultValue={elevator.status}
-                  className="h-control-md w-full rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg"
-                >
-                  {ELEVATOR_STATUSES.map((value) => (
-                    <option key={value} value={value}>
-                      {enumLabel("elevator.status", value)}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field
-                label={t("elevator.fields.maintenanceIntervalDays")}
-                htmlFor="ef-interval"
-                hint={t("elevator.hints.maintenanceInterval")}
-              >
-                <Input type="number" defaultValue={elevator.maintenance_interval_days} min={1} max={30} />
-              </Field>
-
-              <Field
-                label={t("elevator.fields.notes")}
-                htmlFor="ef-notes"
-                className="sm:col-span-2"
-              >
-                <Textarea rows={3} />
-              </Field>
-            </div>
-          </div>
-        </div>
-
-        <div className="hidden xl:block">
-          <RecordStatusPanel onGoToError={() => setActiveTab("inspection")} />
-        </div>
-      </div>
-
-      {/* One save for the whole record, present on every tab. Tabs are a
-          navigation device, not a transaction boundary — saving per tab would
-          teach the user to save six times and produce half-written records. */}
-      <div className="flex flex-wrap items-center gap-3 border-t border-border bg-card px-6 py-3">
-        {dirtyCount > 0 && (
-          <>
-            <span className="hidden text-help text-muted-foreground sm:inline">
-              {t("form.unsavedChangesBody", { count: dirtyCount })}
-            </span>
-            {/* A dropped session returns to this tab and this field, so the
-                phone says the draft is held rather than leaving the user to
-                guess whether leaving costs them the entry. */}
-            <span className="flex flex-col leading-tight sm:hidden">
-              <span className="inline-flex w-fit items-center gap-1 rounded-sm border border-dashed border-border-strong px-1.5 text-help text-muted-foreground">
-                {t("form.notSaved")}
-              </span>
-              <span className="text-help text-subtle">{t("form.draftKeptLocally")}</span>
-            </span>
-          </>
-        )}
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => (dirtyCount > 0 ? setConfirmingExit(true) : undefined)}
-          >
-            {t("form.discard")}
-          </Button>
-          <Button variant="secondary" size="sm">
-            {t("form.saveAndNew")}
-          </Button>
-          <Button size="sm">{t("form.saveAllTabs")}</Button>
-        </div>
-      </div>
-
-      {/* Leaving with unsaved edits is the one place this form can lose work,
-          so the dialog names what would be lost instead of asking in general. */}
-      {confirmingExit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button
-            type="button"
-            className="absolute inset-0 bg-foreground/40"
-            onClick={() => setConfirmingExit(false)}
-            aria-label={t("common.close")}
-          />
-          <div
-            role="alertdialog"
-            aria-modal="true"
-            aria-label={t("form.unsavedChangesTitle")}
-            className="relative flex w-full max-w-md flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-lg"
-          >
-            <h2 className="text-cardtitle">{t("form.unsavedChangesTitle")}</h2>
-
-            {/* Naming each edit is what makes the choice possible: "you have
-                unsaved changes" tells the user nothing they can act on. */}
-            <ul className="flex flex-col gap-1.5 rounded-md bg-muted px-3 py-2.5">
-              <li className="flex items-baseline justify-between gap-3 text-help">
-                <span className="text-muted-foreground">
-                  {t("elevator.fields.maintenanceIntervalDays")}
-                </span>
-                <span className="tnum">{t("form.changedTo", { from: 15, to: 30 })}</span>
-              </li>
-              <li className="flex items-baseline justify-between gap-3 text-help">
-                <span className="text-muted-foreground">{t("elevator.fields.stopCount")}</span>
-                <span className="tnum">8 · {t("form.changed")}</span>
-              </li>
-            </ul>
-
-            <div className="flex flex-col gap-2">
-              <Button size="sm" onClick={() => setConfirmingExit(false)}>
-                {t("form.saveAndExit")}
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => setConfirmingExit(false)}>
-                {t("form.backToEditing")}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setConfirmingExit(false)}>
-                {t("form.discardChanges")}
-              </Button>
-            </div>
-          </div>
-        </div>
+    <Field
+      label={t(field.labelKey)}
+      htmlFor={id}
+      required={field.required}
+      hint={field.hintKey ? t(field.hintKey) : undefined}
+      error={error}
+      className={field.wide ? "sm:col-span-2" : undefined}
+      bindChild={field.kind !== "select"}
+    >
+      {field.kind === "select" ? (
+        <select
+          id={id}
+          name={field.name}
+          required={field.required}
+          className={selectClass}
+          defaultValue={String(value)}
+        >
+          {/* Optional selects can be left unanswered. A required one has no
+              blank option, so it cannot be submitted empty by accident. */}
+          {!field.required && <option value="">—</option>}
+          {(field.options ?? []).map((option) => (
+            <option key={option} value={option}>
+              {enumLabel(field.enumKey ?? "", option)}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <Input
+          name={field.name}
+          type={field.kind === "number" ? "number" : field.kind === "date" ? "date" : "text"}
+          maxLength={field.maxLength}
+          defaultValue={String(value)}
+          invalid={Boolean(error)}
+        />
       )}
-    </div>
+    </Field>
   );
 }

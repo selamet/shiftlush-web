@@ -78,6 +78,9 @@ function resolve(path, search, method, body) {
     return { ...detail, id: elevator[1] };
   }
 
+  if (method === "POST" && path === "/api/v1/elevators/") {
+    return { ...fixture("demo-elevator-detail"), ...body, id: "e-new" };
+  }
   if (path === "/api/v1/elevators/") return page(fixture("demo-elevators"));
 
   if (path === "/api/v1/attachments/") return page(fixture("demo-attachments"));
