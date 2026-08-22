@@ -33,9 +33,19 @@ export interface MapProvider {
 }
 
 /**
- * Stand-in until the tile layer and the backend geocoding endpoint are wired
- * up. It renders the surface and drives every interaction state the design
- * calls for; only the actual map imagery is missing.
+ * Stand-in until `POST /geocode/reverse` exists on the API.
+ *
+ * It answers every call with nulls and a confidence of zero, which is not a
+ * placeholder's convenience but the behaviour section 9.4 asks for: below the
+ * threshold nothing is written into the address fields and the user picks the
+ * neighbourhood themselves. A stub that guessed would cause the exact failure
+ * this interface exists to prevent.
+ *
+ * Nothing imports it yet, and deliberately so. There is no map surface in the
+ * application, because a surface with no endpoint behind it is a control that
+ * looks live and does nothing. The seam is here so that landing the endpoint is
+ * a one-file change; `AddressSelect` is where the accept-or-correct affordance
+ * belongs when it does.
  */
 export const placeholderMapProvider: MapProvider = {
   name: "placeholder",
