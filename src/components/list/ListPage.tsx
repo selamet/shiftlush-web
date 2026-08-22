@@ -45,8 +45,15 @@ export type ListSelection =
 interface ListPageProps<T> {
   breadcrumbKey: string;
   titleKey: string;
+  /**
+   * The create action, and where it goes. Both or neither.
+   *
+   * There used to be a fallback rendering a plain button when the destination
+   * was omitted, and it rendered a button that did nothing. No caller ever took
+   * it — every screen passes both — so it was a dead branch waiting for the
+   * first caller to pass a label alone and get a control that looks live.
+   */
   primaryActionKey?: string;
-  /** Where the primary action goes. Renders a plain button when omitted. */
   primaryActionTo?: string;
   /** Filter, search and paging state, from `useListSearch`. Lives in the URL. */
   state: ListState;
@@ -130,19 +137,12 @@ export function ListPage<T>({
           </nav>
           <h1 className="text-title">{t(titleKey)}</h1>
         </div>
-        {primaryActionKey && (
+        {primaryActionKey && primaryActionTo && (
           <div className="flex items-center gap-2">
-            {primaryActionTo ? (
-              <Link to={primaryActionTo} className={buttonVariants({ size: "sm" })}>
-                <Plus />
-                {t(primaryActionKey)}
-              </Link>
-            ) : (
-              <Button size="sm">
-                <Plus />
-                {t(primaryActionKey)}
-              </Button>
-            )}
+            <Link to={primaryActionTo} className={buttonVariants({ size: "sm" })}>
+              <Plus />
+              {t(primaryActionKey)}
+            </Link>
           </div>
         )}
       </div>
@@ -315,6 +315,7 @@ export function ListPage<T>({
             titleKey={emptyTitleKey}
             prerequisite={prerequisite}
             actionKey={primaryActionKey}
+            actionTo={primaryActionTo}
           />
         ) : (
           <>

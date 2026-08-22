@@ -21,7 +21,17 @@ interface EmptyStateProps {
   titleKey: string;
   /** The record that must exist first, if any. */
   prerequisite?: { labelKey: string; to: string };
+  /**
+   * The create action, and where it goes.
+   *
+   * Both or neither. The label used to arrive without the destination, which
+   * rendered a button that did nothing — in the middle of the screen, on a
+   * list that is empty, which is the one moment the design is pointing the
+   * reader at it. The header's copy of the same action worked, so the product
+   * offered a live control and a dead one under the same words.
+   */
   actionKey?: string;
+  actionTo?: string;
 }
 
 export function EmptyState({
@@ -30,6 +40,7 @@ export function EmptyState({
   titleKey,
   prerequisite,
   actionKey,
+  actionTo,
 }: EmptyStateProps) {
   const { t } = useTranslation();
 
@@ -61,7 +72,12 @@ export function EmptyState({
           </Link>
         </>
       ) : (
-        actionKey && <Button size="sm">{t(actionKey)}</Button>
+        actionKey &&
+        actionTo && (
+          <Link to={actionTo} className={buttonVariants({ size: "sm" })}>
+            {t(actionKey)}
+          </Link>
+        )
       )}
     </div>
   );
