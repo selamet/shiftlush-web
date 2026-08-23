@@ -3,13 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/session";
-import {
-  DEMO_COUNTS,
-  itemBadgeKey,
-  itemLabelKey,
-  visibleGroups,
-  type Role,
-} from "./nav-config";
+import { itemBadgeKey, itemLabelKey, visibleGroups, type Role } from "./nav-config";
 
 function Brand() {
   const { companyName } = useSession();
@@ -45,6 +39,15 @@ function Brand() {
   );
 }
 
+/**
+ * No per-item counters. The ones that used to sit here were literals invented
+ * while the screens were mocks — every firm read the same 342 elevators — and a
+ * real counter is not a cheap thing to put back: it means a count request per
+ * resource, on every navigation, for a number nobody navigates by. If it does
+ * come back it should count what the role can actually reach, since a
+ * technician with 31 assigned elevators reading the company's 342 would be
+ * worse than no number at all.
+ */
 export function SidebarNav({ role }: { role: Role }) {
   const { t } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -61,7 +64,6 @@ export function SidebarNav({ role }: { role: Role }) {
             const Icon = item.icon;
             const active = pathname.startsWith(item.to);
             const badgeKey = itemBadgeKey(item, role);
-            const count = DEMO_COUNTS[item.to]?.[role];
 
             return (
               <Link
@@ -81,9 +83,6 @@ export function SidebarNav({ role }: { role: Role }) {
                   <span className="rounded-sm border border-dashed border-border-strong px-1.5 text-help text-subtle">
                     {t(badgeKey)}
                   </span>
-                )}
-                {count != null && (
-                  <span className="tnum text-help text-subtle">{count}</span>
                 )}
               </Link>
             );
