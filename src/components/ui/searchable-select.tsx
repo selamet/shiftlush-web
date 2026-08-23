@@ -3,6 +3,13 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+/**
+ * The same interval every other search box in the product uses. Kept as its own
+ * constant rather than imported from `ListPage`, which would make a list layout
+ * component a dependency of a form control.
+ */
+const SEARCH_DEBOUNCE_MS = 300;
+
 export type SearchableOption = {
   value: string;
   label: string;
@@ -95,6 +102,44 @@ export function SearchableSelect({
   const { t } = useTranslation();
   const remote = onSearchChange !== undefined;
 
+  /**
+   * The typed term reaches the parent after the typing stops, not per keystroke.
+   *
+   * Every other search box in the product waits 300 ms — `ListPage`, the
+   * elevator list, the label picker. This one did not, so a seven-character
+   * neighbourhood was seven requests — measured — none of them cancelled, and
+   * the list the user acted on was whichever answer came back last rather than
+   * whichever question was asked last. Same interval as the others
+   * deliberately: a field that behaves differently from its neighbours reads as
+   * a different kind of field.
+   *
+   * Only the request is delayed. What is on screen is never behind what was
+   * typed.
+   */
+  const searchTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelPendingSearch = React.useCallback(() => {
+    if (searchTimer.current !== null) {
+      clearTimeout(searchTimer.current);
+      searchTimer.current = null;
+    }
+  }, []);
+
+  const searchLater = React.useCallback(
+    (term: string) => {
+      cancelPendingSearch();
+      searchTimer.current = setTimeout(() => {
+        searchTimer.current = null;
+        onSearchChange?.(term);
+      }, SEARCH_DEBOUNCE_MS);
+    },
+    [cancelPendingSearch, onSearchChange],
+  );
+
+  // A pending request for a field that has gone would arrive as a state update
+  // on something unmounted.
+  React.useEffect(() => cancelPendingSearch, [cancelPendingSearch]);
+
   const [ownValue, setOwnValue] = React.useState(defaultValue ?? "");
   const selected = value !== undefined ? value : ownValue;
 
@@ -145,7 +190,11 @@ export function SearchableSelect({
     setOpen(false);
     setQuery("");
     // The parent holds the query in remote mode; leaving it set would keep a
-    // stale result list warm for the next time the field is opened.
+    // stale result list warm for the next time the field is opened. Immediate,
+    // and cancelling whatever was queued: closing the field is a decision, not
+    // a keystroke, and a debounced clear would be overtaken by the search it
+    // was meant to discard.
+    cancelPendingSearch();
     if (remote) onSearchChange?.("");
   }
 
@@ -154,6 +203,7 @@ export function SearchableSelect({
     onChange?.(option.value);
     setOpen(false);
     setQuery("");
+    cancelPendingSearch();
     if (remote) onSearchChange?.("");
     inputRef.current?.focus();
   }
@@ -216,7 +266,7 @@ export function SearchableSelect({
             const next = event.target.value;
             setQuery(next);
             setOpen(true);
-            if (remote) onSearchChange?.(next);
+            if (remote) searchLater(next);
           }}
           onFocus={() => setOpen(true)}
           onBlur={() => {
