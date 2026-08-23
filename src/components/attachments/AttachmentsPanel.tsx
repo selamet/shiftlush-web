@@ -106,6 +106,10 @@ export function AttachmentsPanel({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
+  /** The control every upload starts from, so a row that leaves can hand focus back to it. */
+  const chooseRef = useRef<HTMLButtonElement>(null);
+  /** The transfer rows, by id, so `dropTransfer` can ask whether the one it is about to remove holds focus. */
+  const rows = useRef(new Map<string, HTMLDivElement>());
 
   const [category, setCategory] = useState<AttachmentCategory>("inspection_report");
   const [transfers, setTransfers] = useState<Transfer[]>([]);
@@ -119,8 +123,25 @@ export function AttachmentsPanel({
     );
   }
 
+  /**
+   * Removes a transfer row, and rescues the keyboard if the row was holding it.
+   *
+   * Cancelling or dismissing a row unmounts the button that was just pressed.
+   * That drops focus to `<body>` and sends the next Tab back to the top of the
+   * page — the same fault, and the same fix, as closing a bulk panel from the X
+   * inside it: hand focus to a control that is still there. Guarded on the row
+   * actually holding focus, because this also runs when an upload finishes on
+   * its own, and an upload completing in the background must never pull the
+   * keyboard away from wherever the user has moved on to.
+   */
   function dropTransfer(id: string) {
+    const row = rows.current.get(id);
+    const holdsFocus = row?.contains(document.activeElement) ?? false;
+
     setTransfers((current) => current.filter((transfer) => transfer.id !== id));
+    // Before the row goes rather than after, so focus is never on `<body>` at
+    // all, not even for the one frame React takes to remove it.
+    if (holdsFocus) chooseRef.current?.focus();
   }
 
   /** The client-side refusals, in the server's own words where they exist. */
@@ -239,6 +260,7 @@ export function AttachmentsPanel({
               </>
             )}
             <Button
+              ref={chooseRef}
               type="button"
               size="sm"
               variant="secondary"
@@ -292,6 +314,13 @@ export function AttachmentsPanel({
       {transfers.map((transfer) => (
         <div
           key={transfer.id}
+          ref={(node) => {
+            if (!node) return;
+            rows.current.set(transfer.id, node);
+            return () => {
+              rows.current.delete(transfer.id);
+            };
+          }}
           className="flex flex-col gap-1.5 rounded-md border border-border-subtle px-3 py-2"
         >
           <div className="flex items-center gap-3">

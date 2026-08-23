@@ -108,7 +108,7 @@ export function AssignedCustomers({ user }: { user: TeamUser }) {
                     type="checkbox"
                     checked={selected.includes(customer.id)}
                     onChange={() => toggle(customer.id)}
-                    className="size-4 shrink-0 rounded-xs accent-primary"
+                    className="checkbox shrink-0"
                   />
                   <span className="flex min-w-0 flex-col leading-tight">
                     <span className="truncate text-body">{customer.legal_name}</span>

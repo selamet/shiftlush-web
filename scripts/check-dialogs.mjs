@@ -27,6 +27,13 @@
  * Plus two source rules, because both regressions this fixes were introduced
  * by copying markup: `aria-modal` may only be claimed by the component that
  * can honour it, and no overlay may go back to a tabbable backdrop.
+ *
+ * The same document then answers the other question a rendered string cannot:
+ * whether the controls that were deliberately left out of the tab order can be
+ * operated at all. The date picker keeps focus in its text box on purpose, so
+ * its calendar, its "today" and its clear are all `tabIndex={-1}` — which is
+ * only a design if every one of them has a key on the field instead, and is a
+ * control nobody can reach otherwise. That is asserted by pressing the keys.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -105,10 +112,22 @@ const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-function press(target, key, { shiftKey = false } = {}) {
-  target.dispatchEvent(
-    new window.KeyboardEvent("keydown", { key, shiftKey, bubbles: true, cancelable: true }),
-  );
+function press(
+  target,
+  key,
+  { shiftKey = false, ctrlKey = false, altKey = false, metaKey = false } = {},
+) {
+  const event = new window.KeyboardEvent("keydown", {
+    key,
+    shiftKey,
+    ctrlKey,
+    altKey,
+    metaKey,
+    bubbles: true,
+    cancelable: true,
+  });
+  target.dispatchEvent(event);
+  return event;
 }
 
 /** True when the element sits inside a subtree something has marked inert. */
@@ -295,6 +314,201 @@ function describe(element) {
 }
 
 /* -------------------------------------------------------------------------
+ * The controls that are deliberately not in the tab order.
+ * ---------------------------------------------------------------------- */
+
+/** `FOCUSABLE`, narrowed to what Tab will actually stop on. */
+const TABBABLE = FOCUSABLE.split(",")
+  .map((selector) => `${selector}:not([tabindex="-1"])`)
+  .join(",");
+
+/**
+ * The date picker's calendar, its "today" and its clear are all out of the tab
+ * order, and that is the right answer only while each of them has a key on the
+ * field instead. This presses the keys.
+ */
+async function datePickerKeys({ DatePicker, todayIso, toDisplay }) {
+  const checks = [];
+  const check = (name, ok, detail = "") => {
+    checks.push({ name, ok });
+    if (!ok) failures.push(`date picker: ${name}${detail ? ` — ${detail}` : ""}`);
+  };
+
+  const START = "2026-03-05";
+  let instance = 0;
+
+  /** A fresh, uncontrolled picker holding `START`, with a field after it to tab to. */
+  async function mount() {
+    instance += 1;
+    await render(
+      h(
+        "div",
+        null,
+        h(
+          "div",
+          { id: "picker-host" },
+          h(DatePicker, { key: `picker-${instance}`, name: "start_date", defaultValue: START }),
+        ),
+        h("input", { id: "after", type: "text" }),
+      ),
+    );
+    const host = document.getElementById("picker-host");
+    return {
+      host,
+      box: host.querySelector("input[role='combobox']"),
+      hidden: host.querySelector("input[type='hidden'][name='start_date']"),
+    };
+  }
+
+  // What the clear button does, for someone who cannot reach it.
+  {
+    const { box, hidden } = await mount();
+    box.focus();
+    await act(async () => press(box, "Escape"));
+    check(
+      "Escape empties a field whose calendar is closed",
+      box.value === "" && hidden.value === "",
+      `box "${box.value}", form would submit "${hidden.value}"`,
+    );
+    check(
+      "clearing leaves focus in the text box",
+      document.activeElement === box,
+      `focus is on ${describe(document.activeElement)}`,
+    );
+  }
+
+  // Escape peels one layer at a time: the calendar first, the date second.
+  {
+    const { box, hidden } = await mount();
+    box.focus();
+    await act(async () => press(box, "ArrowDown", { altKey: true }));
+    check(
+      "Alt+ArrowDown opens the calendar",
+      box.getAttribute("aria-expanded") === "true",
+      `aria-expanded="${box.getAttribute("aria-expanded")}"`,
+    );
+
+    await act(async () => press(box, "Escape"));
+    check(
+      "the first Escape closes the calendar and keeps the date",
+      box.getAttribute("aria-expanded") === "false" && hidden.value === START,
+      `aria-expanded="${box.getAttribute("aria-expanded")}", value "${hidden.value}"`,
+    );
+
+    await act(async () => press(box, "Escape"));
+    check("the second Escape empties the field", hidden.value === "", `value "${hidden.value}"`);
+  }
+
+  // The reason the field may only take the press when it has something to say:
+  // a dialog around it listens for the same key, on the document.
+  {
+    const reached = [];
+    const listener = (event) => {
+      if (event.key === "Escape") reached.push(event);
+    };
+    document.addEventListener("keydown", listener);
+    try {
+      const { box } = await mount();
+      box.focus();
+
+      await act(async () => press(box, "Escape"));
+      const afterClearing = reached.length;
+      await act(async () => press(box, "Escape"));
+
+      check(
+        "Escape stops at a field that has a date to clear",
+        afterClearing === 0,
+        `${afterClearing} press(es) reached the document`,
+      );
+      check(
+        "Escape passes through an empty field, so the dialog around it still closes",
+        reached.length === 1,
+        `${reached.length} press(es) reached the document`,
+      );
+    } finally {
+      document.removeEventListener("keydown", listener);
+    }
+  }
+
+  // What the "today" button does, for someone who cannot reach it — from a
+  // field that already holds another date, which is the case with no keyboard
+  // route at all before this: opening the calendar puts the cursor on the day
+  // that is selected, not on today.
+  {
+    const today = todayIso();
+
+    const { box, hidden } = await mount();
+    box.focus();
+    await act(async () => press(box, "Home", { ctrlKey: true }));
+    check(
+      "Ctrl+Home writes today over the date that was there",
+      hidden.value === today && box.value === toDisplay(today),
+      `box "${box.value}", form would submit "${hidden.value}", today is ${today}`,
+    );
+    check(
+      "picking today leaves focus in the text box",
+      document.activeElement === box,
+      `focus is on ${describe(document.activeElement)}`,
+    );
+
+    const mac = await mount();
+    mac.box.focus();
+    await act(async () => press(mac.box, "Home", { metaKey: true }));
+    check(
+      "Cmd+Home does the same, for the keyboard without a Ctrl in reach",
+      mac.hidden.value === today,
+      `form would submit "${mac.hidden.value}"`,
+    );
+  }
+
+  // And the property both bindings exist to protect.
+  {
+    const { host, box } = await mount();
+    box.focus();
+    await act(async () => press(box, "ArrowDown", { altKey: true }));
+
+    check(
+      "the calendar is on the page for these",
+      Boolean(host.querySelector("td[role='gridcell'] button")),
+      "no day cell rendered",
+    );
+
+    const stops = [...host.querySelectorAll(TABBABLE)].filter(
+      (element) => element.getAttribute("type") !== "hidden",
+    );
+    check(
+      "an open calendar still costs the tab order exactly one stop, the text box",
+      stops.length === 1 && stops[0] === box,
+      stops.map(describe).join(", "),
+    );
+
+    // Anything the picker draws outside the day grid is out of the tab order,
+    // so each one has to name the key that stands in for it. A control added
+    // later with no key fails here rather than shipping unreachable.
+    const stranded = [...host.querySelectorAll("button[tabindex='-1']")].filter(
+      (button) =>
+        !button.closest("[role='gridcell']") && !button.getAttribute("aria-keyshortcuts"),
+    );
+    check(
+      "every control left out of the tab order names the key that reaches it",
+      stranded.length === 0,
+      stranded
+        .map((button) => button.getAttribute("aria-label") ?? button.textContent.trim())
+        .join(", "),
+    );
+
+    const announced = box.getAttribute("aria-keyshortcuts") ?? "";
+    check(
+      "the field announces those keys to a screen reader",
+      announced.includes("Control+Home") && announced.includes("Escape"),
+      `aria-keyshortcuts="${announced}"`,
+    );
+  }
+
+  return checks;
+}
+
+/* -------------------------------------------------------------------------
  * Source rules.
  * ---------------------------------------------------------------------- */
 
@@ -367,6 +581,8 @@ try {
   const { ConfirmDialog } = await server.ssrLoadModule(
     "/src/components/ui/confirm-dialog.tsx",
   );
+  const { DatePicker } = await server.ssrLoadModule("/src/components/ui/date-picker.tsx");
+  const { todayIso, toDisplay } = await server.ssrLoadModule("/src/lib/date.ts");
 
   const subjects = [
     {
@@ -450,6 +666,16 @@ try {
   }
 
   console.log("");
+  {
+    const checks = await datePickerKeys({ DatePicker, todayIso, toDisplay });
+    const bad = checks.filter((entry) => !entry.ok);
+    console.log(`  ${bad.length === 0 ? "OK  " : "FAIL"}  Date picker, the controls with no tab stop`);
+    for (const entry of checks) {
+      console.log(`          ${entry.ok ? "+" : "!"} ${entry.name}`);
+    }
+  }
+
+  console.log("");
   for (const rule of sourceRules()) {
     console.log(`  ${rule.ok ? "OK  " : "FAIL"}  ${rule.name}`);
     if (!rule.ok) console.log(`          at ${rule.detail}`);
@@ -463,7 +689,10 @@ if (failures.length > 0) {
   console.error(`${failures.length} dialog behaviour failure(s):`);
   for (const failure of failures) console.error(`  ${failure}`);
 } else {
-  console.log("Escape, focus containment and focus return hold for every dialog shape");
+  console.log(
+    "Escape, focus containment and focus return hold for every dialog shape, and every\n" +
+      "control left out of the tab order can still be reached from the keyboard",
+  );
 }
 
 // Vite and jsdom both leave timers behind; the verdict is in, so end rather

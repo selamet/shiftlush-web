@@ -36,7 +36,17 @@ const buttonVariants = cva(
         xl: "h-control-xl px-6 text-cardtitle [&_svg]:size-5",
         /** Square icon-only button, matched to the sm row height. */
         icon: "h-control-sm w-control-sm [&_svg]:size-4 pointer-coarse:h-control-md pointer-coarse:w-control-md",
-        iconXs: "hit-40 h-control-xs w-control-xs rounded-sm [&_svg]:size-3.5",
+        /**
+         * Square in-row action. `hit-40` gives it a 40x40 target; the coarse
+         * step is what makes that target visible. Without one the box stayed
+         * 28px on a phone while the area that dispatches the click is 40px, so
+         * a gloved technician aims at something they can barely see and hits
+         * something they cannot see at all. One notch, like every other size —
+         * 34px, which is also what the `xs` text button beside it in a row
+         * already grows to.
+         */
+        iconXs:
+          "hit-40 h-control-xs w-control-xs rounded-sm [&_svg]:size-3.5 pointer-coarse:h-control-sm pointer-coarse:w-control-sm",
       },
     },
     defaultVariants: {

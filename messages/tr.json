@@ -1043,6 +1043,7 @@
     "open": "Takvimi aç",
     "clear": "Tarihi temizle",
     "today": "Bugün",
+    "todayShortcut": "Ctrl+Home",
     "previousMonth": "Önceki ay",
     "nextMonth": "Sonraki ay",
     "calendar": "Takvim",
