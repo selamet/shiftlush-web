@@ -130,16 +130,3 @@ export function itemLabelKey(item: NavItem, role: Role): string {
 export function itemBadgeKey(item: NavItem, role: Role): string | undefined {
   return item.badgeRoles?.includes(role) ? item.badgeKey : undefined;
 }
-
-/**
- * Counters show what the role can actually reach, not the company total — a
- * technician with 31 assigned elevators must not read 342 and wonder where the
- * rest went.
- */
-export const DEMO_COUNTS: Record<string, Record<Role, number | undefined>> = {
-  "/customers": { owner: 52, admin: 52, operations: 52, technician: 6, accountant: 52 },
-  "/complexes": { owner: 18, admin: 18, operations: 18, technician: undefined, accountant: undefined },
-  "/buildings": { owner: 104, admin: 104, operations: 104, technician: 12, accountant: undefined },
-  "/elevators": { owner: 342, admin: 342, operations: 342, technician: 31, accountant: undefined },
-  "/contracts": { owner: 61, admin: 61, operations: 61, technician: undefined, accountant: 61 },
-};
