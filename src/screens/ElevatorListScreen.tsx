@@ -32,7 +32,8 @@ import { enumLabel } from "@/lib/i18n";
 import { formatDate } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
-import { enumFilter, listSearchSchema, useListSearch } from "@/lib/list-search";
+import { useListSearch } from "@/lib/list-search";
+import { elevatorFilters as filters } from "@/screens/list-searches";
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -44,45 +45,6 @@ import {
   type ListColumn,
   type ListSelection,
 } from "@/components/list/ListPage";
-
-/**
- * What `GET /elevators/` narrows by, spelled the way the contract spells it.
- *
- * Building and customer are absent on purpose. Both are references to a set
- * that runs to thousands, so they need the searchable picker rather than a menu
- * listing every building the firm has — and an empty menu would be the same
- * dead control in a new shape.
- */
-const filters = [
-  enumFilter({
-    param: "status",
-    labelKey: "elevator.fields.status",
-    namespace: "elevator.status",
-    values: ["active", "suspended", "sealed", "out_of_service", "uncontracted"],
-  }),
-  enumFilter({
-    param: "inspection_label",
-    labelKey: "elevator.fields.inspectionLabel",
-    namespace: "elevator.inspectionLabel",
-    values: ["green", "blue", "yellow", "red", "none"],
-  }),
-  enumFilter({
-    param: "category",
-    labelKey: "elevator.fields.category",
-    namespace: "elevator.category",
-    values: [
-      "passenger",
-      "freight",
-      "passenger_freight",
-      "dumbwaiter",
-      "accessibility_platform",
-      "vehicle",
-    ],
-  }),
-];
-
-/** Bound to the route, so the search parameters arrive typed and validated. */
-export const elevatorListSearch = listSearchSchema(filters);
 
 /**
  * The statuses this screen will set on many elevators at once.

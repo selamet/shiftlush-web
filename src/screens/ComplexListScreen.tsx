@@ -5,15 +5,8 @@ import { complexListQuery, type Complex,
   customerListQuery,} from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { prerequisiteMissing } from "@/lib/prerequisite";
-import { listSearchSchema, useListSearch } from "@/lib/list-search";
+import { useListSearch } from "@/lib/list-search";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
-
-/**
- * Paging only. `GET /complexes/` declares no `search` and no filter beyond
- * `customer`, which is a reference rather than a menu — so this list offers
- * neither, instead of offering both and narrowing nothing.
- */
-export const complexListSearch = listSearchSchema();
 
 /** Skips the half that is missing rather than rendering a dangling separator. */
 function place(row: Complex): string {

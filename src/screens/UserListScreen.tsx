@@ -5,26 +5,14 @@ import { TriangleAlert } from "lucide-react";
 import { userListQuery, type TeamUser } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { formatDateTime, formatDate } from "@/lib/format";
-import { booleanFilter, enumFilter, listSearchSchema, useListSearch } from "@/lib/list-search";
+import { useListSearch } from "@/lib/list-search";
+import { userFilters as filters } from "@/screens/list-searches";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
 import { RoleChip, StatusChip } from "@/components/ui/status-chip";
 import { PendingInvitations } from "@/components/users/PendingInvitations";
 
 /** Certificates expire, and an expired one blocks the technician on site. */
 const WARN_WITHIN_DAYS = 60;
-
-/** `GET /users/` declares no `search`, so this list is not offered one. */
-const filters = [
-  enumFilter({
-    param: "role",
-    labelKey: "user.fields.role",
-    namespace: "user.role",
-    values: ["owner", "admin", "operations", "technician", "accountant"],
-  }),
-  booleanFilter({ param: "is_active", labelKey: "user.fields.isActive" }),
-];
-
-export const userListSearch = listSearchSchema(filters);
 
 function certificateState(validUntil: string | null): "none" | "ok" | "expiring" {
   if (!validUntil) return "none";

@@ -3,9 +3,11 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   Outlet,
   RouterProvider,
   redirect,
+  type RouteComponent,
 } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
 import { ScreenBoundary } from "@/components/ErrorBoundary";
@@ -36,37 +38,158 @@ import {
 import { SessionProvider, ensureSession, type SessionOverride } from "@/lib/session";
 import type { ListSearch } from "@/lib/list-search";
 import type { Role } from "@/components/layout/nav-config";
-import { LoginScreen } from "@/screens/LoginScreen";
-import { ElevatorListScreen, elevatorListSearch } from "@/screens/ElevatorListScreen";
-import { ElevatorDetailScreen } from "@/screens/ElevatorDetailScreen";
-import { ElevatorFormScreen } from "@/screens/ElevatorFormScreen";
-import { CustomerListScreen, customerListSearch } from "@/screens/CustomerListScreen";
-import { CustomerFormScreen } from "@/screens/CustomerFormScreen";
-import { CustomerDetailScreen } from "@/screens/CustomerDetailScreen";
-import { ContactFormScreen } from "@/screens/ContactFormScreen";
-import { ComplexListScreen, complexListSearch } from "@/screens/ComplexListScreen";
-import { ComplexFormScreen } from "@/screens/ComplexFormScreen";
-import { ComplexDetailScreen } from "@/screens/ComplexDetailScreen";
-import { BuildingListScreen, buildingListSearch } from "@/screens/BuildingListScreen";
-import { BuildingFormScreen } from "@/screens/BuildingFormScreen";
-import { ContractListScreen, contractListSearch } from "@/screens/ContractListScreen";
-import { ContractDetailScreen } from "@/screens/ContractDetailScreen";
-import { ContractFormScreen } from "@/screens/ContractFormScreen";
-import { UserListScreen, userListSearch } from "@/screens/UserListScreen";
-import { InviteUserScreen } from "@/screens/InviteUserScreen";
-import { UserDetailScreen } from "@/screens/UserDetailScreen";
-import { AuditLogListScreen, auditLogListSearch } from "@/screens/AuditLogListScreen";
-import { ProfileSettingsScreen, SettingsScreen } from "@/screens/SettingsScreen";
-import { QrLabelScreen } from "@/screens/QrLabelScreen";
-import { ScanScreen } from "@/screens/ScanScreen";
-import { QrResolveScreen } from "@/screens/QrResolveScreen";
-import { StyleGuide } from "@/styleguide/StyleGuide";
-import { RegisterScreen } from "@/screens/RegisterScreen";
 import {
-  PasswordResetConfirmScreen,
-  PasswordResetRequestScreen,
-} from "@/screens/PasswordResetScreen";
-import { InvitationScreen, VerifyEmailScreen } from "@/screens/InvitationScreen";
+  auditLogListSearch,
+  buildingListSearch,
+  complexListSearch,
+  contractListSearch,
+  customerListSearch,
+  elevatorListSearch,
+  userListSearch,
+} from "@/screens/list-searches";
+// The one screen that is not split.
+//
+// A signed-out visitor is sent here by `beforeLoad`, and that guard already
+// costs a round trip asking whether they have a session. Splitting this screen
+// would put its download *after* that answer comes back — two waits in series
+// before anything is on screen, on the one route every signed-out visit passes
+// through. It is a form with four controls; carrying it in the entry is cheaper
+// than the round trip it saves.
+import { LoginScreen } from "@/screens/LoginScreen";
+
+/**
+ * Every other screen, fetched when a route that uses it is entered.
+ *
+ * Statically imported, the thirty screens were one chunk that every visitor
+ * downloaded in full — a technician who opens a lift, its detail page and the
+ * scanner paid for the contract screens, the settings screens, the QR label
+ * sheet, the audit trail and every form in the product before the first pixel
+ * appeared. On a phone on a machine-room connection that is the largest single
+ * thing between opening the app and using it.
+ *
+ * `lazyRouteComponent` rather than `React.lazy`: it hangs a `preload()` on the
+ * component and the router calls it while the route loads, alongside the
+ * loader's own fetch rather than after it. So the chunk arrives before the
+ * render begins and nothing suspends — which is also why the render smoke
+ * check, which awaits `router.load()` and then renders synchronously under
+ * Node, still sees a resolved component rather than a thrown promise.
+ *
+ * The second argument names the export. Without it the helper reaches for
+ * `default`, and none of these modules has one.
+ */
+const ElevatorListScreen = lazyRouteComponent(
+  () => import("@/screens/ElevatorListScreen"),
+  "ElevatorListScreen",
+);
+const ElevatorDetailScreen = lazyRouteComponent(
+  () => import("@/screens/ElevatorDetailScreen"),
+  "ElevatorDetailScreen",
+);
+const ElevatorFormScreen = lazyRouteComponent(
+  () => import("@/screens/ElevatorFormScreen"),
+  "ElevatorFormScreen",
+);
+const CustomerListScreen = lazyRouteComponent(
+  () => import("@/screens/CustomerListScreen"),
+  "CustomerListScreen",
+);
+const CustomerFormScreen = lazyRouteComponent(
+  () => import("@/screens/CustomerFormScreen"),
+  "CustomerFormScreen",
+);
+const CustomerDetailScreen = lazyRouteComponent(
+  () => import("@/screens/CustomerDetailScreen"),
+  "CustomerDetailScreen",
+);
+const ContactFormScreen = lazyRouteComponent(
+  () => import("@/screens/ContactFormScreen"),
+  "ContactFormScreen",
+);
+const ComplexListScreen = lazyRouteComponent(
+  () => import("@/screens/ComplexListScreen"),
+  "ComplexListScreen",
+);
+const ComplexFormScreen = lazyRouteComponent(
+  () => import("@/screens/ComplexFormScreen"),
+  "ComplexFormScreen",
+);
+const ComplexDetailScreen = lazyRouteComponent(
+  () => import("@/screens/ComplexDetailScreen"),
+  "ComplexDetailScreen",
+);
+const BuildingListScreen = lazyRouteComponent(
+  () => import("@/screens/BuildingListScreen"),
+  "BuildingListScreen",
+);
+const BuildingFormScreen = lazyRouteComponent(
+  () => import("@/screens/BuildingFormScreen"),
+  "BuildingFormScreen",
+);
+const ContractListScreen = lazyRouteComponent(
+  () => import("@/screens/ContractListScreen"),
+  "ContractListScreen",
+);
+const ContractDetailScreen = lazyRouteComponent(
+  () => import("@/screens/ContractDetailScreen"),
+  "ContractDetailScreen",
+);
+const ContractFormScreen = lazyRouteComponent(
+  () => import("@/screens/ContractFormScreen"),
+  "ContractFormScreen",
+);
+const UserListScreen = lazyRouteComponent(
+  () => import("@/screens/UserListScreen"),
+  "UserListScreen",
+);
+const InviteUserScreen = lazyRouteComponent(
+  () => import("@/screens/InviteUserScreen"),
+  "InviteUserScreen",
+);
+const UserDetailScreen = lazyRouteComponent(
+  () => import("@/screens/UserDetailScreen"),
+  "UserDetailScreen",
+);
+const AuditLogListScreen = lazyRouteComponent(
+  () => import("@/screens/AuditLogListScreen"),
+  "AuditLogListScreen",
+);
+const SettingsScreen = lazyRouteComponent(
+  () => import("@/screens/SettingsScreen"),
+  "SettingsScreen",
+);
+const ProfileSettingsScreen = lazyRouteComponent(
+  () => import("@/screens/SettingsScreen"),
+  "ProfileSettingsScreen",
+);
+const QrLabelScreen = lazyRouteComponent(
+  () => import("@/screens/QrLabelScreen"),
+  "QrLabelScreen",
+);
+const ScanScreen = lazyRouteComponent(() => import("@/screens/ScanScreen"), "ScanScreen");
+const QrResolveScreen = lazyRouteComponent(
+  () => import("@/screens/QrResolveScreen"),
+  "QrResolveScreen",
+);
+const RegisterScreen = lazyRouteComponent(
+  () => import("@/screens/RegisterScreen"),
+  "RegisterScreen",
+);
+const PasswordResetRequestScreen = lazyRouteComponent(
+  () => import("@/screens/PasswordResetScreen"),
+  "PasswordResetRequestScreen",
+);
+const PasswordResetConfirmScreen = lazyRouteComponent(
+  () => import("@/screens/PasswordResetScreen"),
+  "PasswordResetConfirmScreen",
+);
+const VerifyEmailScreen = lazyRouteComponent(
+  () => import("@/screens/InvitationScreen"),
+  "VerifyEmailScreen",
+);
+const InvitationScreen = lazyRouteComponent(
+  () => import("@/screens/InvitationScreen"),
+  "InvitationScreen",
+);
 
 /**
  * Set only by createRouterForPath, so the smoke test and the styleguide can
@@ -127,6 +250,13 @@ interface LoaderContext {
 type Loader = (context: LoaderContext) => Promise<unknown>;
 
 /**
+ * A screen, whether it sits in the entry chunk or is fetched when its route is
+ * entered. The two are the same thing to a route: the lazy one carries a
+ * `preload` the router calls before it renders anything.
+ */
+type Screen = RouteComponent;
+
+/**
  * A route inside the application shell, optionally prefetching its data.
  *
  * The loader warms the query cache before the component renders, so the screen
@@ -168,7 +298,7 @@ async function listAndParentCount(
 
 function shellChild(
   path: string,
-  component: () => React.ReactNode,
+  component: Screen,
   loader?: Loader,
   validateSearch?: (raw: Record<string, unknown>) => ListSearch,
 ) {
@@ -205,7 +335,7 @@ const loginRoute = createRoute({
 });
 
 /** Reachable with no session — these are how a person gets one. */
-function publicRoute(path: string, component: () => React.ReactNode, loader?: Loader) {
+function publicRoute(path: string, component: Screen, loader?: Loader) {
   return createRoute({
     getParentRoute: () => rootRoute,
     path,
@@ -216,16 +346,36 @@ function publicRoute(path: string, component: () => React.ReactNode, loader?: Lo
   });
 }
 
-const styleguideRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/styleguide",
-  component: StyleGuide,
-});
+/**
+ * The component gallery, and the demo records it renders — in development only.
+ *
+ * It is a page for whoever is building the interface: every button, chip, field
+ * and table state on one screen, next to the fixture rows that show what they
+ * look like with real content in them. Nobody using the product has a reason to
+ * open it, and until now everybody downloaded it anyway, fixtures included.
+ *
+ * The route is built inside the branch rather than merely hidden by it. `DEV`
+ * is replaced with `false` at build time, so the whole expression folds away and
+ * the `import()` inside it is never reached — the styleguide and
+ * `demo-elevators.json` are not in the production build at all, not in the entry
+ * and not in a chunk beside it. In development the branch is live and
+ * `/styleguide` is a route like any other, which is how `npm run smoke` — a Vite
+ * dev server under Node — still renders it across all four roles.
+ */
+const devRoutes = import.meta.env.DEV
+  ? [
+      createRoute({
+        getParentRoute: () => rootRoute,
+        path: "/styleguide",
+        component: lazyRouteComponent(() => import("@/styleguide/StyleGuide"), "StyleGuide"),
+      }),
+    ]
+  : [];
 
 export const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
-  styleguideRoute,
+  ...devRoutes,
   publicRoute("/register", RegisterScreen),
   publicRoute("/password-reset", PasswordResetRequestScreen),
   publicRoute("/password-reset/$token", PasswordResetConfirmScreen),

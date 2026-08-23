@@ -12,15 +12,8 @@ import { describeAuditEntry } from "@/lib/audit";
 import { enumLabel } from "@/lib/i18n";
 import { formatDateTime } from "@/lib/format";
 import { useSession } from "@/lib/session";
-import {
-  dateFilter,
-  enumFilter,
-  idMenuFilter,
-  listSearchSchema,
-  scopeFilter,
-  useListSearch,
-  type ListFilter,
-} from "@/lib/list-search";
+import { useListSearch } from "@/lib/list-search";
+import { auditLogFilters as filters } from "@/screens/list-searches";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
 import { StatusChip } from "@/components/ui/status-chip";
 
@@ -30,56 +23,6 @@ const ACTION_WEIGHT = {
   update: "silent",
   delete: "ink",
 } as const;
-
-/**
- * Named after the parameters `GET /audit-logs/` declares, so what is in the
- * address bar and what is in the request are the same list of names.
- *
- * All six the endpoint offers are here. A trail is opened when something has
- * gone wrong and someone is working out what happened, and the questions they
- * arrive with are which record, who, what kind of change, and when — so a
- * filter that exists on the endpoint and not on the screen is a question that
- * has to be answered by scrolling.
- *
- * `user_id` and `record_id` take ids rather than a fixed set of values, so
- * neither can list its options here: this module is evaluated when the router
- * is built, long before a colleague list has been fetched. They narrow on the
- * shape of an id instead, and the actor menu is handed its options below.
- */
-const filters: ListFilter[] = [
-  enumFilter({
-    param: "table_name",
-    labelKey: "auditLog.fields.tableName",
-    namespace: "auditLog.table",
-    values: [
-      "elevator",
-      "building",
-      "complex",
-      "customer",
-      "customer_contact",
-      "contract",
-      "contract_elevator",
-      "user",
-      "company",
-      "attachment",
-    ],
-  }),
-  enumFilter({
-    param: "action",
-    labelKey: "auditLog.fields.action",
-    namespace: "auditLog.action",
-    values: ["create", "update", "delete"],
-  }),
-  idMenuFilter({ param: "user_id", labelKey: "auditLog.fields.actor" }),
-  dateFilter({ param: "since", labelKey: "auditLog.fields.since" }),
-  dateFilter({ param: "until", labelKey: "auditLog.fields.until" }),
-  // Arrives on a link — "view all history" on a record's own screen — rather
-  // than being picked here. Shown as a chip so a list narrowed to one lift
-  // never reads as the firm's whole trail.
-  scopeFilter({ param: "record_id", labelKey: "auditLog.recordScope" }),
-];
-
-export const auditLogListSearch = listSearchSchema(filters);
 
 /**
  * The last moment of a chosen day, spelled out rather than computed.
