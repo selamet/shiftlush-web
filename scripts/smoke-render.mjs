@@ -18,6 +18,7 @@
  * running outside a browser.
  */
 import { createServer } from "vite";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { installMockApi, requested } from "./mock-api.mjs";
 import { renderToString } from "react-dom/server";
 import React from "react";
@@ -355,8 +356,45 @@ try {
   } else {
     console.log("  OK    anonymous visitor asks only whether they have a session");
   }
+  // The styleguide renders above, on a dev server, which is the only place it
+  // is a route at all — `router.tsx` builds it inside an `import.meta.env.DEV`
+  // branch so the production build folds the whole thing away. That is the
+  // half a render check cannot see: it proves the page still works for whoever
+  // is building the interface, and says nothing about what shipped.
+  //
+  // So the built output is read instead. `npm run verify` runs the build
+  // immediately before this script, so `dist/` is the build being checked; a
+  // bare `npm run smoke` has no build to look at and this is skipped rather
+  // than failed.
+  //
+  // Asserted on a fixture value rather than on a filename, because a chunk
+  // called `StyleGuide-*.js` is not the failure worth catching — the failure is
+  // demo records reaching a technician's phone, whatever the chunk is named.
+  failures += checkStyleguideStayedHome();
 } finally {
   await server.close();
+}
+
+/** Returns 1 if the development-only styleguide is in the production build. */
+function checkStyleguideStayedHome() {
+  const assets = "dist/assets";
+  if (!existsSync(assets)) {
+    console.log("  SKIP  no dist/ — run `npm run build` to check what production ships");
+    return 0;
+  }
+  const [demo] = JSON.parse(readFileSync("fixtures/demo-elevators.json", "utf8"));
+  const marker = demo.registration_number;
+  const leaked = readdirSync(assets)
+    .filter((name) => name.endsWith(".js"))
+    .filter((name) => readFileSync(`${assets}/${name}`, "utf8").includes(marker));
+
+  if (leaked.length > 0) {
+    console.error(`  FAIL  the styleguide's demo records shipped in ${leaked.join(", ")}`);
+    console.error("          /styleguide is for developers; production must not download it.");
+    return 1;
+  }
+  console.log("  OK    the styleguide and its demo records are not in the production build");
+  return 0;
 }
 
 if (failures > 0) {

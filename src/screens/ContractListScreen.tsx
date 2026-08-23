@@ -8,26 +8,10 @@ import { prerequisiteMissing } from "@/lib/prerequisite";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useSession } from "@/lib/session";
-import { enumFilter, listSearchSchema, useListSearch } from "@/lib/list-search";
+import { useListSearch } from "@/lib/list-search";
+import { contractFilters as filters } from "@/screens/list-searches";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
 import { ContractStatusChip } from "@/components/ui/status-chip";
-
-const filters = [
-  enumFilter({
-    param: "status",
-    labelKey: "contract.fields.status",
-    namespace: "contract.status",
-    values: ["draft", "active", "expired", "terminated", "renewed"],
-  }),
-  enumFilter({
-    param: "scope",
-    labelKey: "contract.fields.scope",
-    namespace: "contract.scope",
-    values: ["maintenance_only", "maintenance_and_repair", "full_coverage"],
-  }),
-];
-
-export const contractListSearch = listSearchSchema(filters);
 
 export function ContractListScreen() {
   const { t } = useTranslation();

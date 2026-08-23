@@ -5,21 +5,10 @@ import { customerListQuery, primaryContact, type Customer } from "@/api/queries"
 import { errorMessage, supportReference } from "@/api/errors";
 import { enumLabel } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
-import { booleanFilter, enumFilter, listSearchSchema, useListSearch } from "@/lib/list-search";
+import { useListSearch } from "@/lib/list-search";
+import { customerFilters as filters } from "@/screens/list-searches";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
 import { StatusChip } from "@/components/ui/status-chip";
-
-const filters = [
-  enumFilter({
-    param: "type",
-    labelKey: "customer.fields.type",
-    namespace: "customer.type",
-    values: ["complex_management", "building_management", "corporate", "public", "individual"],
-  }),
-  booleanFilter({ param: "is_active", labelKey: "customer.fields.isActive" }),
-];
-
-export const customerListSearch = listSearchSchema(filters);
 
 export function CustomerListScreen() {
   const { t } = useTranslation();

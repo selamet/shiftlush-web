@@ -6,30 +6,9 @@ import { buildingListQuery, type Building,
 import { errorMessage, supportReference } from "@/api/errors";
 import { prerequisiteMissing } from "@/lib/prerequisite";
 import { enumLabel } from "@/lib/i18n";
-import { booleanFilter, enumFilter, listSearchSchema, useListSearch } from "@/lib/list-search";
+import { useListSearch } from "@/lib/list-search";
+import { buildingFilters as filters } from "@/screens/list-searches";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
-
-const filters = [
-  enumFilter({
-    param: "type",
-    labelKey: "building.fields.type",
-    namespace: "building.type",
-    values: [
-      "residential",
-      "commercial",
-      "mixed_use",
-      "public",
-      "hospital",
-      "mall",
-      "hotel",
-      "school",
-      "industrial",
-    ],
-  }),
-  booleanFilter({ param: "is_active", labelKey: "building.fields.isActive" }),
-];
-
-export const buildingListSearch = listSearchSchema(filters);
 
 export function BuildingListScreen() {
   const { t } = useTranslation();
