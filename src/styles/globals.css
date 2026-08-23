@@ -289,7 +289,11 @@
      a `gap-*` at each call site because a call site can forget it and this
      cannot. `gap-*` on the parent adds to it, so the separation is never less
      than the minimum — call sites that already space these buttons should drop
-     their own gap rather than stack a second one on top. */
+     their own gap rather than stack a second one on top.
+     Under `pointer: coarse` the icon button grows to 34px, so the overlap
+     there is (40 - 34) / 2 * 2 = 6px and this 12px is a surplus. Deliberately
+     left as it is: too much separation costs a few pixels of row width, too
+     little dispatches a tap to the button next door. */
   .hit-40 + .hit-40 {
     margin-inline-start: calc(var(--sl-hit-target) - var(--spacing-control-xs));
   }

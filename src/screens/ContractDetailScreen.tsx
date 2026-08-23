@@ -1179,12 +1179,12 @@ export function ContractDetailScreen() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2 text-body">
-              <input type="checkbox" defaultChecked className="size-4 rounded-xs accent-primary" />
+            <label className="flex min-h-10 items-center gap-2 text-body">
+              <input type="checkbox" defaultChecked className="checkbox" />
               {t("contractDetail.renewCarryElevators", { count: lines.length })}
             </label>
-            <label className="flex items-center gap-2 text-body">
-              <input type="checkbox" defaultChecked className="size-4 rounded-xs accent-primary" />
+            <label className="flex min-h-10 items-center gap-2 text-body">
+              <input type="checkbox" defaultChecked className="checkbox" />
               {t("contractDetail.renewCopyTerms")}
             </label>
           </div>

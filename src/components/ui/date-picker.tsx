@@ -279,10 +279,50 @@ export function DatePicker({
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (disabled) return;
 
-    if (event.key === "Escape") {
-      if (!open) return;
+    /**
+     * What the "today" button does, for someone who never reaches it.
+     *
+     * The button sits inside the calendar and outside the tab order, so
+     * without a binding the only keyboard route to today is knowing the date
+     * and typing it — and once a date is already in the box there is no route
+     * at all, because opening the calendar puts the cursor on the selected day
+     * rather than on today.
+     *
+     * A chord rather than a letter: this is a text box, and every printable
+     * key belongs to whoever is typing a date into it. `Home` is already the
+     * calendar's word for "the edge of the month"; with Ctrl it is the edge of
+     * the calendar that moves instead — today, whatever month is on screen.
+     * Nothing unique is lost: in a single-line input Ctrl+Home does what Home
+     * does, and Home still does it.
+     */
+    if ((event.ctrlKey || event.metaKey) && event.key === "Home") {
       event.preventDefault();
-      closeCalendar();
+      if (!unavailable(today)) choose(today);
+      return;
+    }
+
+    if (event.key === "Escape") {
+      if (open) {
+        event.preventDefault();
+        closeCalendar();
+        return;
+      }
+
+      /**
+       * And what the clear button does, for the same reason.
+       *
+       * The editable-combobox binding: Escape dismisses the popup, and Escape
+       * with no popup left to dismiss empties the box. Only when there is
+       * something to empty — an already-blank field lets the key through, so
+       * inside a dialog Escape still closes the dialog rather than dead-ending
+       * on a field that has nothing to say.
+       */
+      if (!text && !selected) return;
+      event.preventDefault();
+      // The dialog this field may be sitting in listens on `document`. This
+      // press was spent on the field.
+      event.stopPropagation();
+      clear();
       return;
     }
 
@@ -368,6 +408,10 @@ export function DatePicker({
           aria-activedescendant={open ? dayId(cursor) : undefined}
           aria-describedby={describedBy}
           aria-invalid={invalid || undefined}
+          // Announced by the screen reader on the field itself, because the two
+          // controls these stand in for are not in the tab order and a keyboard
+          // user would otherwise have to guess that they have keys at all.
+          aria-keyshortcuts="Alt+ArrowDown Control+Home Escape"
           required={required}
           disabled={disabled}
           placeholder={t("datePicker.placeholder")}
@@ -388,10 +432,15 @@ export function DatePicker({
           )}
         />
 
-        {/* Both sit outside the tab order on purpose: the combobox already
-            announces that it opens a calendar, and Alt+Down opens it, so a
-            keyboard user gaining two extra stops per date field would be paying
-            for an affordance they do not need. They are pointer targets. */}
+        {/* Both sit outside the tab order on purpose: a keyboard user gaining
+            two extra stops per date field would be paying for an affordance
+            they do not need. They are pointer targets — and every one of them
+            now has a key on the field instead, which is the half that was
+            missing. Alt+Down opens the calendar, Escape empties the box, and
+            they keep focus where the whole component wants it, in the text
+            box. A tab stop could not: the calendar is open while the user is
+            typing, so a stop inside it would land between two form fields at
+            exactly the moment someone is tabbing to the next one. */}
         <div
           onMouseDown={(event) => event.preventDefault()}
           className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center"
@@ -401,6 +450,7 @@ export function DatePicker({
               type="button"
               tabIndex={-1}
               aria-label={t("datePicker.clear")}
+              aria-keyshortcuts="Escape"
               onClick={clear}
               className="hit-40 flex size-8 items-center justify-center rounded-md text-subtle transition-colors hover:bg-muted hover:text-foreground pointer-coarse:size-10"
             >
@@ -412,6 +462,7 @@ export function DatePicker({
             tabIndex={-1}
             disabled={disabled}
             aria-label={t("datePicker.open")}
+            aria-keyshortcuts="Alt+ArrowDown"
             onClick={() => (open ? closeCalendar() : openCalendar())}
             className="hit-40 flex size-8 items-center justify-center rounded-md text-subtle transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed pointer-coarse:size-10"
           >
@@ -433,6 +484,7 @@ export function DatePicker({
               type="button"
               tabIndex={-1}
               aria-label={t("datePicker.previousMonth")}
+              aria-keyshortcuts="PageUp"
               onClick={() => setCursor(addMonths(cursor, -1))}
               className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground pointer-coarse:size-11"
             >
@@ -449,6 +501,7 @@ export function DatePicker({
               type="button"
               tabIndex={-1}
               aria-label={t("datePicker.nextMonth")}
+              aria-keyshortcuts="PageDown"
               onClick={() => setCursor(addMonths(cursor, 1))}
               className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground pointer-coarse:size-11"
             >
@@ -530,11 +583,22 @@ export function DatePicker({
           <button
             type="button"
             tabIndex={-1}
+            aria-keyshortcuts="Control+Home"
             onClick={() => choose(today)}
             disabled={unavailable(today)}
-            className="mt-2 h-control-sm w-full rounded-md border border-border text-body text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:h-control-md"
+            className="mt-2 flex h-control-sm w-full items-center justify-center gap-2 rounded-md border border-border text-body text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:h-control-md"
           >
             {t("datePicker.today")}
+            {/* Printed on the control it belongs to, because a shortcut nobody
+                is told about is a shortcut nobody has. Hidden on a coarse
+                pointer: that keyboard has no Ctrl key, and the button is right
+                there under the thumb anyway. */}
+            <kbd
+              aria-hidden="true"
+              className="font-sans text-help text-subtle pointer-coarse:hidden"
+            >
+              {t("datePicker.todayShortcut")}
+            </kbd>
           </button>
         </div>
       )}
