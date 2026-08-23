@@ -137,14 +137,14 @@ const EXPECT_HIDDEN = {
 };
 
 const EXPECT = {
-  "/customers": "Çamlıca",
-  "/customers/c1": "Çamlıca",
+  "/customers": "Dadaş",
+  "/customers/c1": "Dadaş",
   // The edit form must arrive with the record already in its inputs; an empty
   // form here would mean the loader or the defaultValue wiring is broken.
-  "/customers/c1/edit": "Çamlıca",
+  "/customers/c1/edit": "Dadaş",
   // The contact form is reached through the customer, so it has to name the
   // customer; and the edit form has to arrive with the contact in its inputs.
-  "/customers/c1/contacts/new": "Çamlıca",
+  "/customers/c1/contacts/new": "Dadaş",
   "/customers/c1/contacts/c1-contact-1": "Ayşe Demir",
   // An individual customer, so the half of the form only they see is actually
   // rendered rather than only type-checked. The label is the tell: a TC field
@@ -161,19 +161,19 @@ const EXPECT = {
   // A resolved label names the lift before the thirty-one-field record lands.
   // Asserting the number as well as the name catches the narrowed `by-qr`
   // response being read as though it were the full one.
-  "/q/qr-demo-token": ["Sol asansör", "34-2019-004512"],
+  "/q/qr-demo-token": ["Sol asansör", "25-2019-004512"],
   // The half that matters. Every token but one is a 404 from the mock, which is
   // what the server answers for an unknown label and for another firm's alike —
   // and the screen has to turn that into something a person can act on rather
   // than into a raw error.
   "/q/qr-unknown-token": ["Bu QR bir asansöre çözümlenmedi", "Kimlik numarasıyla bul"],
   "/buildings": "Blok",
-  "/complexes": "Çamlıca Konakları",
+  "/complexes": "Dadaş Konakları",
   // The blocks inside the estate, not the estate's own name: this asserts the
   // related list came back from the server's `complex` filter rather than the
   // card falling through to its empty state.
   "/complexes/s1": "Blok",
-  "/complexes/s1/edit": "Çamlıca Konakları",
+  "/complexes/s1/edit": "Dadaş Konakları",
   // An empty complex, which is the only kind that may be deleted. s1 has
   // blocks in it and renders the refusal instead, so without this the
   // button is never rendered by anything.
@@ -200,9 +200,9 @@ const EXPECT = {
   "/contracts/k-zerovat": ["KDV uygulanmıyor", "1.800,00"],
   // The edit form must arrive with the record in its inputs, on the tab that
   // is showing and on the ones that are not.
-  "/elevators/e1/edit": "34-2019",
-  "/elevators": "34-2018",
-  "/elevators/e1": "34-2019",
+  "/elevators/e1/edit": "25-2019",
+  "/elevators": "25-2018",
+  "/elevators/e1": "25-2019",
   // Two independent sections on one screen: the colleagues table, and the
   // pending invitations underneath it.
   "/users": ["Hakan Çelik", "nur.aydin@yukselisasansor.com", "Süresi doldu"],
@@ -213,12 +213,12 @@ const EXPECT = {
   "/users/u2": ["Ayşe Demir", "Kendinizi pasifleştiremezsiniz."],
   // The assignment panel is the reason a technician has a page at all, and a
   // customer name proves it rendered its list rather than a loading line.
-  "/users/u3": ["Hakan Çelik", "Çamlıca", "Atanmış müşteriler", "Pasifleştir"],
+  "/users/u3": ["Hakan Çelik", "Dadaş", "Atanmış müşteriler", "Pasifleştir"],
   // The company record has to arrive in the inputs, and for every role: the
   // four differ only in whether the fields can be written. A screen that filled
   // the form for the owner and left it empty for everybody else would pass a
   // check that only looked at one of them.
-  "/settings": ["Yükseliş Asansör Bakım ve Servis Ltd. Şti.", "Barbaros Bulvarı"],
+  "/settings": ["Yükseliş Asansör Bakım ve Servis Ltd. Şti.", "Cumhuriyet Caddesi"],
   // Three independent things on the profile tab, so three assertions. The
   // password form has to be a form and not the sentence it replaced; the
   // session list has to have read the three rows the mock serves — the device

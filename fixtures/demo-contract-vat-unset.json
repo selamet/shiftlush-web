@@ -2,7 +2,7 @@
   "id": "k-novat",
   "contract_number": "2025-0091",
   "customer_id": "c2",
-  "customer_name": "Ataşehir Ofis Kule A.Ş.",
+  "customer_name": "Erzurum Ticaret Merkezi A.Ş.",
   "status": "active",
   "scope": "maintenance_only",
   "start_date": "2025-09-01",
@@ -28,7 +28,7 @@
     {
       "id": "line-nv-1",
       "elevator_id": "e1",
-      "registration_number": "34-2019-004511",
+      "registration_number": "25-2019-004511",
       "elevator_name": "Sol Kabin",
       "building_name": "Kule A",
       "unit_price": "1200.00",
@@ -38,7 +38,7 @@
     {
       "id": "line-nv-2",
       "elevator_id": "e2",
-      "registration_number": "34-2019-004512",
+      "registration_number": "25-2019-004512",
       "elevator_name": "Sağ Kabin",
       "building_name": "Kule A",
       "unit_price": "1200.00",

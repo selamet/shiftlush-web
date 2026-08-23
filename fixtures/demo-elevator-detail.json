@@ -1,10 +1,10 @@
 {
   "id": "e1",
   "building_id": "b1",
-  "building_name": "Çamlıca Konakları A Blok",
+  "building_name": "A Blok",
   "customer_id": "c1",
-  "customer_name": "Çamlıca Konakları Site Yönetimi",
-  "complex_name": "Çamlıca Konakları",
+  "customer_name": "Dadaş Konakları Site Yönetimi",
+  "complex_name": "Dadaş Konakları",
   "category": "passenger",
   "drive_type": "gearless_electric",
   "control_type": "full_collective",
@@ -39,7 +39,7 @@
     "end_date": "2027-01-31",
     "unit_price": "1250.00"
   },
-  "registration_number": "34-2019-004512",
+  "registration_number": "25-2019-004512",
   "name": "Sol asansör",
   "qr_token": "7Kd93Pm2",
   "status": "active",
