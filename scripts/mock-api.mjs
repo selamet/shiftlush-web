@@ -177,10 +177,14 @@ function resolve(path, search, method, body) {
 
   if (path === "/api/v1/audit-logs/") return page(fixture("demo-audit-logs-elevator"));
 
+  // The address typeahead, answering with the town the rest of these fixtures
+  // are in. The ids are the real ones from the address dataset — 25 is
+  // Erzurum's plate code and therefore its primary key — so what a form picks
+  // here is a row the server would also have.
   if (path === "/api/v1/provinces/") {
     return [
+      { id: 25, name: "Erzurum", legal_name: "Erzurum", display_name: "Erzurum" },
       { id: 34, name: "İstanbul", legal_name: "İstanbul", display_name: "İstanbul" },
-      { id: 6, name: "Ankara", legal_name: "Ankara", display_name: "Ankara" },
     ];
   }
   if (path === "/api/v1/districts/") {
@@ -188,7 +192,7 @@ function resolve(path, search, method, body) {
     // Mirrors the server: no province, no answer. A mock that returned the
     // whole list would let the client skip a step the API refuses to skip.
     if (!province) return [];
-    return [{ id: 3401, province_id: province, name: "Kadıköy" }];
+    return [{ id: 2045, province_id: province, name: "Yakutiye" }];
   }
   if (path === "/api/v1/neighborhoods/") {
     const district = Number(search.get("district"));
@@ -196,12 +200,12 @@ function resolve(path, search, method, body) {
     if (!district || term.length < 2) return [];
     return [
       {
-        id: 340101,
+        id: 21659,
         district_id: district,
-        district_name: "Kadıköy",
-        province_name: "İstanbul",
-        name: "Caferağa",
-        postal_code: "34710",
+        district_name: "Yakutiye",
+        province_name: "Erzurum",
+        name: "Muratpaşa",
+        postal_code: "25100",
         type: "neighborhood",
       },
     ];

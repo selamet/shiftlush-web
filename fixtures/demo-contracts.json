@@ -8,7 +8,7 @@
     "monthly_fee": "4750.00",
     "elevator_count": 4,
     "customer_id": "c1",
-    "customer_name": "Çamlıca Konakları Site Yönetimi"
+    "customer_name": "Dadaş Konakları Site Yönetimi"
   },
   {
     "id": "k2",
@@ -17,9 +17,9 @@
     "scope": "full_coverage",
     "end_date": "2027-03-31T00:00:00Z",
     "monthly_fee": "9800.00",
-    "elevator_count": 14,
+    "elevator_count": 4,
     "customer_id": "c2",
-    "customer_name": "Ataşehir Ofis Kule A.Ş."
+    "customer_name": "Erzurum Ticaret Merkezi A.Ş."
   },
   {
     "id": "k3",
@@ -28,9 +28,9 @@
     "scope": "maintenance_only",
     "end_date": "2026-05-31T00:00:00Z",
     "monthly_fee": "5100.00",
-    "elevator_count": 17,
+    "elevator_count": 6,
     "customer_id": "c4",
-    "customer_name": "Nurtepe Sitesi Yönetimi"
+    "customer_name": "Ufuk Konutları Yönetimi"
   },
   {
     "id": "k4",
@@ -41,7 +41,7 @@
     "monthly_fee": "3200.00",
     "elevator_count": 9,
     "customer_id": "c3",
-    "customer_name": "Bahçelievler Belediyesi"
+    "customer_name": "Erzurum Belediyesi"
   },
   {
     "id": "k5",
@@ -52,7 +52,7 @@
     "monthly_fee": "1400.00",
     "elevator_count": 1,
     "customer_id": "c5",
-    "customer_name": "Yıldız Apartmanı Yönetimi"
+    "customer_name": "Şelale Apartmanı Yönetimi"
   },
   {
     "id": "k6",
@@ -63,6 +63,6 @@
     "monthly_fee": "4200.00",
     "elevator_count": 4,
     "customer_id": "c1",
-    "customer_name": "Çamlıca Konakları Site Yönetimi"
+    "customer_name": "Dadaş Konakları Site Yönetimi"
   }
 ]
