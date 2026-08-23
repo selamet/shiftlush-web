@@ -212,6 +212,30 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
 }
 
 /**
+ * One attempt, with the two failures `fetch` reports by throwing turned into
+ * something a screen already knows how to read.
+ *
+ * A function rather than an inline try/catch, and that is the whole point of
+ * it: every attempt has to be wrapped, and an attempt that is not throws a raw
+ * TypeError. Screens and `useSubmit` only ever narrow to `ApiError`, so an
+ * unwrapped attempt surfaces as an unhandled failure instead of "connection
+ * lost". The wrapping used to sit around the first attempt only, which left the
+ * post-refresh replay — the attempt most likely to be running on a connection
+ * that is already struggling — outside it.
+ */
+async function attempt(path: string, options: RequestOptions): Promise<Response> {
+  try {
+    return await send(path, options);
+  } catch (error) {
+    // An aborted request is the caller changing its mind, not a failure to
+    // report; letting it surface as NETWORK_ERROR would flash an error toast
+    // every time someone types in a search box.
+    if (error instanceof DOMException && error.name === "AbortError") throw error;
+    throw new ApiError({ code: "NETWORK_ERROR", status: 0 });
+  }
+}
+
+/**
  * One request, with the token attached and one silent retry after a refresh.
  *
  * Retried exactly once. A second 401 after a successful refresh means the
@@ -224,16 +248,7 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
  * the refresh and the error envelope in it — the part that must not exist twice.
  */
 async function sendWithAuth(path: string, options: RequestOptions): Promise<Response> {
-  let response: Response;
-  try {
-    response = await send(path, options);
-  } catch (error) {
-    // An aborted request is the caller changing its mind, not a failure to
-    // report; letting it surface as NETWORK_ERROR would flash an error toast
-    // every time someone types in a search box.
-    if (error instanceof DOMException && error.name === "AbortError") throw error;
-    throw new ApiError({ code: "NETWORK_ERROR", status: 0 });
-  }
+  let response = await attempt(path, options);
 
   if (response.status === 401 && !options.anonymous) {
     const refreshed = await refreshAccessToken();
@@ -242,7 +257,7 @@ async function sendWithAuth(path: string, options: RequestOptions): Promise<Resp
       onSessionLost?.();
       throw await toApiError(response);
     }
-    response = await send(path, options);
+    response = await attempt(path, options);
   }
 
   if (!response.ok) throw await toApiError(response);
