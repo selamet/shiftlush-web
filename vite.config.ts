@@ -54,10 +54,33 @@
  * which `vercel.json` serves `immutable`, so a replacement that kept the same
  * name would be a face no returning browser would ever pick up.
  * ---------------------------------------------------------------------------
+ * Why there is a service worker, and why it never reloads the page
+ *
+ * A technician opens the app in a basement. Without a service worker, a reload
+ * there — or the phone evicting the tab — is a blank page, and the visit they
+ * had saved to the outbox (src/lib/outbox.ts) sits on the device with no app
+ * to send it. The worker precaches the built shell, so the app opens with no
+ * signal and the outbox drains once the signal is back.
+ *
+ * It caches the shell and nothing else. API responses are never cached: the
+ * API is another origin, and a screen of yesterday's maintenance dates
+ * presented as today's is worse than one that says it cannot load.
+ *
+ * `registerType: "prompt"` with no prompt, so a new version waits until every
+ * tab of the app is closed and takes over on the next open. The alternative,
+ * `autoUpdate`, reloads the page when a deploy lands — in the middle of a
+ * half-filled checklist, on the one screen where losing typed answers is the
+ * failure everything else here exists to prevent.
+ *
+ * The icons are the sidebar's brand mark on the primary violet, rendered from
+ * SVG with rsvg-convert: `any` on a rounded tile, `maskable` full-bleed with
+ * the mark inside the 80% safe zone so a circular launcher mask cannot clip it.
+ * ---------------------------------------------------------------------------
  */
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { VitePWA } from "vite-plugin-pwa";
 import path from "node:path";
 
 /**
@@ -122,7 +145,48 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, import.meta.dirname, "VITE_");
 
   return {
-    plugins: [react(), tailwindcss(), apiPreconnect(env.VITE_API_URL)],
+    plugins: [
+      react(),
+      tailwindcss(),
+      apiPreconnect(env.VITE_API_URL),
+      VitePWA({
+        registerType: "prompt",
+        // A plain <script> in index.html: no virtual module for the app to
+        // import, so nothing under src/ — or the render smoke check that runs
+        // it under Node — has to know a worker exists.
+        injectRegister: "script-defer",
+        includeAssets: ["icons/apple-touch-icon.png"],
+        manifest: {
+          name: "ShiftLush",
+          short_name: "ShiftLush",
+          lang: "tr",
+          start_url: "/",
+          scope: "/",
+          display: "standalone",
+          background_color: "#16171c",
+          theme_color: "#5a3bd4",
+          icons: [
+            { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+            { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+            {
+              src: "/icons/icon-maskable-512.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "maskable",
+            },
+          ],
+        },
+        workbox: {
+          globPatterns: ["**/*.{js,css,html,woff2,png,svg}"],
+          // Every route is the same index.html (see vercel.json), so a
+          // navigation with no signal is answered with the cached shell.
+          navigateFallback: "/index.html",
+          // The styleguide is not in the production build; nothing else is
+          // excluded. No runtimeCaching on purpose — see the note above.
+          cleanupOutdatedCaches: true,
+        },
+      }),
+    ],
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "./src"),
