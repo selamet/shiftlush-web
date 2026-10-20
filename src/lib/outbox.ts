@@ -28,7 +28,12 @@ import { ApiError } from "@/api/client";
 
 export type OutboxKind = "maintenance-visit";
 
-export type OutboxState = "pending" | "needs-attention";
+/**
+ * `delivered-with-gaps`: the record reached the server, but the server refused
+ * some of its photos. Nothing is left to send; the entry stays only so the
+ * person who took those photos is told, until they dismiss it (#99).
+ */
+export type OutboxState = "pending" | "needs-attention" | "delivered-with-gaps";
 
 export interface OutboxPhoto {
   name: string;
@@ -241,7 +246,10 @@ export type Attempt =
  * One send of one entry, and what it leaves behind.
  *
  * Sent: the entry is removed, and the progress the sender saved — the id of
- * the record it created — is handed back. Queued: the failure was the network
+ * the record it created — is handed back. If the sender had to skip photos the
+ * server refused, the entry is kept as `delivered-with-gaps` instead: a send
+ * the drain made in the background has nobody watching it, and deleting the
+ * entry would delete the only trace that a photo never arrived. Queued: the failure was the network
  * or the server, so the entry waits for its back-off. Refused: the server said
  * no, and the entry is marked as needing attention.
  *
@@ -261,7 +269,12 @@ export async function attemptEntry(
   };
   try {
     await send(entry, saveProgress);
-    await discardEntry(entry.id);
+    if (entry.progress.photosSkipped?.length) {
+      entry.state = "delivered-with-gaps";
+      await saveEntry(entry);
+    } else {
+      await discardEntry(entry.id);
+    }
     return { outcome: "sent", progress: entry.progress };
   } catch (error) {
     entry.attempts += 1;

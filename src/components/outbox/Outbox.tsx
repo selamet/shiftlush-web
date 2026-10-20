@@ -55,10 +55,17 @@ export function OutboxIndicator({ userId }: { userId: string | null }) {
   const entries = useOutboxEntries(userId);
   if (entries.length === 0) return null;
 
-  const attention = entries.some((entry) => entry.state === "needs-attention");
-  const label = attention
+  const refused = entries.some((entry) => entry.state === "needs-attention");
+  const gaps = entries.filter((entry) => entry.state === "delivered-with-gaps").length;
+  const waiting = entries.length - gaps;
+  // A delivered visit with missing photos is not "waiting" — saying so would
+  // send someone looking for a visit that already arrived.
+  const attention = refused || gaps > 0;
+  const label = refused
     ? t("outbox.indicatorAttention", { count: entries.length })
-    : t("outbox.indicator", { count: entries.length });
+    : waiting > 0
+      ? t("outbox.indicator", { count: waiting })
+      : t("outbox.indicatorGaps", { count: gaps });
   const Icon = attention ? TriangleAlert : CloudUpload;
 
   return (

@@ -297,6 +297,33 @@ describe("attemptEntry — the form's own first try", () => {
   });
 });
 
+describe("a send that lost photos on the way (#99)", () => {
+  const skippingSend: Sender = async (entry, saveProgress) => {
+    await saveProgress({ ...entry.progress, recordId: "visit-7", photosSkipped: ["huge.heic"] });
+  };
+
+  it("keeps the entry as a note instead of deleting the only trace", async () => {
+    const entry = await addEntry(visit("a"), NOW);
+
+    const attempt = await attemptEntry(entry, skippingSend, NOW);
+
+    expect(attempt.outcome).toBe("sent");
+    const [kept] = await listEntries("user-1");
+    expect(kept.state).toBe("delivered-with-gaps");
+    expect(kept.progress).toMatchObject({ recordId: "visit-7", photosSkipped: ["huge.heic"] });
+  });
+
+  it("is never sent again by the drain", async () => {
+    await addEntry(visit("a"), NOW);
+    const send = vi.fn(skippingSend);
+
+    await drainOutbox("user-1", send, NOW);
+    await drainOutbox("user-1", send, NOW + 3600_000, { ignoreBackoff: true });
+
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("classifyFailure", () => {
   it.each([
     [offline(), "retry"],
