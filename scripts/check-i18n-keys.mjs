@@ -79,7 +79,7 @@ const RUNTIME_NAMESPACES = [
   "visit.status",
   "visit.checklistItem",
   "visit.checklistResult",
-  "visit.photoState",
+  "outbox.kind",
   "errors",
 ];
 

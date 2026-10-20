@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, TriangleAlert } from "lucide-react";
 import { visitAttachmentsQuery, visitKeys, visitQuery, type MaintenanceVisit } from "@/api/queries";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { CHECKLIST_ITEMS, attentionCount, canReadVisits } from "@/lib/visit";
 import type { Role } from "@/components/layout/nav-config";
 import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
+import { Alert } from "@/components/ui/alert";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { ChecklistResultChip, VisitStatusChip } from "@/components/ui/status-chip";
 import { VisitsRestricted } from "@/components/visits/VisitsRestricted";
@@ -59,6 +60,12 @@ export function VisitDetailScreen() {
   const { t } = useTranslation();
   const { id } = useParams({ strict: false }) as { id?: string };
   const { role, userId } = useSession();
+  const search = useSearch({ strict: false }) as { photosSkipped?: unknown };
+  // Set by the visit form when the server refused some of the photos sent with
+  // this visit. Narrowed rather than trusted: it arrives in the address bar.
+  const photosSkipped = Array.isArray(search.photosSkipped)
+    ? search.photosSkipped.filter((name): name is string => typeof name === "string")
+    : [];
   const visitId = id ?? "";
   const canRead = canReadVisits(role);
 
@@ -131,6 +138,19 @@ export function VisitDetailScreen() {
           {visit.elevator_name}
         </Link>
       </div>
+
+      {/* Up here rather than beside the photos: it is what the person arriving
+          from the form most needs to know, and the photos are a scroll away. */}
+      {photosSkipped.length > 0 && (
+        <Alert
+          tone="warning"
+          block
+          title={t("visit.photosSkipped", { count: photosSkipped.length })}
+        >
+          <p>{photosSkipped.join(", ")}</p>
+          <p className="text-help">{t("visit.photosSkippedHint")}</p>
+        </Alert>
+      )}
 
       <section className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border-subtle bg-border-subtle sm:grid-cols-3">
         {facts.map(([label, value]) => (

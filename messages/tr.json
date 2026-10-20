@@ -153,14 +153,12 @@
     "title": "Bakım kayıtları",
     "record": "Bakım kaydı gir",
     "save": "Bakım kaydını kaydet",
-    "saved": "Bakım kaydı kaydedildi",
     "detailTitle": "Bakım kaydı — {{date}}",
     "empty": "Henüz bakım kaydı yok",
     "restricted": "Bakım kayıtları rolünüzde görünmüyor",
     "restrictedHint": "Bakım kayıtlarını firma sahibi, yöneticiler, operasyon ekibi ve teknisyenler görebilir.",
     "noContract": "Aktif sözleşme yok — bakım kaydı girilemez.",
     "backToElevator": "Asansöre dön",
-    "openSaved": "Bakım kaydını aç",
     "maintenance": "Bakım",
     "lastMaintenance": "Son bakım",
     "nextMaintenance": "Sonraki bakım",
@@ -189,15 +187,6 @@
     "photoLimit": "En fazla {{count}} fotoğraf eklenebilir",
     "photoType": "Bu dosya türü kabul edilmiyor. JPEG, PNG veya WebP fotoğraf ekleyin",
     "photoTooLarge": "Fotoğraf 10 MB'den büyük olamaz",
-    "photosSending": "Fotoğraflar yükleniyor…",
-    "photosFailed": "{{count}} fotoğraf yüklenemedi",
-    "photosFailedHint": "Bakım kaydı kaydedildi; yalnızca bu fotoğraflar eksik. Şimdi tekrar deneyebilir ya da daha sonra bakım kaydının sayfasından ekleyebilirsiniz.",
-    "retryPhotos": "Fotoğrafları tekrar yükle",
-    "photoState": {
-      "waiting": "Sırada",
-      "sending": "Yükleniyor…",
-      "sent": "Yüklendi"
-    },
     "fields": {
       "visitDate": "Bakım tarihi",
       "visitDateAfter": "Bakım tarihi (başlangıç)",
@@ -240,6 +229,39 @@
       "pit_condition": "Kuyu dibi durumu ve temizliği",
       "machine_room_condition": "Makine dairesi durumu ve havalandırma",
       "earthing_grounding": "Topraklama"
+    },
+    "queued": "Bağlantı yok — kayıt cihazda saklandı, bağlantı gelince otomatik gönderilecek.",
+    "queuedHint": "Uygulamayı kapatabilir ya da başka asansöre geçebilirsiniz. Bekleyen kayıtları üst çubuktaki “Gönderilmeyi bekliyor” bağlantısından görebilirsiniz.",
+    "openOutbox": "Bekleyen kayıtlar",
+    "photosSkipped": "{{count}} fotoğraf sunucu tarafından kabul edilmedi",
+    "photosSkippedHint": "Bakım kaydı kaydedildi. Bu fotoğrafları aşağıdaki Fotoğraflar bölümünden yeniden ekleyebilirsiniz."
+  },
+  "outbox": {
+    "title": "Gönderilmeyi bekleyenler",
+    "intro": "Bu cihazda kaydedilen ama henüz sunucuya ulaşmayan kayıtlar. Bağlantı gelince kendiliğinden gönderilirler.",
+    "indicator": "Gönderilmeyi bekliyor ({{count}})",
+    "indicatorAttention": "Gönderilemeyen kayıt var ({{count}})",
+    "tryNow": "Şimdi dene",
+    "sending": "Gönderiliyor…",
+    "empty": "Gönderilmeyi bekleyen kayıt yok",
+    "emptyHint": "Bağlantı yokken kaydettiğiniz bakım kayıtları burada bekler.",
+    "photoCount": "{{count}} fotoğraf",
+    "lastAttempt": "Son deneme başarısız ({{count}}. deneme): {{message}}",
+    "attentionHint": "Sunucu bu kaydı kabul etmedi; tekrar göndermek aynı sonucu verir. Kaydı silip asansör sayfasından yeniden girin.",
+    "discard": "Sil",
+    "discardTitle": "“{{label}}” kaydı silinsin mi?",
+    "discardBody": "Bu kayıt henüz sunucuya ulaşmadı; tek kopyası bu cihazda.",
+    "discardConsequence": "Silinen kayıt geri getirilemez ve hiçbir zaman gönderilmez.",
+    "resultSent": "{{count}} kayıt gönderildi.",
+    "resultRetrying": "{{count}} kayıt hâlâ gönderilemedi; bağlantı gelince yeniden denenecek.",
+    "resultRefused": "{{count}} kayıt sunucu tarafından kabul edilmedi.",
+    "resultNothing": "Gönderilecek kayıt yoktu.",
+    "state": {
+      "pending": "Sırada",
+      "needsAttention": "İnceleme gerekiyor"
+    },
+    "kind": {
+      "maintenance-visit": "Bakım kaydı"
     }
   },
   "contract": {

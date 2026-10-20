@@ -8,13 +8,14 @@ import { useTheme } from "@/lib/theme";
 import { enumLabel } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { OutboxDriver, OutboxIndicator } from "@/components/outbox/Outbox";
 import { UserMenu } from "./UserMenu";
 import { Sidebar, SidebarNav, SidebarSkeleton } from "./Sidebar";
 import { ROLES, type Role } from "./nav-config";
 
 function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const { t } = useTranslation();
-  const { fullName, role, setRole } = useSession();
+  const { fullName, role, setRole, userId } = useSession();
   const { theme, toggle } = useTheme();
 
   return (
@@ -45,6 +46,7 @@ function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
       </label>
 
       <div className="ml-auto flex items-center gap-2">
+        <OutboxIndicator userId={userId} />
         {/* Dev affordance: the role normally comes from the session. It is
             exposed here so the role-scoped navigation and the hidden financial
             fields can be reviewed without five accounts. Remove once the real
@@ -99,7 +101,7 @@ function TopbarSkeleton() {
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
-  const { status, role } = useSession();
+  const { status, role, userId } = useSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // A drawer left open while the window grows into the desktop layout is
@@ -161,6 +163,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <SidebarNav role={role} />
         </Modal>
       )}
+
+      {/* Here rather than on the visit form: a record saved offline has to be
+          sent whichever screen the technician has moved on to, and only while
+          somebody is signed in to send it as. Not during restore, when there
+          is not yet a user to scope the outbox to. */}
+      {!restoring && <OutboxDriver userId={userId} />}
 
       <div className="flex min-w-0 flex-1 flex-col">
         {restoring ? <TopbarSkeleton /> : <Topbar onOpenMenu={() => setDrawerOpen(true)} />}

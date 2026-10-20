@@ -1,16 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, CheckCircle2, ChevronRight, Loader2, TriangleAlert, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import {
-  createVisit,
+  Camera,
+  CheckCircle2,
+  ChevronRight,
+  CloudOff,
+  Loader2,
+  QrCode,
+  TriangleAlert,
+  X,
+} from "lucide-react";
+import {
   elevatorKeys,
   elevatorQuery,
   visitKeys,
   visitTechniciansQuery,
   type Elevator,
-  type MaintenanceVisit,
   type MaintenanceVisitWrite,
 } from "@/api/queries";
 import type { MaintenanceVisitStatus } from "@/api/enums";
@@ -19,7 +26,15 @@ import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { toDisplay, todayIso } from "@/lib/date";
 import { enumLabel } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
-import { uploadAttachment, uploadRefusal } from "@/lib/upload";
+import {
+  addEntry,
+  attemptEntry,
+  discardEntry,
+  type OutboxEntry,
+  type OutboxProgress,
+} from "@/lib/outbox";
+import { uploadRefusal } from "@/lib/upload";
+import { sendVisit, type VisitOutboxEntry } from "@/lib/visit-outbox";
 import { cn } from "@/lib/utils";
 import {
   MAX_VISIT_PHOTOS,
@@ -30,7 +45,6 @@ import {
   submitBlocker,
   type Checklist,
 } from "@/lib/visit";
-import { describeUploadFailure } from "@/components/attachments/AttachmentsPanel";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -54,10 +68,26 @@ interface Photo {
   file: File;
   /** An object URL for the thumbnail; revoked when the photo leaves. */
   preview: string;
-  /** Minted per photo and kept across its retries — one file, one intention. */
-  idempotencyKey: string;
-  state: "waiting" | "sending" | "sent" | "failed";
-  error?: string;
+}
+
+/**
+ * What became of a submission that the server did not refuse.
+ *
+ * `sent` — the visit exists, with whatever photos the server took. `queued` —
+ * the connection did not hold, and the whole thing is on this device, waiting
+ * for the background drain. A refusal is neither: it is thrown, so the form
+ * shows it the way every form here shows a refusal.
+ */
+type Delivery =
+  | { kind: "sent"; recordId: string; photosSkipped: string[] }
+  | { kind: "queued" };
+
+function delivered(progress: OutboxProgress): Delivery {
+  return {
+    kind: "sent",
+    recordId: progress.recordId as string,
+    photosSkipped: progress.photosSkipped ?? [],
+  };
 }
 
 /**
@@ -144,8 +174,7 @@ export function VisitFormScreen() {
 function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { role, fullName } = useSession();
+  const { role, fullName, userId } = useSession();
   const idempotencyKey = useIdempotencyKey();
   // Today where the technician is standing, fixed when the form opens. Not
   // re-read at submit: a form opened at 23:55 and sent at 00:05 records the
@@ -157,8 +186,17 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
   const [checklist, setChecklist] = useState<Checklist>({});
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [photoNotice, setPhotoNotice] = useState<string[]>([]);
-  const [saved, setSaved] = useState<MaintenanceVisit | null>(null);
+  const [queued, setQueued] = useState(false);
   const photoInput = useRef<HTMLInputElement>(null);
+  /**
+   * The submission, held in memory, for a browser with no outbox to hold it.
+   *
+   * Private browsing on some phones refuses IndexedDB outright. The form then
+   * sends directly, as it did before the outbox existed — and keeps what that
+   * send achieved here, so pressing save again after a dropped connection
+   * resumes the same submission under the same keys instead of starting over.
+   */
+  const memoryEntry = useRef<VisitOutboxEntry | null>(null);
 
   // Revoked on the way out. Each preview holds the decoded photo in memory, and
   // four phone photos are tens of megabytes on a device that has little to spare.
@@ -176,60 +214,89 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
   const namesTechnician = role !== "technician";
   const technicians = useQuery({ ...visitTechniciansQuery(), enabled: namesTechnician });
 
-  const { submit, state } = useSubmit<MaintenanceVisitWrite, MaintenanceVisit>({
-    mutationFn: (body) => createVisit(body, idempotencyKey),
+  /**
+   * Saved first, sent second.
+   *
+   * The visit goes into this device's outbox before a single byte is sent, so
+   * a connection that drops mid-send loses nothing: the outbox resends it, under
+   * the same key, when the signal comes back. Then one attempt is made here, so
+   * the usual case — a working connection — ends on the new record exactly as
+   * it did before, and a refusal is said next to the field that caused it.
+   *
+   * A refusal is taken back out of the outbox. The person is still on the form,
+   * which is where it gets fixed; a copy waiting in the outbox as well would be
+   * the same visit in two places, one of them wrong.
+   */
+  async function deliver(body: MaintenanceVisitWrite): Promise<Delivery> {
+    const draft = {
+      // The form's idempotency key. Never a new one: it is what makes every
+      // later attempt, from here or from the outbox, the same submission.
+      id: idempotencyKey,
+      userId: userId ?? "",
+      kind: "maintenance-visit" as const,
+      label: elevator.name,
+      body,
+      photos: photos.map((photo) => ({
+        name: photo.file.name,
+        type: photo.file.type,
+        blob: photo.file as Blob,
+      })),
+    };
+
+    let entry: OutboxEntry | null = null;
+    if (userId && typeof indexedDB !== "undefined") {
+      entry = await addEntry(draft).catch(() => null);
+    }
+
+    if (entry) {
+      const attempt = await attemptEntry(entry, sendVisit);
+      if (attempt.outcome === "sent") return delivered(attempt.progress);
+      if (attempt.outcome === "queued") return { kind: "queued" };
+      await discardEntry(entry.id).catch(() => undefined);
+      throw attempt.error;
+    }
+
+    // No outbox on this browser: a direct send. The visit's answers are taken
+    // afresh each press until it exists; after that only its photos are left.
+    const held: VisitOutboxEntry =
+      memoryEntry.current?.progress.recordId
+        ? memoryEntry.current
+        : {
+            ...draft,
+            createdAt: Date.now(),
+            state: "pending",
+            attempts: 0,
+            nextAttemptAt: 0,
+            progress: { photosDone: 0 },
+          };
+    memoryEntry.current = held;
+    await sendVisit(held, async (progress) => {
+      held.progress = progress;
+    });
+    return delivered(held.progress);
+  }
+
+  const { submit, state } = useSubmit<MaintenanceVisitWrite, Delivery>({
+    mutationFn: deliver,
     // The elevator as well as the visits: the server moves its maintenance
     // dates on every completed visit, and the page this form returns to shows
-    // them.
+    // them. Harmless when the visit was only queued.
     invalidate: [visitKeys.all, elevatorKeys.detail(elevator.id)],
-    onSuccess: (visit) => {
-      setSaved(visit);
-      void sendPhotos(visit, photos);
+    onSuccess: (result) => {
+      if (result.kind === "queued") {
+        setQueued(true);
+        return;
+      }
+      void navigate({
+        to: "/maintenance-visits/$id",
+        params: { id: result.recordId },
+        // Said on arrival, by name. A photo the server would not take is not
+        // retried — it would be refused again — so this is the one moment the
+        // person can find out and add a better one.
+        search: result.photosSkipped.length > 0 ? { photosSkipped: result.photosSkipped } : {},
+      });
     },
   });
-
-  function patchPhoto(id: string, patch: Partial<Photo>) {
-    setPhotos((current) => current.map((photo) => (photo.id === id ? { ...photo, ...patch } : photo)));
-  }
-
-  /**
-   * The photos, one at a time, after the visit exists.
-   *
-   * After, because a photo has to be attached to a record and until the create
-   * answers there is none. One at a time, because the connection this runs on
-   * is the worst one anybody using the product has, and four transfers sharing
-   * it means four slow failures instead of one.
-   *
-   * A failure here never touches the visit. It is already saved; what failed
-   * is a file, and the screen says which one and offers to send it again.
-   */
-  async function sendPhotos(visit: MaintenanceVisit, queue: Photo[]) {
-    let failed = 0;
-    for (const photo of queue) {
-      if (photo.state === "sent") continue;
-      patchPhoto(photo.id, { state: "sending", error: undefined });
-      try {
-        await uploadAttachment({
-          objectType: "maintenance_visit",
-          objectId: visit.id,
-          category: "photo",
-          file: photo.file,
-          idempotencyKey: photo.idempotencyKey,
-        });
-        patchPhoto(photo.id, { state: "sent" });
-      } catch (error) {
-        failed += 1;
-        patchPhoto(photo.id, { state: "failed", error: describeUploadFailure(error, t) });
-      }
-    }
-    if (queue.length > 0) {
-      await queryClient.invalidateQueries({ queryKey: visitKeys.attachments(visit.id) });
-    }
-    // Everything arrived: on to the record, which is the confirmation that it
-    // exists. Anything missing keeps the person here, with the files still in
-    // memory, until they retry or choose to leave without them.
-    if (failed === 0) void navigate({ to: "/maintenance-visits/$id", params: { id: visit.id } });
-  }
 
   function addPhotos(files: FileList | null) {
     if (!files) return;
@@ -254,8 +321,6 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
         id: crypto.randomUUID(),
         file,
         preview,
-        idempotencyKey: crypto.randomUUID(),
-        state: "waiting",
       });
     }
     setPhotos((current) => [...current, ...added]);
@@ -279,16 +344,7 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
     input?.closest("li")?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  if (saved) {
-    return (
-      <SavedState
-        visit={saved}
-        elevatorId={elevator.id}
-        photos={photos}
-        onRetry={() => void sendPhotos(saved, photos)}
-      />
-    );
-  }
+  if (queued) return <QueuedState elevatorId={elevator.id} />;
 
   const blocker = submitBlocker(status, checklist);
   // The server's refusal wins; failing that, a list that never arrived is said
@@ -534,94 +590,40 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
 }
 
 /**
- * After the visit is saved: the photos on their way, and what to do if one
- * did not make it.
+ * The visit is on this device and will go when the connection does.
  *
- * The form is gone by now, on purpose — the visit exists, and a second press of
- * "save" has nothing left to do. What is left is the files, which are still in
- * memory here and nowhere else, so this is the one place a failed photo can be
- * retried without taking it again.
+ * Calm on purpose, and with no spinner: nothing here is waiting on the
+ * network, and a spinner would tell the technician to stand in the machine
+ * room until it stops. The work is safe; the next thing they need is the next
+ * lift.
  */
-function SavedState({
-  visit,
-  elevatorId,
-  photos,
-  onRetry,
-}: {
-  visit: MaintenanceVisit;
-  elevatorId: string;
-  photos: Photo[];
-  onRetry: () => void;
-}) {
+function QueuedState({ elevatorId }: { elevatorId: string }) {
   const { t } = useTranslation();
-  const sending = photos.some((photo) => photo.state === "sending" || photo.state === "waiting");
-  const failed = photos.filter((photo) => photo.state === "failed");
-
   return (
     <div className="flex flex-col gap-4">
-      <Alert tone="success" block title={t("visit.saved")}>
-        {photos.length > 0 && sending && <p>{t("visit.photosSending")}</p>}
-      </Alert>
-
-      {photos.length > 0 && (
-        <ul className="flex flex-col gap-2">
-          {photos.map((photo, index) => (
-            <li
-              key={photo.id}
-              className="flex items-center gap-3 rounded-md border border-border-subtle bg-card p-2"
-            >
-              <img
-                src={photo.preview}
-                alt={t("visit.photoAlt", { index: index + 1 })}
-                className="size-12 shrink-0 rounded-sm object-cover"
-              />
-              <div className="flex min-w-0 flex-col leading-tight">
-                <span className="truncate text-cell">{photo.file.name}</span>
-                <span
-                  className={cn(
-                    "text-help",
-                    photo.state === "failed" ? "text-destructive" : "text-muted-foreground",
-                  )}
-                >
-                  {photo.state === "failed" ? photo.error : t(`visit.photoState.${photo.state}`)}
-                </span>
-              </div>
-              {photo.state === "sending" && (
-                <Loader2 className="ml-auto size-4 shrink-0 animate-spin text-muted-foreground" aria-hidden="true" />
-              )}
-              {photo.state === "sent" && (
-                <CheckCircle2 className="ml-auto size-4 shrink-0 text-success" aria-hidden="true" />
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {failed.length > 0 && !sending && (
-        <Alert tone="warning" block title={t("visit.photosFailed", { count: failed.length })}>
-          <p>{t("visit.photosFailedHint")}</p>
-        </Alert>
-      )}
-
+      <div className="flex items-start gap-3 rounded-lg border border-border-subtle bg-card p-4">
+        <CloudOff className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <div className="flex flex-col gap-1">
+          <p role="status" className="text-body font-medium">
+            {t("visit.queued")}
+          </p>
+          <p className="text-help text-muted-foreground">{t("visit.queuedHint")}</p>
+        </div>
+      </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        {failed.length > 0 && !sending && (
-          <Button type="button" size="lg" onClick={onRetry}>
-            {t("visit.retryPhotos")}
-          </Button>
-        )}
-        <Link
-          to="/maintenance-visits/$id"
-          params={{ id: visit.id }}
-          className={buttonVariants({ variant: failed.length > 0 ? "secondary" : "primary", size: "lg" })}
-        >
-          {t("visit.openSaved")}
+        <Link to="/scan" className={buttonVariants({ size: "xl" })}>
+          <QrCode />
+          {t("detail.scanAnother")}
         </Link>
         <Link
           to="/elevators/$id"
           params={{ id: elevatorId }}
-          className={buttonVariants({ variant: "ghost", size: "lg" })}
+          className={buttonVariants({ variant: "secondary", size: "lg" })}
         >
           {t("visit.backToElevator")}
+        </Link>
+        <Link to="/outbox" className={buttonVariants({ variant: "ghost", size: "lg" })}>
+          {t("visit.openOutbox")}
         </Link>
       </div>
     </div>
