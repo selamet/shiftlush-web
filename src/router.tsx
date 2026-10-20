@@ -188,6 +188,10 @@ const VisitDetailScreen = lazyRouteComponent(
   () => import("@/screens/VisitDetailScreen"),
   "VisitDetailScreen",
 );
+const OutboxScreen = lazyRouteComponent(
+  () => import("@/screens/OutboxScreen"),
+  "OutboxScreen",
+);
 const RegisterScreen = lazyRouteComponent(
   () => import("@/screens/RegisterScreen"),
   "RegisterScreen",
@@ -575,6 +579,8 @@ export const routeTree = rootRoute.addChildren([
       }
     }),
     shellChild("/audit-logs", AuditLogListScreen, undefined, auditLogListSearch),
+    // No loader: what it lists lives on this device, not on the server.
+    shellChild("/outbox", OutboxScreen),
     shellChild(
       "/maintenance-visits",
       VisitListScreen,

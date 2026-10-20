@@ -110,6 +110,7 @@ const PATHS = [
   "/users/u2",
   "/users/u3",
   "/audit-logs",
+  "/outbox",
   "/settings",
   // Its own route rather than a tab behind a click, which is what makes it
   // renderable here at all: the password form and the session list are the two
@@ -143,6 +144,10 @@ const EXPECT_HIDDEN = {
 };
 
 const EXPECT = {
+  // There is no IndexedDB under Node, so the outbox is empty for every role —
+  // which is the state that has to render without one, as on a phone in
+  // private mode.
+  "/outbox": "Gönderilmeyi bekleyen kayıt yok",
   "/customers": "Dadaş",
   "/customers/c1": "Dadaş",
   // The edit form must arrive with the record already in its inputs; an empty
