@@ -34,6 +34,8 @@ import {
   companyQuery,
   currentUserQuery,
   sessionListQuery,
+  notificationListQuery,
+  notificationPreferencesQuery,
   visitAttachmentsQuery,
   visitListQuery,
   visitQuery,
@@ -50,6 +52,7 @@ import {
   customerListSearch,
   elevatorListSearch,
   userListSearch,
+  notificationListSearch,
   visitListParams,
   visitListSearch,
 } from "@/screens/list-searches";
@@ -191,6 +194,10 @@ const VisitDetailScreen = lazyRouteComponent(
 const OutboxScreen = lazyRouteComponent(
   () => import("@/screens/OutboxScreen"),
   "OutboxScreen",
+);
+const NotificationListScreen = lazyRouteComponent(
+  () => import("@/screens/NotificationListScreen"),
+  "NotificationListScreen",
 );
 const RegisterScreen = lazyRouteComponent(
   () => import("@/screens/RegisterScreen"),
@@ -610,8 +617,20 @@ export const routeTree = rootRoute.addChildren([
       await Promise.all([
         queryClient.ensureQueryData(currentUserQuery()),
         queryClient.ensureQueryData(sessionListQuery()),
+        // The e-mail choices are the last section of the tab. Warmed with the
+        // rest so the checkboxes arrive already holding what was stored.
+        queryClient.ensureQueryData(notificationPreferencesQuery()),
       ]);
     }),
+    // Every role has notifications, each person their own, so there is no
+    // role to gate on and the prefetch is never a guaranteed refusal.
+    shellChild(
+      "/notifications",
+      NotificationListScreen,
+      ({ deps }) =>
+        queryClient.ensureQueryData(notificationListQuery(notificationListSearch.params(deps.search))),
+      notificationListSearch,
+    ),
   ]),
 ]);
 

@@ -175,6 +175,42 @@ function resolve(path, search, method, body) {
     return page(rows);
   }
 
+  // Notifications, the signed-in person's own. One of each shape the screens
+  // have to handle: unread and read, a contract and an elevator, a contract
+  // with no customer name, and a kind this client has never heard of — the
+  // server may add kinds before the client ships their wording.
+  const notifications = fixture("demo-notifications");
+  if (path === "/api/v1/notifications/unread-count/") {
+    return { count: notifications.filter((row) => row.read_at === null).length };
+  }
+  if (method === "POST" && path === "/api/v1/notifications/read-all/") {
+    return { count: notifications.filter((row) => row.read_at === null).length };
+  }
+  const readOne = /^\/api\/v1\/notifications\/([^/]+)\/read\/$/.exec(path);
+  if (method === "POST" && readOne) {
+    const row = notifications.find((one) => one.id === readOne[1]);
+    return row ? { ...row, read_at: row.read_at ?? "2026-10-20T08:00:00Z" } : null;
+  }
+  if (path === "/api/v1/notifications/preferences/") {
+    if (method === "PUT") return body;
+    return [
+      { kind: "contract_renewal_due", email: true },
+      { kind: "contract_expired", email: true },
+      { kind: "contract_auto_renewed", email: true },
+      { kind: "contract_auto_renewal_blocked", email: true },
+      { kind: "maintenance_overdue", email: false },
+    ];
+  }
+  if (path === "/api/v1/notifications/") {
+    // Narrowed the way the server narrows it: `true` is unread, `false` read.
+    const unread = search.get("unread");
+    let rows = notifications;
+    if (unread === "true") rows = rows.filter((row) => row.read_at === null);
+    if (unread === "false") rows = rows.filter((row) => row.read_at !== null);
+    const size = Number(search.get("page_size")) || rows.length;
+    return page(rows.slice(0, size));
+  }
+
   if (path === "/api/v1/audit-logs/") return page(fixture("demo-audit-logs-elevator"));
 
   // Maintenance visits. The create answers with the read shape — the view

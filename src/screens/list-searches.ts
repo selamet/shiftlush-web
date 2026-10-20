@@ -230,3 +230,21 @@ export const visitListSearch = listSearchSchema(visitFilters);
 export function visitListParams(raw: Record<string, unknown>) {
   return { ordering: "-visit_date", ...visitListSearch.params(raw) };
 }
+
+/**
+ * `GET /notifications/` narrows by `unread` and `kind`. Only `unread` is offered:
+ * five kinds is not yet a list anyone needs to narrow, and the question people
+ * bring to this screen is "what haven't I seen".
+ *
+ * `true` alone is accepted. The server reads `false` as "read only", which is
+ * a filter nobody asked for, and "all" is the parameter being absent.
+ */
+export const notificationFilters: ListFilter[] = [
+  {
+    param: "unread",
+    labelKey: "notification.filterUnread",
+    options: [{ value: "true", labelKey: "notification.filterUnread" }],
+  },
+];
+
+export const notificationListSearch = listSearchSchema(notificationFilters);

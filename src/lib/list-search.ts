@@ -212,7 +212,17 @@ function positiveInt(value: unknown): number | undefined {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
+/**
+ * A search value as text.
+ *
+ * The router parses the query string as JSON where it can, so a hand-typed or
+ * e-mailed `?unread=true` arrives as the boolean `true`, not the string — and
+ * read as "not a string" it was silently dropped, showing every row under a
+ * link that promised a filter. A link the app builds itself quotes the value
+ * and was never affected. Booleans are read back as the text the API takes.
+ */
 function text(value: unknown): string {
+  if (typeof value === "boolean") return String(value);
   return typeof value === "string" ? value.trim() : "";
 }
 

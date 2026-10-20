@@ -9,6 +9,7 @@ import { enumLabel } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { OutboxDriver, OutboxIndicator } from "@/components/outbox/Outbox";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { UserMenu } from "./UserMenu";
 import { Sidebar, SidebarNav, SidebarSkeleton } from "./Sidebar";
 import { ROLES, type Role } from "./nav-config";
@@ -68,6 +69,10 @@ function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
             </select>
           </label>
         )}
+        {/* Every role has notifications — each person's own — so the bell is
+            not role-gated. Only once there is a session to ask under; the
+            skeleton topbar during restore has none. */}
+        <NotificationBell />
         <Button size="icon" variant="ghost" onClick={toggle} aria-label={t("styleguide.toggleTheme")}>
           {theme === "dark" ? <Sun /> : <Moon />}
         </Button>

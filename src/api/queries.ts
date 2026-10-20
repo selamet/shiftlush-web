@@ -1091,3 +1091,91 @@ export function revokeSession(sessionId: string) {
 export function revokeOtherSessions() {
   return api.post<void>("/auth/sessions/revoke-others");
 }
+
+// --------------------------------------------------------------------------
+// Notifications
+//
+// Every request here is scoped to the caller by the token, like the sessions
+// above: there is no way to ask for somebody else's notifications, so no screen
+// is built as though there were. The server sends codes and data and never a
+// sentence — the sentence is written in `lib/notifications.ts`.
+// --------------------------------------------------------------------------
+
+/**
+ * One notification. Not called `Notification`: that is the browser's own
+ * global, and shadowing it is how a file ends up typing one as the other.
+ */
+export type AppNotification = Schemas["Notification"];
+export type NotificationKind = Schemas["NotificationKind"];
+export type NotificationPreference = Schemas["NotificationPreference"];
+
+/**
+ * Hierarchical, so that marking one read — which changes the count, every list
+ * and the panel at once — is a single invalidation of `notificationKeys.all`.
+ */
+export const notificationKeys = {
+  all: ["notifications"] as const,
+  list: (params: ListParams) => ["notifications", "list", params] as const,
+  unreadCount: ["notifications", "unread-count"] as const,
+  preferences: ["notification-preferences"] as const,
+} as const;
+
+/** How often the bell asks, while somebody can see it. */
+export const UNREAD_POLL_MS = 60_000;
+
+export function notificationListQuery(params: ListParams = {}) {
+  return queryOptions({
+    queryKey: notificationKeys.list(params),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<AppNotification>>("/notifications/", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+/**
+ * The number on the bell.
+ *
+ * Polled, because nothing pushes: a contract that expires at half past midnight
+ * should be on the bell of whoever opens the app at nine without a reload. Only
+ * while the page is visible — `refetchIntervalInBackground` is off, so a tab
+ * left open overnight in a drawer asks nothing until it is looked at, and the
+ * focus refetch then brings the count up to date the moment it is.
+ */
+export function unreadCountQuery() {
+  return queryOptions({
+    queryKey: notificationKeys.unreadCount,
+    queryFn: ({ signal }) =>
+      api.get<Schemas["UnreadCount"]>("/notifications/unread-count/", { signal }),
+    refetchInterval: UNREAD_POLL_MS,
+    refetchIntervalInBackground: false,
+  });
+}
+
+/** Idempotent on the server: marking a read one again changes nothing. */
+export function markNotificationRead(id: string) {
+  return api.post<AppNotification>(`/notifications/${id}/read/`);
+}
+
+export function markAllNotificationsRead() {
+  return api.post<Schemas["UpdatedCount"]>("/notifications/read-all/");
+}
+
+/** One row per kind, every kind — including the ones never changed from the default. */
+export function notificationPreferencesQuery() {
+  return queryOptions({
+    queryKey: notificationKeys.preferences,
+    queryFn: ({ signal }) =>
+      api.get<NotificationPreference[]>("/notifications/preferences/", { signal }),
+  });
+}
+
+/**
+ * A PUT of the whole list, which replaces every flag.
+ *
+ * The client always sends every kind it was given, so a choice is stored as a
+ * row for each — see EMAIL_DEFAULTS on the server for why an explicit choice
+ * matters: a kind left at "the default" moves when the default does.
+ */
+export function updateNotificationPreferences(preferences: NotificationPreference[]) {
+  return api.put<NotificationPreference[]>("/notifications/preferences/", preferences);
+}
