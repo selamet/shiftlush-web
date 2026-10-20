@@ -16,6 +16,13 @@
  * The signature also covers the content type, so that header has to be exactly
  * the one the server signed — a helpful guess would void it.
  */
+import {
+  confirmUpload,
+  requestUploadTicket,
+  type Attachment,
+  type AttachmentCategory,
+  type AttachmentObjectType,
+} from "@/api/queries";
 
 /** Why a transfer ended without the file arriving. */
 export type UploadFailure = "expired" | "network" | "rejected" | "cancelled";
@@ -89,4 +96,85 @@ export function putSignedFile({
 
     request.send(file);
   });
+}
+
+/**
+ * What the server accepts, restated here to save a wasted transfer.
+ *
+ * These two numbers are the server's rule, not this file's: they are declared
+ * in the contract as `MimeTypeEnum` and the maximum on `size_bytes`. Checking
+ * them here only means a refusal arrives in a moment instead of after four
+ * minutes of uploading a file that was never going to be accepted. The server
+ * still decides — anything it rejects is shown as it explained it.
+ */
+export const ALLOWED_UPLOAD_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+/** Why a file is not worth sending, or `null` when it is. The caller words it. */
+export function uploadRefusal(
+  file: Pick<File, "type" | "size">,
+  allowed: readonly string[] = ALLOWED_UPLOAD_TYPES,
+): "type" | "tooLarge" | null {
+  if (!allowed.includes(file.type)) return "type";
+  if (file.size > MAX_UPLOAD_BYTES) return "tooLarge";
+  return null;
+}
+
+interface UploadAttachmentOptions {
+  objectType: AttachmentObjectType;
+  objectId: string;
+  category: AttachmentCategory;
+  file: File;
+  /**
+   * One per file, kept across that file's retries. See `Transfer` in the
+   * attachments panel for why a per-form key is the wrong grain here.
+   */
+  idempotencyKey: string;
+  onProgress?: (fraction: number) => void;
+  signal?: AbortSignal;
+}
+
+/**
+ * The whole journey of one file: a ticket, the bytes, the confirmation.
+ *
+ * Written once because two screens need it in the same order — the attachments
+ * panel, and the visit form, which sends its photos after the visit exists —
+ * and the order is the part that is easy to get subtly wrong. A fresh ticket
+ * every call: retrying with the previous URL is the one thing guaranteed not
+ * to work when the reason for retrying was that it expired.
+ */
+export async function uploadAttachment({
+  objectType,
+  objectId,
+  category,
+  file,
+  idempotencyKey,
+  onProgress,
+  signal,
+}: UploadAttachmentOptions): Promise<Attachment> {
+  const ticket = await requestUploadTicket({
+    object_type: objectType,
+    object_id: objectId,
+    category,
+    mime_type: file.type as never,
+    size_bytes: file.size,
+  });
+
+  await putSignedFile({
+    url: ticket.upload_url,
+    file,
+    contentType: ticket.content_type,
+    onProgress,
+    signal,
+  });
+
+  return confirmUpload(
+    { storage_key: ticket.storage_key, original_filename: file.name },
+    idempotencyKey,
+  );
 }

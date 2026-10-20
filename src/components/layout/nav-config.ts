@@ -3,6 +3,7 @@ import {
   Users,
   LayoutGrid,
   ArrowUpDown,
+  ClipboardCheck,
   FileText,
   QrCode,
   UserCog,
@@ -71,6 +72,15 @@ export const NAV_GROUPS: NavGroup[] = [
         to: "/elevators",
         labelKey: "elevator.title",
         icon: ArrowUpDown,
+        roles: ["owner", "admin", "operations", "technician"],
+      },
+      {
+        // Under the elevators because that is what a visit is a record of.
+        // The accountant is absent for the reason the server gives: a visit
+        // is operational evidence, not anything an invoice is built from.
+        to: "/maintenance-visits",
+        labelKey: "visit.title",
+        icon: ClipboardCheck,
         roles: ["owner", "admin", "operations", "technician"],
       },
     ],

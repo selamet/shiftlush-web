@@ -41,6 +41,13 @@ import { Alert } from "@/components/ui/alert";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
 import { ElevatorDetailMobile } from "./ElevatorDetailMobile";
 import { InspectionLabel } from "@/components/ui/inspection-label";
+import { toDisplay } from "@/lib/date";
+import { canReadVisits, canRecordVisits } from "@/lib/visit";
+import {
+  RecordVisitAction,
+  VisitHistoryList,
+  useElevatorVisits,
+} from "@/components/visits/ElevatorVisits";
 
 type Value = string | number | null | undefined;
 
@@ -214,6 +221,12 @@ export function ElevatorDetailScreen() {
     ...elevatorHistoryQuery(elevatorId),
     enabled: Boolean(elevatorId) && canSeeHistory,
   });
+  // The visit history. The same matrix row as the visit screens: the
+  // accountant reads none of it, so the request is not made for them and
+  // neither the panel nor the maintenance dates are drawn.
+  const showsVisits = canReadVisits(role);
+  const recordsVisits = canRecordVisits(role);
+  const visits = useElevatorVisits(elevatorId, showsVisits);
 
   const queryClient = useQueryClient();
   const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
@@ -320,6 +333,17 @@ export function ElevatorDetailScreen() {
           elevator={elevator}
           attachmentCount={attachments.length}
           viaQr={role === "technician"}
+          role={role}
+          visits={
+            showsVisits
+              ? {
+                  rows: visits.rows,
+                  total: visits.history.data?.pagination.total ?? 0,
+                  loading: visits.history.isPending,
+                  error: visits.history.error,
+                }
+              : undefined
+          }
         />
       </div>
 
@@ -364,7 +388,10 @@ export function ElevatorDetailScreen() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {/* The one action a technician has on this page, so it leads. With
+              no contract it becomes the reason instead — see the component. */}
+          {recordsVisits && <RecordVisitAction elevator={elevator} size="sm" />}
           <PrintLabelButton
             size="sm"
             busy={labelSheet.isPending}
@@ -484,6 +511,23 @@ export function ElevatorDetailScreen() {
                 />
               </Group>
 
+              {showsVisits && (
+                <Group title={t("visit.maintenance")}>
+                  <FieldRow
+                    label={t("visit.lastMaintenance")}
+                    value={toDisplay(elevator.last_maintenance_date)}
+                  />
+                  <FieldRow
+                    label={t("visit.nextMaintenance")}
+                    value={toDisplay(elevator.next_maintenance_date)}
+                  />
+                  <FieldRow
+                    label={t("elevator.fields.maintenanceIntervalDays")}
+                    value={elevator.maintenance_interval_days}
+                  />
+                </Group>
+              )}
+
               <Group title={t("elevator.tabs.manufacturing")}>
                 <FieldRow label={t("elevator.fields.brand")} value={man.brand} />
                 <FieldRow label={t("elevator.fields.model")} value={man.model} />
@@ -592,6 +636,18 @@ export function ElevatorDetailScreen() {
               <p className="text-help text-subtle">{t("elevator.hints.noContract")}</p>
             )}
           </RailCard>
+
+          {showsVisits && (
+            <RailCard title={t("visit.history")}>
+              <VisitHistoryList
+                elevatorId={elevatorId}
+                rows={visits.rows}
+                total={visits.history.data?.pagination.total ?? 0}
+                loading={visits.history.isPending}
+                error={visits.history.error}
+              />
+            </RailCard>
+          )}
 
           <RailCard title={t("detail.qrCode")}>
             <div className="flex items-center gap-3">

@@ -1,13 +1,17 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
-import type { Elevator } from "@/api/queries";
+import type { Elevator, MaintenanceVisit } from "@/api/queries";
+import type { Role } from "@/components/layout/nav-config";
 import { QrCode, WifiOff, TriangleAlert, Paperclip, MapPin } from "lucide-react";
 import { enumLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { formatDate, formatNumber } from "@/lib/format";
+import { toDisplay } from "@/lib/date";
+import { canRecordVisits } from "@/lib/visit";
 import { buttonVariants } from "@/components/ui/button";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
 import { InspectionLabel } from "@/components/ui/inspection-label";
+import { RecordVisitAction, VisitHistoryList } from "@/components/visits/ElevatorVisits";
 
 /**
  * The record as the technician meets it: scanned a QR in a machine room, one
@@ -18,10 +22,12 @@ import { InspectionLabel } from "@/components/ui/inspection-label";
  * context before anything else, because how you arrived changes what you
  * expect to see.
  *
- * Of the record's 31 fields only six appear, the six that decide what happens
- * next on site; the rest is a scroll away. And because this role cannot write,
- * there is no add or edit control anywhere — that is said once, plainly,
- * rather than left as a screen of things that quietly do nothing.
+ * Of the record's 31 fields only eight appear, the eight that decide what
+ * happens next on site; the rest is a scroll away. The record itself cannot be
+ * edited from here, and that is said once, plainly, rather than left as a
+ * screen of things that quietly do nothing. What can be done here is the job
+ * the technician came for — record the visit — and that is the action at the
+ * bottom of the screen.
  */
 /**
  * Takes the record as a prop rather than fetching it.
@@ -34,10 +40,24 @@ export function ElevatorDetailMobile({
   elevator,
   attachmentCount,
   viaQr,
+  role,
+  visits,
 }: {
   elevator: Elevator;
   attachmentCount: number;
   viaQr?: boolean;
+  role: Role | null;
+  /**
+   * The visit history, from the parent's query — the same reason the record
+   * is a prop. Absent for a role that may not read visits, and then neither
+   * the maintenance dates nor the panel are drawn.
+   */
+  visits?: {
+    rows: MaintenanceVisit[];
+    total: number;
+    loading: boolean;
+    error: unknown;
+  };
 }) {
   const { t } = useTranslation();
   // Flat record: the fixture's `technical` and `manufacturing` groups never
@@ -60,7 +80,16 @@ export function ElevatorDetailMobile({
     [t("elevator.fields.speedMps"), tech.speed_mps ? `${tech.speed_mps} m/s` : "—"],
     [t("elevator.fields.lastInspectionDate"), formatDate(insp.last_inspection_date)],
     [t("elevator.fields.nextInspectionDate"), formatDate(insp.next_inspection_date)],
+    // Next to the inspection dates rather than in a section of their own: on
+    // site the question is "is this lift due?", and both pairs answer it.
+    ...(visits
+      ? ([
+          [t("visit.lastMaintenance"), toDisplay(elevator.last_maintenance_date) || "—"],
+          [t("visit.nextMaintenance"), toDisplay(elevator.next_maintenance_date) || "—"],
+        ] as Array<[string, React.ReactNode]>)
+      : []),
   ];
+  const recordsVisits = canRecordVisits(role);
 
   return (
     <div className="flex min-h-full flex-col bg-background">
@@ -108,7 +137,7 @@ export function ElevatorDetailMobile({
           </p>
         </section>
 
-        {/* Six values, in a two-column grid. Everything else is below. */}
+        {/* Six values, eight with the maintenance dates, in a two-column grid. Everything else is below. */}
         <section className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border-subtle bg-border-subtle">
           {facts.map(([label, value]) => (
             <div key={label} className="flex flex-col gap-0.5 bg-card p-3">
@@ -126,20 +155,53 @@ export function ElevatorDetailMobile({
           </span>
         </section>
 
+        {visits && (
+          <section className="rounded-lg border border-border-subtle bg-card p-4">
+            <h2 className="mb-1 text-colhead uppercase text-subtle">{t("visit.history")}</h2>
+            <VisitHistoryList
+              elevatorId={elevator.id}
+              rows={visits.rows}
+              total={visits.total}
+              loading={visits.loading}
+              error={visits.error}
+            />
+          </section>
+        )}
+
+        {/* The role that is actually signed in. This used to say "technician"
+            whoever was holding the phone. */}
         <p className="text-help text-muted-foreground">
-          {t("detail.yourRole")}: {enumLabel("user.role", "technician")} —{" "}
-          {t("detail.readOnlyNotice")}
+          {t("detail.yourRole")}: {enumLabel("user.role", role)} —{" "}
+          {recordsVisits ? t("detail.recordOnlyNotice") : t("detail.readOnlyNotice")}
         </p>
       </div>
 
-      {/* One action, at the gloved-hand height.
+      {/* The primary action at the gloved-hand height: recording the visit,
+          which is what the technician scanned the sticker to do. Scanning the
+          next lift stays, one step down — it is the action after this one.
 
-          A link rather than a button: this is a navigation, and made a button
-          it would lose the things a link gives for free on a phone — long-press
-          to open the scanner in a second tab, and a destination the browser
-          restores if the page is reloaded mid-round. */}
-      <div className="sticky bottom-0 border-t border-border bg-card p-3">
-        <Link to="/scan" className={cn(buttonVariants({ size: "xl" }), "w-full")}>
+          Links rather than buttons: both are navigations, and made buttons
+          they would lose what a link gives for free on a phone — long-press to
+          open in a second tab, and a destination the browser restores if the
+          page is reloaded mid-round.
+
+          With no contract the record action is replaced by its reason, and
+          scanning the next lift becomes the primary action again: there is
+          nothing else to do here. */}
+      <div className="sticky bottom-0 flex flex-col gap-2 border-t border-border bg-card p-3">
+        {recordsVisits && (
+          <RecordVisitAction elevator={elevator} size="xl" className="w-full" />
+        )}
+        <Link
+          to="/scan"
+          className={cn(
+            buttonVariants({
+              size: recordsVisits && elevator.current_contract ? "lg" : "xl",
+              variant: recordsVisits && elevator.current_contract ? "secondary" : "primary",
+            }),
+            "w-full",
+          )}
+        >
           <QrCode />
           {t("detail.scanAnother")}
         </Link>

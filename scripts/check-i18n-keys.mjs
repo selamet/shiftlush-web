@@ -76,6 +76,10 @@ const RUNTIME_NAMESPACES = [
   "user.role",
   "attachment.category",
   "address.type",
+  "visit.status",
+  "visit.checklistItem",
+  "visit.checklistResult",
+  "visit.photoState",
   "errors",
 ];
 

@@ -45,6 +45,8 @@
   "status": "active",
   "inspection_label": "green",
   "maintenance_interval_days": 30,
+  "last_maintenance_date": "2026-10-14",
+  "next_maintenance_date": "2026-11-13",
   "internal_code": "",
   "notes": "",
   "qr_token_generated_at": "2026-01-12T09:00:00Z",
