@@ -1259,6 +1259,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["notifications_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/{id}/read/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Mark one notification read. Idempotent: the first read time is kept. */
+        post: operations["notifications_read_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/preferences/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Every kind with the caller's e-mail flag; PUT replaces them.
+         *
+         *     GET always lists every kind, defaults filled in, so the settings screen
+         *     never has to know what the defaults are. PUT takes the same list back;
+         *     a kind left out returns to its default, and an unknown kind is a 400.
+         */
+        get: operations["notifications_preferences_list"];
+        /**
+         * @description Every kind with the caller's e-mail flag; PUT replaces them.
+         *
+         *     GET always lists every kind, defaults filled in, so the settings screen
+         *     never has to know what the defaults are. PUT takes the same list back;
+         *     a kind left out returns to its default, and an unknown kind is a 400.
+         */
+        put: operations["notifications_preferences_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/read-all/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Mark every unread notification of the caller's read.
+         *
+         *     Answers with how many changed, so a client can tell "nothing to do"
+         *     from "done" without asking for the count again. A queryset update, so
+         *     no signal fires — which is fine, Notification is not audited.
+         */
+        post: operations["notifications_read_all_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/unread-count/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description How many of the caller's notifications are unread, for the bell.
+         *
+         *     Its own endpoint rather than a field on the list, because the bell asks
+         *     every minute from every open tab and needs one indexed count, not a page.
+         */
+        get: operations["notifications_unread_count_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/provinces/": {
         parameters: {
             query?: never;
@@ -2564,6 +2672,38 @@ export interface components {
          * @enum {string}
          */
         NeighborhoodType: "neighborhood" | "village" | "town";
+        Notification: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly kind: components["schemas"]["NotificationKind"];
+            readonly subject_type: string;
+            /** Format: uuid */
+            readonly subject_id: string;
+            readonly data: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            readonly read_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        /**
+         * @description * `contract_renewal_due` - Contract renewal due
+         *     * `contract_expired` - Contract expired
+         *     * `contract_auto_renewed` - Contract auto-renewed
+         *     * `contract_auto_renewal_blocked` - Contract auto-renewal blocked
+         *     * `maintenance_overdue` - Maintenance overdue
+         * @enum {string}
+         */
+        NotificationKind: "contract_renewal_due" | "contract_expired" | "contract_auto_renewed" | "contract_auto_renewal_blocked" | "maintenance_overdue";
+        NotificationPreference: {
+            kind: components["schemas"]["NotificationKind"];
+            email: boolean;
+        };
+        NotificationPreferenceRequest: {
+            kind: components["schemas"]["NotificationKind"];
+            email: boolean;
+        };
         PaginatedAttachmentList: {
             results: components["schemas"]["Attachment"][];
             pagination: {
@@ -2683,6 +2823,19 @@ export interface components {
         };
         PaginatedMaintenanceVisitReadList: {
             results: components["schemas"]["MaintenanceVisitRead"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedNotificationList: {
+            results: components["schemas"]["Notification"][];
             pagination: {
                 /** @example 1 */
                 page: number;
@@ -3062,6 +3215,13 @@ export interface components {
          * @enum {string}
          */
         UnmatchedEnum: "province" | "district" | "neighborhood";
+        UnreadCount: {
+            readonly count: number;
+        };
+        /** @description How many notifications a bulk action changed. */
+        UpdatedCount: {
+            readonly count: number;
+        };
         UploadUrlRequestRequest: {
             object_type: components["schemas"]["AttachmentObjectType"];
             /** Format: uuid */
@@ -5164,6 +5324,145 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Neighborhood"][];
+                };
+            };
+        };
+    };
+    notifications_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description * `contract_renewal_due` - Contract renewal due
+                 *     * `contract_expired` - Contract expired
+                 *     * `contract_auto_renewed` - Contract auto-renewed
+                 *     * `contract_auto_renewal_blocked` - Contract auto-renewal blocked
+                 *     * `maintenance_overdue` - Maintenance overdue
+                 */
+                kind?: "contract_auto_renewal_blocked" | "contract_auto_renewed" | "contract_expired" | "contract_renewal_due" | "maintenance_overdue";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                unread?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedNotificationList"];
+                };
+            };
+        };
+    };
+    notifications_read_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this notification. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"];
+                };
+            };
+        };
+    };
+    notifications_preferences_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPreference"][];
+                };
+            };
+        };
+    };
+    notifications_preferences_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPreferenceRequest"][];
+                "application/x-www-form-urlencoded": components["schemas"]["NotificationPreferenceRequest"][];
+                "multipart/form-data": components["schemas"]["NotificationPreferenceRequest"][];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPreference"][];
+                };
+            };
+        };
+    };
+    notifications_read_all_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdatedCount"];
+                };
+            };
+        };
+    };
+    notifications_unread_count_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadCount"];
                 };
             };
         };

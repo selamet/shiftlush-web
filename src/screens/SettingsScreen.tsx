@@ -23,6 +23,7 @@ import { AddressSelect } from "@/components/forms/AddressSelect";
 import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
 import { ChangePasswordForm } from "@/components/settings/ChangePasswordForm";
 import { SessionList } from "@/components/settings/SessionList";
+import { NotificationPreferencesForm } from "@/components/settings/NotificationPreferencesForm";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -646,6 +647,12 @@ function ProfileTab() {
 
       <Section title={t("settings.activeSessions")}>
         <SessionList />
+      </Section>
+
+      {/* On the profile tab, not the firm's: what reaches a person's inbox is
+          that person's choice, and every role makes it for themselves. */}
+      <Section title={t("notification.preferences.title")}>
+        <NotificationPreferencesForm />
       </Section>
     </div>
   );

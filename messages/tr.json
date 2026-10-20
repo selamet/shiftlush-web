@@ -1222,5 +1222,60 @@
         "title": "Etiket okunamadı"
       }
     }
+  },
+  "notification": {
+    "title": "Bildirimler",
+    "bell": "Bildirimler",
+    "bellUnread": "Bildirimler, {{count}} okunmamış",
+    "viewAll": "Tümünü gör",
+    "markAllRead": "Tümünü okundu say",
+    "markingAllRead": "İşaretleniyor…",
+    "empty": "Bildiriminiz yok",
+    "emptyUnread": "Okunmamış bildiriminiz yok",
+    "emptyHint": "Sözleşme süreleri ve geciken bakımlar burada bildirilir.",
+    "unreadTag": "Yeni",
+    "filterAll": "Tümü",
+    "filterUnread": "Okunmamış",
+    "filterLabel": "Gösterilen bildirimler",
+    "previousPage": "Önceki sayfa",
+    "nextPage": "Sonraki sayfa",
+    "pageOf": "Sayfa {{page}} / {{pages}}",
+    "justNow": "az önce",
+    "contractRef": "{{number}} numaralı",
+    "contractRefWithCustomer": "{{customer}} ile yapılan {{number}} numaralı",
+    "subject": {
+      "contract_renewal_due": "{{number}} numaralı sözleşmenin süresi doluyor",
+      "contract_expired": "{{number}} numaralı sözleşmenin süresi doldu",
+      "contract_auto_renewed": "{{number}} numaralı sözleşme otomatik olarak yenilendi",
+      "contract_auto_renewal_blocked": "{{number}} numaralı sözleşme otomatik olarak yenilenemedi",
+      "maintenance_overdue": "{{elevator}} asansörünün bakımı gecikti"
+    },
+    "body": {
+      "contract_renewal_due": "{{contract}} sözleşmenin süresi {{date}} tarihinde doluyor.",
+      "renewalOn": "Otomatik yenileme açık: sözleşme bu tarihte aynı koşullarla yenilenecek.",
+      "renewalOff": "Otomatik yenileme kapalı: yenilenmezse sözleşme bu tarihte sona erecek ve kapsadığı asansörler sözleşmesiz kalacak.",
+      "contract_expired": "{{contract}} sözleşmenin süresi {{date}} tarihinde doldu. Otomatik yenileme kapalı olduğu için sözleşme sona erdi ve kapsadığı asansörler sözleşmesiz duruma geçti.",
+      "contract_auto_renewed": "{{contract}} sözleşmenin süresi {{date}} tarihinde doldu ve sözleşme otomatik olarak yenilendi. Yeni sözleşme {{successor}} numarasıyla aynı koşullarda yürürlüğe girdi.",
+      "contract_auto_renewal_blocked": "{{contract}} sözleşmenin süresi {{date}} tarihinde doldu, ancak sözleşmede KDV oranı tanımlı olmadığı için otomatik olarak yenilenemedi. Yeni sözleşme {{successor}} numarasıyla taslak olarak oluşturuldu; KDV oranını girip sözleşmeyi gözden geçirdikten sonra etkinleştirmeniz gerekiyor.",
+      "maintenance_overdue": "{{elevator}} asansörünün bakımı {{date}} tarihinde yapılmalıydı.",
+      "maintenance_overdue_withBuilding": "{{elevator}} ({{building}}) asansörünün bakımı {{date}} tarihinde yapılmalıydı."
+    },
+    "unknown": {
+      "title": "Yeni bildirim",
+      "body": "Bu bildirimin ayrıntıları uygulamanın bu sürümünde gösterilemiyor."
+    },
+    "kind": {
+      "contract_renewal_due": "Sözleşme süresi doluyor",
+      "contract_expired": "Sözleşme süresi doldu",
+      "contract_auto_renewed": "Sözleşme otomatik olarak yenilendi",
+      "contract_auto_renewal_blocked": "Sözleşme otomatik olarak yenilenemedi",
+      "maintenance_overdue": "Bakım gecikti"
+    },
+    "preferences": {
+      "title": "Bildirimler",
+      "hint": "Bildirimler uygulamada her zaman görünür. İşaretlediğiniz türler ayrıca e-posta ile de gönderilir.",
+      "email": "E-posta ile de gönder",
+      "saved": "Bildirim tercihleriniz kaydedildi"
+    }
   }
 }

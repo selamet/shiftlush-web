@@ -80,6 +80,9 @@ const RUNTIME_NAMESPACES = [
   "visit.checklistItem",
   "visit.checklistResult",
   "outbox.kind",
+  "notification.kind",
+  "notification.subject",
+  "notification.body",
   "errors",
 ];
 

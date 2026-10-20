@@ -111,6 +111,11 @@ const PATHS = [
   "/users/u3",
   "/audit-logs",
   "/outbox",
+  "/notifications",
+  // Spelled the way the app writes it: the router JSON-quotes a string that
+  // would otherwise parse as a boolean. A bare `?unread=true` typed by hand is
+  // read too, and the router rewrites the address to this form.
+  "/notifications?unread=%22true%22",
   "/settings",
   // Its own route rather than a tab behind a click, which is what makes it
   // renderable here at all: the password form and the session list are the two
@@ -144,6 +149,20 @@ const EXPECT_HIDDEN = {
 };
 
 const EXPECT = {
+  // Every role has notifications of its own. The list renders each kind's
+  // sentence, including a contract with no customer name, and a kind this
+  // client does not know falls back to a plain notice rather than a blank row.
+  "/notifications": [
+    "Sol asansör (A Blok) asansörünün bakımı 13.10.2026 tarihinde yapılmalıydı.",
+    "Dadaş Konakları Site Yönetimi ile yapılan 2026-0043 numaralı sözleşmenin süresi 31.01.2027 tarihinde doluyor.",
+    "2025-0112 numaralı sözleşmenin süresi 18.10.2026 tarihinde doldu",
+    "Yeni bildirim",
+    "Tümünü okundu say",
+    // The bell is in the top bar of every signed-in page.
+    "Bildirimler",
+  ],
+  "/notifications?unread=%22true%22": ["Sol asansör asansörünün bakımı gecikti", "Yeni"],
+
   // There is no IndexedDB under Node, so the outbox is empty for every role —
   // which is the state that has to render without one, as on a phone in
   // private mode.
@@ -242,6 +261,9 @@ const EXPECT = {
     "Safari · iOS",
     "Edge · Windows",
     "Bu cihaz",
+    // The e-mail choices, one per kind, as the server stored them.
+    "E-posta ile de gönder",
+    "Bakım gecikti",
   ],
 };
 
@@ -254,6 +276,8 @@ const EXPECT = {
  * its absence can, and the absence is the whole safety property.
  */
 const EXPECT_ABSENT = {
+  // Read ones are not in the unread view — the filter reached the request.
+  "/notifications?unread=%22true%22": ["2025-0112"],
   "/users/u1": "Pasifleştir",
   "/users/u2": "Pasifleştir",
   // A contract at 0% is settled, not unfinished. The moment this sentence
