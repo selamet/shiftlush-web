@@ -1367,6 +1367,123 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/planned-visits/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The monthly maintenance plan.
+         *
+         *     Composed from mixins rather than a TenantViewSet because nothing here is
+         *     created or deleted by a client — the `plan_maintenance` job writes the rows
+         *     and a recorded visit closes them — so there is no create for the router to
+         *     publish, and no delete.
+         *
+         *     Technicians read their own rows and the unassigned rows of the customers
+         *     they are assigned to: the usual customer narrowing, then within it only
+         *     what is theirs to do or still open for anyone. Another technician's row
+         *     is a 404.
+         */
+        get: operations["planned_visits_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/planned-visits/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The monthly maintenance plan.
+         *
+         *     Composed from mixins rather than a TenantViewSet because nothing here is
+         *     created or deleted by a client — the `plan_maintenance` job writes the rows
+         *     and a recorded visit closes them — so there is no create for the router to
+         *     publish, and no delete.
+         *
+         *     Technicians read their own rows and the unassigned rows of the customers
+         *     they are assigned to: the usual customer narrowing, then within it only
+         *     what is theirs to do or still open for anyone. Another technician's row
+         *     is a 404.
+         */
+        get: operations["planned_visits_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description The monthly maintenance plan.
+         *
+         *     Composed from mixins rather than a TenantViewSet because nothing here is
+         *     created or deleted by a client — the `plan_maintenance` job writes the rows
+         *     and a recorded visit closes them — so there is no create for the router to
+         *     publish, and no delete.
+         *
+         *     Technicians read their own rows and the unassigned rows of the customers
+         *     they are assigned to: the usual customer narrowing, then within it only
+         *     what is theirs to do or still open for anyone. Another technician's row
+         *     is a 404.
+         */
+        patch: operations["planned_visits_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/planned-visits/bulk-assign/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Give many rows to one technician, all or nothing.
+         *
+         *     One id the caller cannot see — another firm's, or never issued — refuses
+         *     the whole request with nothing changed. Converges on a retry: rows
+         *     already given to that technician are not announced again, so it needs
+         *     no Idempotency-Key.
+         */
+        post: operations["planned_visits_bulk_assign_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/planned-visits/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Counts for the plan screen's header: per technician, unassigned, overdue.
+         *
+         *     Over the same rows the list would return for the same filters, so a
+         *     technician's summary covers exactly the rows they can see.
+         */
+        get: operations["planned_visits_summary_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/provinces/": {
         parameters: {
             query?: never;
@@ -1712,6 +1829,15 @@ export interface components {
             /** Format: int64 */
             unit_count?: number | null;
             is_active?: boolean;
+        };
+        BulkAssignRequest: {
+            ids: string[];
+            /** Format: uuid */
+            technician: string;
+        };
+        /** @description How many rows the bulk assignment covered, including any already theirs. */
+        BulkAssignResult: {
+            readonly count: number;
         };
         Company: {
             /** Format: uuid */
@@ -2693,9 +2819,10 @@ export interface components {
          *     * `contract_auto_renewed` - Contract auto-renewed
          *     * `contract_auto_renewal_blocked` - Contract auto-renewal blocked
          *     * `maintenance_overdue` - Maintenance overdue
+         *     * `visit_assigned` - Planned visits assigned
          * @enum {string}
          */
-        NotificationKind: "contract_renewal_due" | "contract_expired" | "contract_auto_renewed" | "contract_auto_renewal_blocked" | "maintenance_overdue";
+        NotificationKind: "contract_renewal_due" | "contract_expired" | "contract_auto_renewed" | "contract_auto_renewal_blocked" | "maintenance_overdue" | "visit_assigned";
         NotificationPreference: {
             kind: components["schemas"]["NotificationKind"];
             email: boolean;
@@ -2704,6 +2831,8 @@ export interface components {
             kind: components["schemas"]["NotificationKind"];
             email: boolean;
         };
+        /** @enum {unknown} */
+        NullEnum: null;
         PaginatedAttachmentList: {
             results: components["schemas"]["Attachment"][];
             pagination: {
@@ -2836,6 +2965,19 @@ export interface components {
         };
         PaginatedNotificationList: {
             results: components["schemas"]["Notification"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedPlannedVisitReadList: {
+            results: components["schemas"]["PlannedVisitRead"][];
             pagination: {
                 /** @example 1 */
                 page: number;
@@ -3085,6 +3227,19 @@ export interface components {
             parts_replaced?: string;
             items?: components["schemas"]["SetChecklistItemRequest"][];
         };
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported - every app that needs this defines its own
+         *     (see apps/contracts, apps/customers, apps/elevators, apps/properties);
+         *     there is no shared core.serializers module to pull it from.
+         */
+        PatchedPlannedVisitWriteRequest: {
+            /** Format: uuid */
+            technician?: string | null;
+            /** Format: date */
+            planned_date?: string | null;
+        };
         PatchedUserUpdateRequest: {
             first_name?: string;
             last_name?: string;
@@ -3093,6 +3248,88 @@ export interface components {
             certificate_number?: string;
             /** Format: date */
             certificate_valid_until?: string | null;
+        };
+        PlanStatusCounts: {
+            planned: number;
+            done: number;
+            cancelled: number;
+        };
+        PlanSummary: {
+            period: string;
+            total: number;
+            by_status: components["schemas"]["PlanStatusCounts"];
+            unassigned: number;
+            overdue: number;
+            technicians: components["schemas"]["TechnicianPlanSummary"][];
+        };
+        /**
+         * @description One row of the plan, with every name the screen prints.
+         *
+         *     The names are joined in by the viewset's select_related, so a page of rows
+         *     is one query — the plan screen and the technician's list both show the
+         *     whole month at once.
+         */
+        PlannedVisitRead: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly elevator: string;
+            readonly elevator_name: string;
+            /** Format: uuid */
+            readonly building: string;
+            readonly building_name: string;
+            readonly neighborhood_name: string | null;
+            readonly district: number | null;
+            readonly district_name: string | null;
+            /** Format: uuid */
+            readonly customer: string;
+            readonly customer_name: string;
+            readonly period: string;
+            /** Format: date */
+            readonly due_date: string;
+            /** Format: date */
+            readonly planned_date: string | null;
+            /** Format: uuid */
+            readonly technician: string | null;
+            readonly technician_name: string | null;
+            readonly status: components["schemas"]["PlannedVisitStatus"];
+            /** Format: uuid */
+            readonly visit: string | null;
+            /**
+             * @description Status of the visit linked to this row: the one that closed it when `done`, the latest attempt while `planned`. Null when nobody has been yet. `planned` with a status here means tried, not done.
+             *
+             *     * `completed` - Completed
+             *     * `incomplete` - Incomplete
+             *     * `access_denied` - Access denied
+             */
+            readonly latest_visit_status: (components["schemas"]["MaintenanceVisitStatus"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Still planned and past its due date, by the Istanbul calendar. */
+            readonly is_overdue: boolean;
+            readonly manually_edited: boolean;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /**
+         * @description * `planned` - Planned
+         *     * `done` - Done
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        PlannedVisitStatus: "planned" | "done" | "cancelled";
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported - every app that needs this defines its own
+         *     (see apps/contracts, apps/customers, apps/elevators, apps/properties);
+         *     there is no shared core.serializers module to pull it from.
+         */
+        PlannedVisitWrite: {
+            /** Format: uuid */
+            technician?: string | null;
+            /** Format: date */
+            planned_date?: string | null;
         };
         /**
          * @description * `per_elevator` - Per elevator
@@ -3191,6 +3428,15 @@ export interface components {
             /** Format: uuid */
             id: string;
             name: string;
+        };
+        TechnicianPlanSummary: {
+            planned: number;
+            done: number;
+            cancelled: number;
+            /** Format: uuid */
+            technician: string;
+            technician_name: string;
+            overdue: number;
         };
         TerminateRequest: {
             /** Format: date */
@@ -5337,8 +5583,9 @@ export interface operations {
                  *     * `contract_auto_renewed` - Contract auto-renewed
                  *     * `contract_auto_renewal_blocked` - Contract auto-renewal blocked
                  *     * `maintenance_overdue` - Maintenance overdue
+                 *     * `visit_assigned` - Planned visits assigned
                  */
-                kind?: "contract_auto_renewal_blocked" | "contract_auto_renewed" | "contract_expired" | "contract_renewal_due" | "maintenance_overdue";
+                kind?: "contract_auto_renewal_blocked" | "contract_auto_renewed" | "contract_expired" | "contract_renewal_due" | "maintenance_overdue" | "visit_assigned";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -5463,6 +5710,144 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UnreadCount"];
+                };
+            };
+        };
+    };
+    planned_visits_list: {
+        parameters: {
+            query: {
+                customer?: string;
+                district?: number;
+                due_before?: string;
+                elevator?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description The month, as "YYYY-MM". Required: the plan is always read a month at a time. */
+                period: string;
+                /**
+                 * @description * `planned` - Planned
+                 *     * `done` - Done
+                 *     * `cancelled` - Cancelled
+                 */
+                status?: "cancelled" | "done" | "planned";
+                /** @description A user id, or "me" for the signed-in user. */
+                technician?: string;
+                unassigned?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedPlannedVisitReadList"];
+                };
+            };
+        };
+    };
+    planned_visits_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this planned visit. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlannedVisitRead"];
+                };
+            };
+        };
+    };
+    planned_visits_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this planned visit. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedPlannedVisitWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedPlannedVisitWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedPlannedVisitWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlannedVisitWrite"];
+                };
+            };
+        };
+    };
+    planned_visits_bulk_assign_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkAssignRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["BulkAssignRequest"];
+                "multipart/form-data": components["schemas"]["BulkAssignRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkAssignResult"];
+                };
+            };
+        };
+    };
+    planned_visits_summary_retrieve: {
+        parameters: {
+            query: {
+                /** @description The month, as "YYYY-MM". The list filters apply here too. */
+                period: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanSummary"];
                 };
             };
         };

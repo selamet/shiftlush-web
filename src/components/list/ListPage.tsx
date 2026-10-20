@@ -73,6 +73,12 @@ interface ListPageProps<T> {
   loading?: boolean;
   /** Set when the request failed. Already translated — this component shows it. */
   error?: { message: string; reference?: string; onRetry?: () => void };
+  /**
+   * Drawn between the title and the filter bar — for a list whose meaning
+   * depends on more than its filters, like the plan's month and its counts.
+   * Kept out of the header so the title stays where every other list has it.
+   */
+  headerExtra?: React.ReactNode;
 }
 
 /** How long the typing has to stop before the term becomes a request. */
@@ -108,6 +114,7 @@ export function ListPage<T>({
   prerequisite,
   loading,
   error,
+  headerExtra,
 }: ListPageProps<T>) {
   const { t } = useTranslation();
   // Several controls stacked vertically push the table off a phone screen, so
@@ -146,6 +153,8 @@ export function ListPage<T>({
           </div>
         )}
       </div>
+
+      {headerExtra && <div className="px-6 pb-4">{headerExtra}</div>}
 
       <div className="flex flex-wrap items-center gap-2 px-6 pb-3">
         {searchable && <SearchBox state={state} />}

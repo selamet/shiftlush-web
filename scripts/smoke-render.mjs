@@ -116,6 +116,10 @@ const PATHS = [
   // would otherwise parse as a boolean. A bare `?unread=true` typed by hand is
   // read too, and the router rewrites the address to this form.
   "/notifications?unread=%22true%22",
+  "/plan",
+  "/plan?unassigned=%22true%22",
+  "/today",
+  "/week",
   "/settings",
   // Its own route rather than a tab behind a click, which is what makes it
   // renderable here at all: the password form and the session list are the two
@@ -309,8 +313,40 @@ const VISITS_RESTRICTED = "Bakım kayıtları rolünüzde görünmüyor";
 const EXPECT_BY_ROLE = {
   "/elevators/e1": {
     // The maintenance dates as the server sends them on the elevator.
-    all: ["Bakım kaydı gir", "Bakım geçmişi", "14.10.2026", "13.11.2026"],
+    all: ["Bakım kaydı gir", "Bakım geçmişi", "14.10.2026", "13.11.2026", "Bu ayın planı", "Hakan Çelik"],
     replace: { accountant: [] },
+  },
+  // The office's month: the summary, the rows in route order, an unassigned
+  // row named as such, and a row somebody tried and was turned away from.
+  "/plan": {
+    all: ["Sol asansör", "Bu ay toplam", "Atanmamış", "Denendi: Erişim sağlanamadı", "Dönem"],
+    replace: {
+      technician: ["Bakım planı rolünüzde görünmüyor", "Bugünkü listenize gidin"],
+      accountant: ["Bakım planı rolünüzde görünmüyor"],
+    },
+  },
+  "/plan?unassigned=%22true%22": {
+    all: ["Yük asansörü", "Yalnızca atanmamışlar"],
+    replace: {
+      technician: ["Bakım planı rolünüzde görünmüyor"],
+      accountant: ["Bakım planı rolünüzde görünmüyor"],
+    },
+  },
+  // A technician's day: their own rows due today, the done one kept and
+  // marked. The office is pointed at the month; the accountant at nothing.
+  "/today": {
+    all: ["Bugün ve Bu hafta listeleri teknisyenler içindir"],
+    replace: {
+      technician: ["Sol asansör", "Sağ asansör", "Servis asansörü", "Yapıldı", "bakım kaldı"],
+      accountant: ["Bakım planı rolünüzde görünmüyor"],
+    },
+  },
+  "/week": {
+    all: ["Bugün ve Bu hafta listeleri teknisyenler içindir"],
+    replace: {
+      technician: ["Sol asansör", "Bu hafta"],
+      accountant: ["Bakım planı rolünüzde görünmüyor"],
+    },
   },
   "/elevators/e1/visits/new": {
     all: ["Fren sistemi", "Topraklama", "0/16", "2026-0043", "16 madde daha yanıtlanmalı"],
@@ -350,7 +386,13 @@ const EXPECT_BY_ROLE = {
  * offer them a way in — the absence is the property being asserted.
  */
 const EXPECT_ABSENT_BY_ROLE = {
-  "/elevators/e1": { replace: { accountant: ["Bakım kaydı gir", "Bakım geçmişi"] } },
+  "/elevators/e1": {
+    replace: { accountant: ["Bakım kaydı gir", "Bakım geçmişi", "Bu ayın planı"] },
+  },
+  // Only the unassigned row: the filter reached the request.
+  "/plan?unassigned=%22true%22": { all: ["Sol asansör"] },
+  // An unassigned row is the office's to give, never on a technician's day.
+  "/today": { all: ["Yük asansörü"] },
   "/maintenance-visits?visit_date_after=2026-10-01&visit_date_before=2026-10-31": {
     all: ["15.09.2026"],
   },

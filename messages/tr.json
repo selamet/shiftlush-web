@@ -1254,7 +1254,8 @@
       "contract_expired": "{{number}} numaralı sözleşmenin süresi doldu",
       "contract_auto_renewed": "{{number}} numaralı sözleşme otomatik olarak yenilendi",
       "contract_auto_renewal_blocked": "{{number}} numaralı sözleşme otomatik olarak yenilenemedi",
-      "maintenance_overdue": "{{elevator}} asansörünün bakımı gecikti"
+      "maintenance_overdue": "{{elevator}} asansörünün bakımı gecikti",
+      "visit_assigned": "{{count}} bakım size atandı — {{month}}"
     },
     "body": {
       "contract_renewal_due": "{{contract}} sözleşmenin süresi {{date}} tarihinde doluyor.",
@@ -1264,7 +1265,8 @@
       "contract_auto_renewed": "{{contract}} sözleşmenin süresi {{date}} tarihinde doldu ve sözleşme otomatik olarak yenilendi. Yeni sözleşme {{successor}} numarasıyla aynı koşullarda yürürlüğe girdi.",
       "contract_auto_renewal_blocked": "{{contract}} sözleşmenin süresi {{date}} tarihinde doldu, ancak sözleşmede KDV oranı tanımlı olmadığı için otomatik olarak yenilenemedi. Yeni sözleşme {{successor}} numarasıyla taslak olarak oluşturuldu; KDV oranını girip sözleşmeyi gözden geçirdikten sonra etkinleştirmeniz gerekiyor.",
       "maintenance_overdue": "{{elevator}} asansörünün bakımı {{date}} tarihinde yapılmalıydı.",
-      "maintenance_overdue_withBuilding": "{{elevator}} ({{building}}) asansörünün bakımı {{date}} tarihinde yapılmalıydı."
+      "maintenance_overdue_withBuilding": "{{elevator}} ({{building}}) asansörünün bakımı {{date}} tarihinde yapılmalıydı.",
+      "visit_assigned": "{{month}} dönemi için {{count}} bakım ziyareti size atandı. Listenizi ShiftLush'ta rota sırasıyla görebilirsiniz."
     },
     "unknown": {
       "title": "Yeni bildirim",
@@ -1275,13 +1277,71 @@
       "contract_expired": "Sözleşme süresi doldu",
       "contract_auto_renewed": "Sözleşme otomatik olarak yenilendi",
       "contract_auto_renewal_blocked": "Sözleşme otomatik olarak yenilenemedi",
-      "maintenance_overdue": "Bakım gecikti"
+      "maintenance_overdue": "Bakım gecikti",
+      "visit_assigned": "Bakım ziyareti atandı"
     },
     "preferences": {
       "title": "Bildirimler",
       "hint": "Bildirimler uygulamada her zaman görünür. İşaretlediğiniz türler ayrıca e-posta ile de gönderilir.",
       "email": "E-posta ile de gönder",
       "saved": "Bildirim tercihleriniz kaydedildi"
+    }
+  },
+  "plan": {
+    "title": "Bakım planı",
+    "today": "Bugün",
+    "week": "Bu hafta",
+    "weekHint": "Bu haftanın bakımları, rota sırasıyla",
+    "leftCount": "{{count}} bakım kaldı",
+    "todayEmpty": "Bugün için planlanmış bakımınız yok",
+    "weekEmpty": "Bu hafta için planlanmış bakımınız yok",
+    "plannedOn": "Plan: {{date}}",
+    "dueOn": "Son tarih: {{date}}",
+    "thisMonth": "Bu ayın planı",
+    "noRowThisMonth": "Bu asansör için bu ay planlanmış bakım yok",
+    "unassigned": "Atanmamış",
+    "empty": "Bu dönem için planlanmış bakım yok",
+    "restricted": "Bakım planı rolünüzde görünmüyor",
+    "restrictedHint": "Bakım planını firma sahibi, yöneticiler ve operasyon ekibi yönetir.",
+    "technicianOnly": "Bugün ve Bu hafta listeleri teknisyenler içindir.",
+    "goToPlan": "Ayın bakım planına git",
+    "goToToday": "Bugünkü listenize gidin",
+    "editRow": "{{name}} satırını düzenle",
+    "selectTechnician": "Teknisyen seçin",
+    "assign": "Teknisyene ata",
+    "assigning": "Atanıyor…",
+    "assigned": "{{count}} bakım atandı",
+    "fields": {
+      "period": "Dönem",
+      "elevator": "Asansör",
+      "district": "İlçe",
+      "customer": "Müşteri",
+      "dueDate": "Son tarih",
+      "plannedDate": "Planlanan tarih",
+      "technician": "Teknisyen",
+      "status": "Durum"
+    },
+    "filters": {
+      "unassigned": "Atama",
+      "unassignedOnly": "Yalnızca atanmamışlar",
+      "dueBefore": "Son tarih (en geç)"
+    },
+    "status": {
+      "planned": "Planlandı",
+      "done": "Yapıldı",
+      "cancelled": "İptal edildi"
+    },
+    "flags": {
+      "overdue": "Gecikmiş",
+      "tried": "Denendi: {{status}}"
+    },
+    "summary": {
+      "total": "Bu ay toplam",
+      "done": "Yapılan",
+      "planned": "Planlanan",
+      "unassigned": "Atanmamış",
+      "overdue": "Gecikmiş",
+      "show": "Göster"
     }
   }
 }

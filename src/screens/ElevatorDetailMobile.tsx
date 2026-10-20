@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { formatDate, formatNumber } from "@/lib/format";
 import { toDisplay } from "@/lib/date";
 import { canRecordVisits } from "@/lib/visit";
+import { canReadPlan } from "@/lib/plan";
+import { ElevatorPlanCard } from "@/components/plan/ElevatorPlanCard";
 import { buttonVariants } from "@/components/ui/button";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
 import { InspectionLabel } from "@/components/ui/inspection-label";
@@ -154,6 +156,13 @@ export function ElevatorDetailMobile({
             {attachmentCount}
           </span>
         </section>
+
+        {canReadPlan(role) && (
+          <section className="rounded-lg border border-border-subtle bg-card p-4">
+            <h2 className="mb-1 text-colhead uppercase text-subtle">{t("plan.thisMonth")}</h2>
+            <ElevatorPlanCard elevatorId={elevator.id} enabled />
+          </section>
+        )}
 
         {visits && (
           <section className="rounded-lg border border-border-subtle bg-card p-4">

@@ -1,0 +1,211 @@
+import { useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
+import { useQueries } from "@tanstack/react-query";
+import { CalendarCheck, ChevronRight, MapPin } from "lucide-react";
+import { plannedVisitListQuery, type PlannedVisit } from "@/api/queries";
+import { errorMessage, supportReference } from "@/api/errors";
+import { toDisplay, todayIso } from "@/lib/date";
+import { enumLabel } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
+import { cn } from "@/lib/utils";
+import {
+  canManagePlan,
+  isDueThisWeek,
+  isDueToday,
+  myPlanParams,
+  periodOf,
+  periodsForWeek,
+  triedNotDone,
+} from "@/lib/plan";
+import { ListError, TableSkeleton } from "@/components/list/ListStates";
+import { PlanRestricted } from "@/components/plan/PlanRestricted";
+import { PlanFlagChips, PlanStatusChip } from "@/components/ui/status-chip";
+
+type Scope = "today" | "week";
+
+/**
+ * Route order across two months.
+ *
+ * Within a month the server already sends route order. A week that crosses a
+ * month end is two requests, and two route-ordered lists placed end to end are
+ * not one: the second month's first district would follow the first month's
+ * last. So the merged list is ordered again here by the same keys the server
+ * uses — district, neighbourhood, building, lift — and a sort that is stable
+ * keeps the server's own order wherever these agree.
+ */
+function routeOrder(a: PlannedVisit, b: PlannedVisit): number {
+  const keys: Array<keyof PlannedVisit> = [
+    "district_name",
+    "neighborhood_name",
+    "building_name",
+    "elevator_name",
+  ];
+  for (const key of keys) {
+    const left = String(a[key] ?? "");
+    const right = String(b[key] ?? "");
+    const order = left.localeCompare(right, "tr");
+    if (order !== 0) return order;
+  }
+  return 0;
+}
+
+/**
+ * The technician's day, and their week.
+ *
+ * What they open the app for: which lifts, in the order they will drive to
+ * them. Each row is one large target that opens the lift, where recording the
+ * visit is the button at the bottom of the screen. Done rows stay on the list,
+ * marked, because seeing what is already finished is half of knowing what is
+ * left.
+ *
+ * Only their own rows — `technician=me` — and not the unassigned ones the
+ * server would also let them see: an unassigned lift is the office's decision
+ * to make, and putting it on a technician's day would make it for them.
+ */
+export function TechnicianPlanScreen({ scope }: { scope: Scope }) {
+  const { t } = useTranslation();
+  const { role } = useSession();
+  const today = todayIso();
+  const isTechnician = role === "technician";
+  const periods = scope === "today" ? [periodOf(today)] : periodsForWeek(today);
+
+  const queries = useQueries({
+    queries: periods.map((period) => ({
+      ...plannedVisitListQuery(myPlanParams(period)),
+      enabled: isTechnician,
+    })),
+  });
+
+  if (!isTechnician) {
+    // The office has the month view; anybody else has neither.
+    if (canManagePlan(role)) {
+      return (
+        <div className="flex flex-col gap-3 px-6 py-16 text-center">
+          <CalendarCheck className="size-8 self-center text-subtle" aria-hidden="true" />
+          <p className="text-body text-muted-foreground">{t("plan.technicianOnly")}</p>
+          <Link to="/plan" className="self-center text-body text-primary hover:underline">
+            {t("plan.goToPlan")}
+          </Link>
+        </div>
+      );
+    }
+    return <PlanRestricted titleKey="plan.restricted" />;
+  }
+
+  const failed = queries.find((query) => query.isError);
+  const pending = queries.some((query) => query.isPending);
+  const all = queries.flatMap((query) => query.data?.results ?? []);
+  const merged = periods.length > 1 ? [...all].sort(routeOrder) : all;
+  const rows = merged.filter((row) =>
+    scope === "today" ? isDueToday(row, today) : isDueThisWeek(row, today),
+  );
+  const left = rows.filter((row) => row.status === "planned").length;
+
+  return (
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4 md:p-6">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-title">{scope === "today" ? t("plan.today") : t("plan.week")}</h1>
+        <p className="text-help text-muted-foreground">
+          {scope === "today" ? toDisplay(today) : t("plan.weekHint")}
+          {!pending && !failed && ` · ${t("plan.leftCount", { count: left })}`}
+        </p>
+      </div>
+
+      {/* Two tabs that are links, so each list has its own address — the
+          landing route is one of them — and each is a full gloved-hand
+          target. */}
+      <nav className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted p-1">
+        {(["today", "week"] as const).map((key) => (
+          <Link
+            key={key}
+            to={key === "today" ? "/today" : "/week"}
+            aria-current={scope === key ? "page" : undefined}
+            className={cn(
+              "flex min-h-control-lg items-center justify-center rounded-md text-body transition-colors focus-ring",
+              scope === key
+                ? "border border-border-strong bg-card font-medium text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {key === "today" ? t("plan.today") : t("plan.week")}
+          </Link>
+        ))}
+      </nav>
+
+      {pending ? (
+        <TableSkeleton columns={1} rows={4} />
+      ) : failed ? (
+        <ListError
+          message={errorMessage(failed.error, t)}
+          reference={supportReference(failed.error)}
+          onRetry={() => queries.forEach((query) => void query.refetch())}
+        />
+      ) : rows.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border px-6 py-12 text-center">
+          <CalendarCheck className="size-8 text-subtle" aria-hidden="true" />
+          <p className="text-body text-muted-foreground">
+            {scope === "today" ? t("plan.todayEmpty") : t("plan.weekEmpty")}
+          </p>
+        </div>
+      ) : (
+        <ol className="flex flex-col gap-2">
+          {rows.map((row, index) => (
+            <li key={row.id}>
+              <Link
+                to="/elevators/$id"
+                params={{ id: row.elevator }}
+                className={cn(
+                  "flex min-h-control-xl items-center gap-3 rounded-lg border bg-card p-3 hover:bg-muted focus-ring",
+                  row.is_overdue ? "border-l-[3px] border-l-foreground" : "border-border-subtle",
+                  row.status !== "planned" && "opacity-75",
+                )}
+              >
+                {/* The stop number: the order is the route, and "the third
+                    one" is how the day is talked about over the phone. */}
+                <span className="tnum grid size-8 shrink-0 place-items-center rounded-full bg-muted text-label">
+                  {index + 1}
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col gap-1 leading-tight">
+                  <span className="text-cardtitle">{row.elevator_name}</span>
+                  <span className="flex items-center gap-1 text-help text-muted-foreground">
+                    <MapPin className="size-3 shrink-0" aria-hidden="true" />
+                    <span className="truncate">
+                      {[row.building_name, row.neighborhood_name, row.district_name]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </span>
+                  <span className="flex flex-wrap items-center gap-1.5 text-help text-muted-foreground">
+                    <span className="tnum">
+                      {row.planned_date
+                        ? t("plan.plannedOn", { date: toDisplay(row.planned_date) })
+                        : t("plan.dueOn", { date: toDisplay(row.due_date) })}
+                    </span>
+                    <PlanStatusChip value={row.status} />
+                    <PlanFlagChips
+                      overdue={row.is_overdue}
+                      tried={triedNotDone(row)}
+                      overdueLabel={t("plan.flags.overdue")}
+                      triedLabel={t("plan.flags.tried", {
+                        status: enumLabel("visit.status", row.latest_visit_status),
+                      })}
+                    />
+                  </span>
+                </span>
+                <ChevronRight className="size-5 shrink-0 text-subtle" aria-hidden="true" />
+              </Link>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+export function TodayScreen() {
+  return <TechnicianPlanScreen scope="today" />;
+}
+
+export function WeekScreen() {
+  return <TechnicianPlanScreen scope="week" />;
+}

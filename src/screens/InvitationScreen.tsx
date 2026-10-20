@@ -13,6 +13,8 @@ import { errorMessage } from "@/api/errors";
 import { formValues, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
 import { MIN_PASSWORD_LENGTH } from "@/lib/password";
+import { homePath } from "@/lib/plan";
+import type { Role } from "@/components/layout/nav-config";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
@@ -42,7 +44,7 @@ export function InvitationScreen() {
     mutationFn: ({ password }) => acceptInvitation(token ?? "", password),
     onSuccess: (tokens) => {
       setAccessToken(tokens.access);
-      void navigate({ to: "/elevators" });
+      void navigate({ to: homePath(tokens.user.role as Role) });
     },
   });
 

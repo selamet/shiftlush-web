@@ -43,6 +43,8 @@ import { ElevatorDetailMobile } from "./ElevatorDetailMobile";
 import { InspectionLabel } from "@/components/ui/inspection-label";
 import { toDisplay } from "@/lib/date";
 import { canReadVisits, canRecordVisits } from "@/lib/visit";
+import { canReadPlan } from "@/lib/plan";
+import { ElevatorPlanCard } from "@/components/plan/ElevatorPlanCard";
 import {
   RecordVisitAction,
   VisitHistoryList,
@@ -227,6 +229,7 @@ export function ElevatorDetailScreen() {
   const showsVisits = canReadVisits(role);
   const recordsVisits = canRecordVisits(role);
   const visits = useElevatorVisits(elevatorId, showsVisits);
+  const readsPlan = canReadPlan(role);
 
   const queryClient = useQueryClient();
   const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
@@ -636,6 +639,14 @@ export function ElevatorDetailScreen() {
               <p className="text-help text-subtle">{t("elevator.hints.noContract")}</p>
             )}
           </RailCard>
+
+          {/* Above the history: what is planned next matters more on this page
+              than what was done before. */}
+          {readsPlan && (
+            <RailCard title={t("plan.thisMonth")}>
+              <ElevatorPlanCard elevatorId={elevatorId} enabled={readsPlan} />
+            </RailCard>
+          )}
 
           {showsVisits && (
             <RailCard title={t("visit.history")}>

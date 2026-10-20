@@ -5,6 +5,7 @@ import { PublicShell } from "@/screens/PublicShell";
 import { ApiError } from "@/api/client";
 import { errorMessage } from "@/api/errors";
 import { useSession } from "@/lib/session";
+import { homePath } from "@/lib/plan";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
@@ -24,8 +25,9 @@ export function LoginScreen() {
     setState("submitting");
 
     try {
-      await signIn(String(form.get("email") ?? ""), String(form.get("password") ?? ""));
-      void navigate({ to: "/elevators" });
+      const role = await signIn(String(form.get("email") ?? ""), String(form.get("password") ?? ""));
+      // A technician starts on today's list; everyone else on the lifts.
+      void navigate({ to: homePath(role) });
     } catch (error) {
       // The lockout is its own state, not a worse version of a wrong password:
       // it is the system protecting the account, and the way out is different.

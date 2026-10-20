@@ -28,6 +28,8 @@ import {
   scopeFilter,
   type ListFilter,
 } from "@/lib/list-search";
+import { monthYearLabel, todayIso } from "@/lib/date";
+import { isPeriod, periodOf } from "@/lib/plan";
 
 /**
  * What `GET /elevators/` narrows by, spelled the way the contract spells it.
@@ -248,3 +250,62 @@ export const notificationFilters: ListFilter[] = [
 ];
 
 export const notificationListSearch = listSearchSchema(notificationFilters);
+
+/**
+ * What the plan screen narrows by — every filter `GET /planned-visits/` takes
+ * except `customer`, a reference into thousands that would need a picker.
+ *
+ * `period` is here so it survives the other filters changing: the list state
+ * keeps only parameters it knows. It has no control in the bar — the month
+ * picker above the table sets it — and a chip once it is not the current
+ * month, so a plan for November never reads as this month's. Its absence means
+ * the current month, so the default is never written into the address.
+ *
+ * `district` and `technician` are ids whose names arrive with data, so their
+ * menus are handed options on screen. `unassigned` takes `true` alone: "the
+ * assigned ones" is not a question anyone brings to a plan, and `false` would
+ * offer it. `due_before` is inclusive on the server, and is what the summary's
+ * "overdue" link sets, together with `status=planned`.
+ */
+export const planFilters: ListFilter[] = [
+  {
+    param: "period",
+    labelKey: "plan.fields.period",
+    options: [],
+    kind: "scope",
+    accepts: isPeriod,
+    formatValue: (value) => monthYearLabel(`${value}-01`),
+  },
+  idMenuFilter({ param: "technician", labelKey: "plan.fields.technician" }),
+  {
+    param: "unassigned",
+    labelKey: "plan.filters.unassigned",
+    options: [{ value: "true", labelKey: "plan.filters.unassignedOnly" }],
+  },
+  enumFilter({
+    param: "status",
+    labelKey: "plan.fields.status",
+    namespace: "plan.status",
+    values: ["planned", "done", "cancelled"],
+  }),
+  idMenuFilter({ param: "district", labelKey: "plan.fields.district" }),
+  dateFilter({ param: "due_before", labelKey: "plan.filters.dueBefore" }),
+];
+
+export const planListSearch = listSearchSchema(planFilters);
+
+/** The month the plan screen shows when the address names none: this one. */
+export function currentPeriod(): string {
+  return periodOf(todayIso());
+}
+
+/**
+ * The list's request. The period is always named, because the server requires
+ * it — the URL's when it has one, the current month's otherwise. One function
+ * for the route's prefetch and the screen, so both warm and read one key.
+ */
+export function planListParams(raw: Record<string, unknown>) {
+  const params = planListSearch.params(raw);
+  const period = typeof params.period === "string" ? params.period : currentPeriod();
+  return { ...params, period };
+}
