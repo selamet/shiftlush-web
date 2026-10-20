@@ -14,6 +14,10 @@ export type BillingPeriod = Schemas["BillingPeriodEnum"];
 export type MaintenanceVisitStatus = Schemas["MaintenanceVisitStatus"];
 export type MaintenanceChecklistItem = Schemas["MaintenanceChecklistItem"];
 export type MaintenanceChecklistResult = Schemas["MaintenanceChecklistResult"];
+/* A plan row's state. Not chosen by anyone on a form — the plan job writes
+   `planned`, a recorded visit makes it `done` — but the plan screen filters by
+   it, and the filter's option list is bound to it like any other. */
+export type PlannedVisitStatus = Schemas["PlannedVisitStatus"];
 /* `VatStatusEnum` is deliberately not listed here. Every type above names a set
    of options a form offers, which is what `allOf` below exists to bind. VAT
    status is nobody's choice — the server derives it from `vat_rate` and sends

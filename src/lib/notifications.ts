@@ -16,7 +16,7 @@
  */
 import type { TFunction } from "i18next";
 import type { AppNotification } from "@/api/queries";
-import { toDisplay } from "@/lib/date";
+import { monthYearLabel, toDisplay } from "@/lib/date";
 import { formatDate } from "@/lib/format";
 import { DEFAULT_LOCALE } from "@/lib/i18n";
 
@@ -27,6 +27,7 @@ const REQUIRED: Record<string, readonly string[]> = {
   contract_auto_renewed: ["contract_number", "end_date", "successor_contract_number"],
   contract_auto_renewal_blocked: ["contract_number", "end_date", "successor_contract_number"],
   maintenance_overdue: ["elevator_name", "next_maintenance_date"],
+  visit_assigned: ["period", "count"],
 };
 
 export interface NotificationText {
@@ -118,6 +119,21 @@ export function describeNotification(notification: AppNotification, t: TFunction
         known: true,
       };
     }
+    case "visit_assigned": {
+      // The month as the e-mail spells it — month name and year — from Intl rather
+      // than a list of month names in this file.
+      const month = monthYearLabel(`${text(data, "period")}-01`) || text(data, "period");
+      // A number for i18next, which reserves `count` for plurals.
+      const count = Number(text(data, "count"));
+      if (!Number.isInteger(count)) {
+        return { title: t("notification.unknown.title"), body: t("notification.unknown.body"), known: false };
+      }
+      return {
+        title: t("notification.subject.visit_assigned", { count, month }),
+        body: t("notification.body.visit_assigned", { count, month }),
+        known: true,
+      };
+    }
     default:
       return { title: t("notification.unknown.title"), body: t("notification.unknown.body"), known: false };
   }
@@ -128,10 +144,18 @@ export function describeNotification(notification: AppNotification, t: TFunction
  *
  * `null` for a subject this client has no screen for. The row is still shown
  * and can still be marked read; it just is not a link to nowhere.
+ *
+ * A `plan` subject is the recipient's own work list rather than one record —
+ * the server raises `visit_assigned` with the recipient's id — so it leads to
+ * their "today" screen, which is where newly assigned lifts are worked from.
  */
 export function notificationTarget(
   notification: Pick<AppNotification, "subject_type" | "subject_id">,
-): { to: "/contracts/$id" | "/elevators/$id"; params: { id: string } } | null {
+):
+  | { to: "/contracts/$id" | "/elevators/$id"; params: { id: string } }
+  | { to: "/today"; params?: undefined }
+  | null {
+  if (notification.subject_type === "plan") return { to: "/today" };
   if (!notification.subject_id) return null;
   if (notification.subject_type === "contract") {
     return { to: "/contracts/$id", params: { id: notification.subject_id } };

@@ -32,6 +32,42 @@ function page(rows) {
   };
 }
 
+/** A calendar day where the run happens, as `YYYY-MM-DD`. */
+function localDay(date) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** This month's plan, dated around today. See the planned-visits route below. */
+function plannedVisits() {
+  const now = new Date();
+  const today = localDay(now);
+  const period = today.slice(0, 7);
+  const first = `${period}-01`;
+  const last = localDay(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  const place = {
+    building: "b1",
+    building_name: "A Blok",
+    neighborhood_name: "Muratpaşa",
+    district: 2045,
+    district_name: "Yakutiye",
+    customer: "c1",
+    customer_name: "Dadaş Konakları Site Yönetimi",
+    period,
+    manually_edited: false,
+    created_at: `${first}T00:30:00Z`,
+    updated_at: `${first}T00:30:00Z`,
+  };
+  const hakan = { technician: "u3", technician_name: "Hakan Çelik" };
+  const nobody = { technician: null, technician_name: null };
+  return [
+    { ...place, ...hakan, id: "p1", elevator: "e1", elevator_name: "Sol asansör", due_date: today, planned_date: null, status: "planned", visit: null, latest_visit_status: null, is_overdue: false },
+    { ...place, ...hakan, id: "p2", elevator: "e2", elevator_name: "Sağ asansör", due_date: first, planned_date: null, status: "planned", visit: null, latest_visit_status: "access_denied", is_overdue: first < today },
+    { ...place, ...nobody, id: "p3", elevator: "e3", elevator_name: "Yük asansörü", building: "b2", building_name: "B Blok", due_date: last, planned_date: null, status: "planned", visit: null, latest_visit_status: null, is_overdue: false },
+    { ...place, ...hakan, id: "p4", elevator: "e4", elevator_name: "Servis asansörü", due_date: first, planned_date: today, status: "done", visit: "v1", latest_visit_status: "completed", is_overdue: false, manually_edited: true },
+  ];
+}
+
 /**
  * Routes are matched most-specific first, so `/customers/{id}` is tried before
  * the collection. Each entry returns the body for that path.
@@ -199,6 +235,7 @@ function resolve(path, search, method, body) {
       { kind: "contract_auto_renewed", email: true },
       { kind: "contract_auto_renewal_blocked", email: true },
       { kind: "maintenance_overdue", email: false },
+      { kind: "visit_assigned", email: true },
     ];
   }
   if (path === "/api/v1/notifications/") {
@@ -209,6 +246,72 @@ function resolve(path, search, method, body) {
     if (unread === "false") rows = rows.filter((row) => row.read_at !== null);
     const size = Number(search.get("page_size")) || rows.length;
     return page(rows.slice(0, size));
+  }
+
+  // The maintenance plan, built for whatever month the run happens in: the
+  // screens default to the current period and to "today", so a fixture with
+  // fixed dates would be a plan for a month nobody is looking at. One row of
+  // each kind the screens draw differently — due today, tried and turned away,
+  // unassigned, done.
+  if (path.startsWith("/api/v1/planned-visits/")) {
+    const rows = plannedVisits();
+    const summaryOrList = path === "/api/v1/planned-visits/summary/" || path === "/api/v1/planned-visits/";
+    if (method === "POST" && path === "/api/v1/planned-visits/bulk-assign/") {
+      return { count: (body?.ids ?? []).length };
+    }
+    const one = /^\/api\/v1\/planned-visits\/([^/]+)\/$/.exec(path);
+    if (one && !summaryOrList) {
+      const row = rows.find((candidate) => candidate.id === one[1]);
+      if (!row) return null;
+      return method === "PATCH" ? { technician: row.technician, planned_date: row.planned_date, ...body } : row;
+    }
+    // Narrowed the way the server narrows it. `me` is the fixture's one
+    // technician: the stub has no session to resolve it against.
+    let narrowed = rows.filter((row) => row.period === search.get("period"));
+    const technician = search.get("technician");
+    if (technician) narrowed = narrowed.filter((row) => row.technician === (technician === "me" ? "u3" : technician));
+    if (search.get("unassigned") === "true") narrowed = narrowed.filter((row) => row.technician === null);
+    for (const param of ["status", "elevator"]) {
+      const value = search.get(param);
+      if (value) narrowed = narrowed.filter((row) => row[param] === value);
+    }
+    const district = search.get("district");
+    if (district) narrowed = narrowed.filter((row) => String(row.district) === district);
+    const dueBefore = search.get("due_before");
+    if (dueBefore) narrowed = narrowed.filter((row) => row.due_date <= dueBefore);
+
+    if (path === "/api/v1/planned-visits/summary/") {
+      const count = (list, status) => list.filter((row) => row.status === status).length;
+      const overdue = (list) => list.filter((row) => row.is_overdue).length;
+      const assigned = narrowed.filter((row) => row.technician);
+      const technicians = [...new Set(assigned.map((row) => row.technician))].map((id) => {
+        const mine = assigned.filter((row) => row.technician === id);
+        return {
+          technician: id,
+          technician_name: mine[0].technician_name,
+          planned: count(mine, "planned"),
+          done: count(mine, "done"),
+          cancelled: count(mine, "cancelled"),
+          overdue: overdue(mine),
+        };
+      });
+      return {
+        period: search.get("period"),
+        total: narrowed.length,
+        by_status: {
+          planned: count(narrowed, "planned"),
+          done: count(narrowed, "done"),
+          cancelled: count(narrowed, "cancelled"),
+        },
+        unassigned: narrowed.filter((row) => row.status === "planned" && !row.technician).length,
+        overdue: overdue(narrowed),
+        technicians,
+      };
+    }
+    if (path === "/api/v1/planned-visits/") {
+      const size = Number(search.get("page_size")) || narrowed.length;
+      return page(narrowed.slice(0, size));
+    }
   }
 
   if (path === "/api/v1/audit-logs/") return page(fixture("demo-audit-logs-elevator"));

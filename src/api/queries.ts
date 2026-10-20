@@ -1179,3 +1179,69 @@ export function notificationPreferencesQuery() {
 export function updateNotificationPreferences(preferences: NotificationPreference[]) {
   return api.put<NotificationPreference[]>("/notifications/preferences/", preferences);
 }
+
+// --------------------------------------------------------------------------
+// The maintenance plan
+//
+// One row per elevator per month, written by the server's planning job and
+// closed by a recorded visit. Nothing here creates or deletes a row: the
+// office assigns them and moves their dates, and that is all a client may do.
+// --------------------------------------------------------------------------
+
+export type PlannedVisit = Schemas["PlannedVisitRead"];
+export type PlanSummary = Schemas["PlanSummary"];
+export type PlannedVisitEdit = Schemas["PatchedPlannedVisitWriteRequest"];
+
+/**
+ * Hierarchical, so an assignment — which moves the summary's counts, every
+ * list and the elevator's own panel at once — is one invalidation.
+ */
+export const planKeys = {
+  all: ["planned-visits"] as const,
+  list: (params: ListParams) => ["planned-visits", "list", params] as const,
+  summary: (params: ListParams) => ["planned-visits", "summary", params] as const,
+} as const;
+
+/** A month's rows. `period` is required by the server; every caller names one. */
+export function plannedVisitListQuery(params: ListParams & { period: string }) {
+  return queryOptions({
+    queryKey: planKeys.list(params),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<PlannedVisit>>("/planned-visits/", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+/** The header's counts, over the same rows the list's filters describe. */
+export function planSummaryQuery(params: ListParams & { period: string }) {
+  return queryOptions({
+    queryKey: planKeys.summary(params),
+    queryFn: ({ signal }) =>
+      api.get<PlanSummary>("/planned-visits/summary/", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+/**
+ * Moving a row's date or giving it to somebody else. `null` clears either.
+ *
+ * The server marks the row as edited by hand, so the next planning run leaves
+ * it alone. The answer is not read: the contract describes the write shape and
+ * the screen refetches the list, which is where the row's other columns live.
+ */
+export function updatePlannedVisit(id: string, body: PlannedVisitEdit) {
+  return api.patch<unknown>(`/planned-visits/${id}/`, body);
+}
+
+/**
+ * Many rows to one technician, all or nothing.
+ *
+ * No Idempotency-Key: the server converges on a retry — rows already given to
+ * that technician are neither changed nor announced again.
+ */
+export function bulkAssignPlannedVisits(ids: string[], technician: string) {
+  return api.post<Schemas["BulkAssignResult"]>("/planned-visits/bulk-assign/", {
+    ids,
+    technician,
+  });
+}

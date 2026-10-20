@@ -320,6 +320,12 @@ export interface ListState {
   /** `null` removes the filter. */
   setFilter: (param: string, value: string | null) => void;
   /**
+   * Several filters in one navigation. Two `setFilter` calls in a row are two
+   * navigations, and the second can be built from the address before the
+   * first has landed — keeping one of the two and silently dropping the other.
+   */
+  setFilters: (values: Record<string, string | null>) => void;
+  /**
    * Drops every filter and the search term, and returns to the first page.
    * Page size and sorting are not filters and stay as they were.
    */
@@ -385,6 +391,14 @@ export function useListSearch(filters: readonly ListFilter[] = NO_FILTERS): List
     ),
     setFilter: useCallback(
       (param: string, value: string | null) => update({ [param]: value ?? undefined, page: 1 }),
+      [update],
+    ),
+    setFilters: useCallback(
+      (values: Record<string, string | null>) => {
+        const patch: Record<string, unknown> = { page: 1 };
+        for (const [param, value] of Object.entries(values)) patch[param] = value ?? undefined;
+        update(patch);
+      },
       [update],
     ),
     clearAll: useCallback(() => {

@@ -3,6 +3,8 @@ import {
   Users,
   LayoutGrid,
   ArrowUpDown,
+  CalendarCheck,
+  CalendarRange,
   ClipboardCheck,
   FileText,
   QrCode,
@@ -73,6 +75,21 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: "elevator.title",
         icon: ArrowUpDown,
         roles: ["owner", "admin", "operations", "technician"],
+      },
+      {
+        // A technician's first entry, because it is their landing screen and
+        // the list they come back to between lifts.
+        to: "/today",
+        labelKey: "plan.today",
+        icon: CalendarCheck,
+        roles: ["technician"],
+      },
+      {
+        // The office's month. Beside the visits it plans for.
+        to: "/plan",
+        labelKey: "plan.title",
+        icon: CalendarRange,
+        roles: ["owner", "admin", "operations"],
       },
       {
         // Under the elevators because that is what a visit is a record of.

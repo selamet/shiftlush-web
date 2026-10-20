@@ -34,6 +34,8 @@ import {
   companyQuery,
   currentUserQuery,
   sessionListQuery,
+  plannedVisitListQuery,
+  planSummaryQuery,
   notificationListQuery,
   notificationPreferencesQuery,
   visitAttachmentsQuery,
@@ -41,6 +43,8 @@ import {
   visitQuery,
 } from "@/api/queries";
 import { elevatorHistoryParams } from "@/lib/visit";
+import { elevatorPlanParams, homePath, myPlanParams, periodOf } from "@/lib/plan";
+import { todayIso } from "@/lib/date";
 import { SessionProvider, ensureSession, type SessionOverride } from "@/lib/session";
 import type { ListSearch } from "@/lib/list-search";
 import type { Role } from "@/components/layout/nav-config";
@@ -52,6 +56,8 @@ import {
   customerListSearch,
   elevatorListSearch,
   userListSearch,
+  planListParams,
+  planListSearch,
   notificationListSearch,
   visitListParams,
   visitListSearch,
@@ -198,6 +204,15 @@ const OutboxScreen = lazyRouteComponent(
 const NotificationListScreen = lazyRouteComponent(
   () => import("@/screens/NotificationListScreen"),
   "NotificationListScreen",
+);
+const PlanScreen = lazyRouteComponent(() => import("@/screens/PlanScreen"), "PlanScreen");
+const TodayScreen = lazyRouteComponent(
+  () => import("@/screens/TechnicianPlanScreen"),
+  "TodayScreen",
+);
+const WeekScreen = lazyRouteComponent(
+  () => import("@/screens/TechnicianPlanScreen"),
+  "WeekScreen",
 );
 const RegisterScreen = lazyRouteComponent(
   () => import("@/screens/RegisterScreen"),
@@ -346,8 +361,13 @@ function shellChild(
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  beforeLoad: () => {
-    throw redirect({ to: "/elevators" });
+  // Where each person starts: a technician's day, everybody else's register.
+  // The session is asked for here only to learn the role — the cached promise
+  // the shell's guard awaits anyway — and a visitor without one is sent to
+  // the register, whose guard sends them on to sign in.
+  beforeLoad: async () => {
+    const role = sessionOverride ? sessionOverride.role : (await ensureSession())?.role;
+    throw redirect({ to: homePath(role as Role | undefined) });
   },
 });
 
@@ -358,7 +378,8 @@ const loginRoute = createRoute({
   // obvious answer.
   beforeLoad: async () => {
     if (sessionOverride) return;
-    if (await ensureSession()) throw redirect({ to: "/elevators" });
+    const me = await ensureSession();
+    if (me) throw redirect({ to: homePath(me.role as Role) });
   },
   component: LoginScreen,
 });
@@ -442,6 +463,8 @@ export const routeTree = rootRoute.addChildren([
         queryClient.ensureQueryData(elevatorQuery(id)),
         queryClient.ensureQueryData(elevatorAttachmentsQuery(id)),
         queryClient.ensureQueryData(visitListQuery(elevatorHistoryParams(id))),
+        // This month's plan row, for the same four roles the history serves.
+        queryClient.ensureQueryData(plannedVisitListQuery(elevatorPlanParams(id))),
       ]);
     }),
     // The visit form needs the elevator for everything it draws first — its
@@ -586,6 +609,26 @@ export const routeTree = rootRoute.addChildren([
       }
     }),
     shellChild("/audit-logs", AuditLogListScreen, undefined, auditLogListSearch),
+    // The office's month. The summary is the whole month whatever the table
+    // is narrowed to, so it is keyed on the period alone.
+    shellChild(
+      "/plan",
+      PlanScreen,
+      async ({ deps }) => {
+        const params = planListParams(deps.search);
+        await Promise.all([
+          queryClient.ensureQueryData(plannedVisitListQuery(params)),
+          queryClient.ensureQueryData(planSummaryQuery({ period: params.period })),
+        ]);
+      },
+      planListSearch,
+    ),
+    // A technician's landing screen, so it is warmed before the first paint.
+    // The week is not: it may be two months, and is one tap away.
+    shellChild("/today", TodayScreen, () =>
+      queryClient.ensureQueryData(plannedVisitListQuery(myPlanParams(periodOf(todayIso())))),
+    ),
+    shellChild("/week", WeekScreen),
     // No loader: what it lists lives on this device, not on the server.
     shellChild("/outbox", OutboxScreen),
     shellChild(

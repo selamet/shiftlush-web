@@ -124,6 +124,22 @@ describe("describeNotification", () => {
     expect(without.body).toBe("Sol asansör asansörünün bakımı 13.10.2026 tarihinde yapılmalıydı.");
   });
 
+  it("tells a technician how many visits they were given, and for which month", () => {
+    const words = describeNotification(
+      notification("visit_assigned", { period: "2026-11", count: 12 }, { subject_type: "plan", subject_id: "u3" }),
+      t,
+    );
+    expect(words).toEqual({
+      title: "12 bakım size atandı — Kasım 2026",
+      body: "Kasım 2026 dönemi için 12 bakım ziyareti size atandı. Listenizi ShiftLush'ta rota sırasıyla görebilirsiniz.",
+      known: true,
+    });
+  });
+
+  it("falls back when the count is not a number", () => {
+    expect(describeNotification(notification("visit_assigned", { period: "2026-11", count: "many" }), t).known).toBe(false);
+  });
+
   it("falls back to a plain notice for a kind this client does not know", () => {
     const words = describeNotification(notification("invoice_overdue", { amount: "100" }), t);
     expect(words).toEqual({
@@ -150,6 +166,10 @@ describe("notificationTarget", () => {
       to: "/elevators/$id",
       params: { id: "e1" },
     });
+  });
+
+  it("leads a plan notice to the technician's own list for today", () => {
+    expect(notificationTarget({ subject_type: "plan", subject_id: "u3" })).toEqual({ to: "/today" });
   });
 
   it("leads nowhere for a subject this client has no screen for", () => {

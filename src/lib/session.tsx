@@ -21,7 +21,8 @@ export interface Session {
 }
 
 interface SessionContextValue extends Session {
-  signIn: (email: string, password: string) => Promise<void>;
+  /** Resolves with the role signed in as, so the caller can send them to their own start. */
+  signIn: (email: string, password: string) => Promise<Role | null>;
   /**
    * Takes over the tokens an endpoint handed back mid-session.
    *
@@ -180,10 +181,12 @@ export function SessionProvider({
       { anonymous: true },
     );
     setAccessToken(tokens.access);
-    setUser(toSession(tokens.user));
+    const session = toSession(tokens.user);
+    setUser(session);
     setStatus("authenticated");
     // The cached answer is now wrong; the next guard has to ask again.
     forgetSession();
+    return session.role;
   }, []);
 
   const adoptTokens = useCallback((tokens: TokenResponse) => {

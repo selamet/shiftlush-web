@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CircleHelp, Pause, TriangleAlert } from "lucide-react";
+import { AlarmClock, Check, CircleHelp, Pause, RotateCcw, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { enumLabel, isUnknownEnum } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
@@ -137,6 +137,55 @@ const CHECKLIST_RESULT: Record<string, { weight: ChipWeight; icon?: typeof Pause
   attention_needed: { weight: "outline", icon: TriangleAlert },
   not_applicable: { weight: "recessed" },
 };
+
+/**
+ * A plan row's state. `planned` is most of a month and stays plain text;
+ * `done` is the outcome the plan exists for and carries a tick; `cancelled`
+ * is on file but asks nothing of anyone, so it recedes.
+ */
+const PLAN_STATUS: Record<string, { weight: ChipWeight; icon?: typeof Pause }> = {
+  planned: { weight: "silent" },
+  done: { weight: "outline", icon: Check },
+  cancelled: { weight: "recessed" },
+};
+
+export function PlanStatusChip({ value }: { value: string }) {
+  return <EnumChip namespace="plan.status" value={value} map={PLAN_STATUS} />;
+}
+
+/**
+ * The two things about a plan row that need somebody's attention, each with
+ * its own word and icon so neither depends on colour: overdue takes the
+ * heaviest weight — a lift past its legal maintenance date — and "tried, not
+ * done" the reversible one, since the next attempt may well finish it.
+ */
+export function PlanFlagChips({
+  overdue,
+  tried,
+  overdueLabel,
+  triedLabel,
+}: {
+  overdue: boolean;
+  tried: boolean;
+  overdueLabel: string;
+  triedLabel: string;
+}) {
+  if (!overdue && !tried) return null;
+  return (
+    <span className="inline-flex flex-wrap gap-1">
+      {overdue && (
+        <StatusChip weight="ink" icon={AlarmClock}>
+          {overdueLabel}
+        </StatusChip>
+      )}
+      {tried && (
+        <StatusChip weight="outline" icon={RotateCcw}>
+          {triedLabel}
+        </StatusChip>
+      )}
+    </span>
+  );
+}
 
 export function ChecklistResultChip({ value }: { value: string }) {
   return <EnumChip namespace="visit.checklistResult" value={value} map={CHECKLIST_RESULT} />;
