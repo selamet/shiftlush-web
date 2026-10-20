@@ -54,7 +54,6 @@ export const DOOR_TYPES = [
   "manual",
 ] as const;
 export const MACHINE_ROOMS = ["present", "absent", "partial"] as const;
-export const INSPECTION_LABELS = ["green", "blue", "yellow", "red", "none"] as const;
 
 export const TABS: TabSpec[] = [
   {
@@ -183,42 +182,48 @@ export const TABS: TabSpec[] = [
     ],
   },
   {
+    // Read-only. The five inspection fields are written by the latest
+    // recorded inspection (M5), not by this form: the server refuses a create
+    // or edit that carries any of them. The tab stays, as a summary of the
+    // values the record holds — see `READ_ONLY_FIELDS` below.
     key: "inspection",
     labelKey: "elevator.tabs.inspection",
-    fields: [
-      {
-        name: "inspection_label",
-        labelKey: "elevator.fields.inspectionLabel",
-        kind: "select",
-        enumKey: "elevator.inspectionLabel",
-        options: INSPECTION_LABELS,
-        required: true,
-      },
-      {
-        name: "last_inspection_date",
-        labelKey: "elevator.fields.lastInspectionDate",
-        kind: "date",
-      },
-      {
-        name: "next_inspection_date",
-        labelKey: "elevator.fields.nextInspectionDate",
-        kind: "date",
-      },
-      {
-        name: "inspection_body",
-        labelKey: "elevator.fields.inspectionBody",
-        kind: "text",
-        maxLength: 120,
-      },
-      {
-        name: "inspection_report_number",
-        labelKey: "elevator.fields.inspectionReportNumber",
-        kind: "text",
-        maxLength: 60,
-      },
-    ],
+    fields: [],
   },
 ];
+
+/**
+ * The elevator fields this form shows but never sends.
+ *
+ * Owned by the inspection records. A field listed here must not appear in any
+ * tab above — an input is a value in the request body — and `elevatorWriteBody`
+ * strips them as well, so a stray hidden input or a future field spec cannot
+ * put one back into a request the server would answer with a 400.
+ */
+export const READ_ONLY_FIELDS = [
+  "inspection_label",
+  "last_inspection_date",
+  "next_inspection_date",
+  "inspection_body",
+  "inspection_report_number",
+] as const;
+
+/**
+ * The request body, from what the form collected.
+ *
+ * `hasCarDoor` is passed in rather than read from the values: an unchecked box
+ * is absent from FormData, and absent would mean "not provided" rather than
+ * false. Whether a car has a door is a fact about the lift, and its absence is
+ * the serious case.
+ */
+export function elevatorWriteBody(
+  values: Record<string, unknown>,
+  hasCarDoor: boolean,
+): Record<string, unknown> {
+  const body: Record<string, unknown> = { ...values, has_car_door: hasCarDoor };
+  for (const name of READ_ONLY_FIELDS) delete body[name];
+  return body;
+}
 
 export const ALL_FIELDS: FieldSpec[] = TABS.flatMap((tab) => tab.fields);
 

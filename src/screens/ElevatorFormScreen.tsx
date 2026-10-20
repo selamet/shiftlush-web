@@ -22,7 +22,15 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Field, Input } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
-import { ALL_FIELDS, TABS, TAB_OF_FIELD, type FieldSpec } from "@/screens/elevator-form-fields";
+import {
+  ALL_FIELDS,
+  TABS,
+  TAB_OF_FIELD,
+  elevatorWriteBody,
+  type FieldSpec,
+} from "@/screens/elevator-form-fields";
+import { InspectionLabel } from "@/components/ui/inspection-label";
+import { formatDate } from "@/lib/format";
 
 function initialValue(record: Elevator | undefined, field: FieldSpec): string | boolean {
   if (!record) return field.kind === "checkbox" ? true : "";
@@ -32,7 +40,8 @@ function initialValue(record: Elevator | undefined, field: FieldSpec): string | 
 }
 
 /**
- * The elevator record: thirty-one fields across six tabs.
+ * The elevator record: twenty-six editable fields across five tabs, and a sixth
+ * that shows the inspection values the inspection records own.
  *
  * Every panel stays mounted and the tabs only change what is visible. That is
  * the whole reason this works: the inputs are uncontrolled, so unmounting a
@@ -137,14 +146,13 @@ export function ElevatorFormScreen() {
         onChange={recount}
         onSubmit={(event) => {
           event.preventDefault();
-          const values = formValues(event.currentTarget) as Record<string, unknown>;
-          // An unchecked box is absent from FormData, and absent means "not
-          // provided" rather than false. Whether a car has a door is a fact
-          // about the lift, and its absence is the serious case.
-          values.has_car_door = Boolean(
+          const hasCarDoor = Boolean(
             (event.currentTarget.elements.namedItem("has_car_door") as HTMLInputElement)?.checked,
           );
-          submit(values as ElevatorWrite);
+          // Cast: the contract in hand still lists the inspection fields as
+          // writable (one as required); the server about to ship refuses them.
+          // `elevatorWriteBody` leaves them out either way.
+          submit(elevatorWriteBody(formValues(event.currentTarget), hasCarDoor) as ElevatorWrite);
         }}
       >
         {state.message && (
@@ -235,14 +243,18 @@ export function ElevatorFormScreen() {
               hidden={tab.key !== activeTab}
               className="grid max-w-3xl gap-5 sm:grid-cols-2"
             >
-              {tab.fields.map((field) => (
-                <FormField
-                  key={field.name}
-                  field={field}
-                  record={record}
-                  error={state.fields[field.name]}
-                />
-              ))}
+              {tab.key === "inspection" ? (
+                <InspectionSummary record={record} />
+              ) : (
+                tab.fields.map((field) => (
+                  <FormField
+                    key={field.name}
+                    field={field}
+                    record={record}
+                    error={state.fields[field.name]}
+                  />
+                ))
+              )}
             </div>
           ))}
         </div>
@@ -349,5 +361,47 @@ function FormField({
         />
       )}
     </Field>
+  );
+}
+
+/**
+ * The record's inspection values, shown and not edited.
+ *
+ * They are the latest recorded inspection's, written by the server when one is
+ * recorded, and the server refuses them on a create or an edit. Plain text,
+ * with no input anywhere in it, so none of them can reach the request body
+ * through FormData — a read-only input would still be submitted.
+ */
+function InspectionSummary({ record }: { record: Elevator | undefined }) {
+  const { t } = useTranslation();
+  const rows: Array<[string, React.ReactNode]> = record
+    ? [
+        [t("elevator.fields.inspectionLabel"), <InspectionLabel value={record.inspection_label} />],
+        [t("elevator.fields.lastInspectionDate"), formatDate(record.last_inspection_date) || "—"],
+        [t("elevator.fields.nextInspectionDate"), formatDate(record.next_inspection_date) || "—"],
+        [t("elevator.fields.inspectionBody"), record.inspection_body || "—"],
+        [t("elevator.fields.inspectionReportNumber"), record.inspection_report_number || "—"],
+      ]
+    : [];
+
+  return (
+    <div className="flex flex-col gap-3 sm:col-span-2">
+      {record ? (
+        <dl className="flex flex-col rounded-lg border border-border-subtle bg-card px-4">
+          {rows.map(([label, value]) => (
+            <div
+              key={label}
+              className="flex items-center justify-between gap-4 border-b border-border-subtle py-2.5 last:border-0"
+            >
+              <dt className="text-help text-muted-foreground">{label}</dt>
+              <dd className="text-right text-cell">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="text-body text-muted-foreground">{t("elevator.inspectionNone")}</p>
+      )}
+      <p className="text-help text-muted-foreground">{t("elevator.inspectionReadOnly")}</p>
+    </div>
   );
 }
