@@ -18,6 +18,10 @@ export type MaintenanceChecklistResult = Schemas["MaintenanceChecklistResult"];
    `planned`, a recorded visit makes it `done` — but the plan screen filters by
    it, and the filter's option list is bound to it like any other. */
 export type PlannedVisitStatus = Schemas["PlannedVisitStatus"];
+/* A fault's priority is chosen on the staff form; its status is the server's,
+   moved only by the transition endpoints, and listed here for the filter. */
+export type FaultPriority = Schemas["FaultPriority"];
+export type FaultStatus = Schemas["FaultStatus"];
 /* `VatStatusEnum` is deliberately not listed here. Every type above names a set
    of options a form offers, which is what `allOf` below exists to bind. VAT
    status is nobody's choice — the server derives it from `vat_rate` and sends

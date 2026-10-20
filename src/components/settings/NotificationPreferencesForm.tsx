@@ -48,7 +48,10 @@ function PreferencesForm({ initial }: { initial: NotificationPreference[] }) {
   const { t } = useTranslation();
   const [saved, setSaved] = useState(false);
 
-  const { submit, state } = useSubmit<NotificationPreference[], NotificationPreference[]>({
+  const { submit, state } = useSubmit<
+    Parameters<typeof updateNotificationPreferences>[0],
+    NotificationPreference[]
+  >({
     mutationFn: updateNotificationPreferences,
     invalidate: [notificationKeys.preferences],
     onSuccess: () => setSaved(true),
@@ -63,7 +66,16 @@ function PreferencesForm({ initial }: { initial: NotificationPreference[] }) {
         const form = new FormData(event.currentTarget);
         // The whole list, every kind: the PUT replaces every flag, so a kind
         // left out would be a kind silently reset to the server's default.
-        submit(initial.map(({ kind }) => ({ kind, email: form.has(`email-${kind}`) })));
+        //
+        // A locked kind is sent as stored. Its box is disabled, and a disabled
+        // box is not in the form data at all — read as "unticked", it would ask
+        // to turn off the one e-mail the server refuses to turn off.
+        submit(
+          initial.map(({ kind, email, locked }) => ({
+            kind,
+            email: locked ? email : form.has(`email-${kind}`),
+          })),
+        );
       }}
     >
       <p className="text-help text-muted-foreground">{t("notification.preferences.hint")}</p>
@@ -79,17 +91,33 @@ function PreferencesForm({ initial }: { initial: NotificationPreference[] }) {
       )}
 
       <ul className="flex flex-col divide-y divide-border-subtle rounded-md border border-border-subtle">
-        {initial.map(({ kind, email }) => (
+        {initial.map(({ kind, email, locked }) => (
           <li key={kind} className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5">
-            <span id={`pref-${kind}`} className="text-body">
-              {enumLabel("notification.kind", kind)}
+            <span className="flex flex-col">
+              <span id={`pref-${kind}`} className="text-body">
+                {enumLabel("notification.kind", kind)}
+              </span>
+              {/* Why the box cannot be changed, next to it: a disabled control
+                  with no reason reads as broken. */}
+              {locked && (
+                <span id={`pref-${kind}-locked`} className="text-help text-muted-foreground">
+                  {t("notification.preferences.locked")}
+                </span>
+              )}
             </span>
-            <label className="flex min-h-control-md cursor-pointer items-center gap-2 text-body text-muted-foreground">
+            <label
+              className={
+                locked
+                  ? "flex min-h-control-md items-center gap-2 text-body text-muted-foreground"
+                  : "flex min-h-control-md cursor-pointer items-center gap-2 text-body text-muted-foreground"
+              }
+            >
               <input
                 type="checkbox"
                 name={`email-${kind}`}
-                defaultChecked={email}
-                aria-describedby={`pref-${kind}`}
+                defaultChecked={locked ? true : email}
+                disabled={locked}
+                aria-describedby={locked ? `pref-${kind} pref-${kind}-locked` : `pref-${kind}`}
                 className="size-4 accent-primary focus-ring"
               />
               {t("notification.preferences.email")}

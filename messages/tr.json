@@ -754,6 +754,8 @@
     "IDEMPOTENCY_KEY_REQUIRED": "İstek eksik gönderildi, lütfen tekrar deneyin",
     "ELEVATOR_ALREADY_CONTRACTED": "Bu asansör zaten aktif bir sözleşmede",
     "NO_ACTIVE_CONTRACT_FOR_ELEVATOR": "Seçilen sözleşme aktif değil ya da bu asansörü kapsamıyor",
+    "FAULT_TRANSITION_NOT_ALLOWED": "Arıza bu durumdayken bu işlem yapılamaz; sayfa güncellenmiş olabilir, yenileyip tekrar deneyin",
+    "NOTIFICATION_EMAIL_LOCKED": "Bu bildirimin e-postası kapatılamaz",
     "LAST_OWNER_CANNOT_BE_DEACTIVATED": "Firmada en az bir aktif sahip kalmalı",
     "ONLY_TECHNICIANS_ARE_ASSIGNED": "Müşteri ataması yalnızca teknisyenler için yapılır",
     "TECHNICIAN_RECORDS_OWN_VISITS": "Teknisyen yalnızca kendi adına bakım kaydı girebilir",
@@ -1255,7 +1257,11 @@
       "contract_auto_renewed": "{{number}} numaralı sözleşme otomatik olarak yenilendi",
       "contract_auto_renewal_blocked": "{{number}} numaralı sözleşme otomatik olarak yenilenemedi",
       "maintenance_overdue": "{{elevator}} asansörünün bakımı gecikti",
-      "visit_assigned": "{{count}} bakım size atandı — {{month}}"
+      "visit_assigned": "{{count}} bakım size atandı — {{month}}",
+      "fault_reported": "Arıza bildirildi: {{elevator}} ({{building}})",
+      "fault_emergency": "ACİL: {{elevator}} ({{building}}) asansöründe mahsur kalan var",
+      "fault_assigned": "Arıza size atandı: {{elevator}} ({{building}})",
+      "fault_resolved": "Arıza çözüldü: {{elevator}} ({{building}})"
     },
     "body": {
       "contract_renewal_due": "{{contract}} sözleşmenin süresi {{date}} tarihinde doluyor.",
@@ -1266,7 +1272,12 @@
       "contract_auto_renewal_blocked": "{{contract}} sözleşmenin süresi {{date}} tarihinde doldu, ancak sözleşmede KDV oranı tanımlı olmadığı için otomatik olarak yenilenemedi. Yeni sözleşme {{successor}} numarasıyla taslak olarak oluşturuldu; KDV oranını girip sözleşmeyi gözden geçirdikten sonra etkinleştirmeniz gerekiyor.",
       "maintenance_overdue": "{{elevator}} asansörünün bakımı {{date}} tarihinde yapılmalıydı.",
       "maintenance_overdue_withBuilding": "{{elevator}} ({{building}}) asansörünün bakımı {{date}} tarihinde yapılmalıydı.",
-      "visit_assigned": "{{month}} dönemi için {{count}} bakım ziyareti size atandı. Listenizi ShiftLush'ta rota sırasıyla görebilirsiniz."
+      "visit_assigned": "{{month}} dönemi için {{count}} bakım ziyareti size atandı. Listenizi ShiftLush'ta rota sırasıyla görebilirsiniz.",
+      "fault_reported": "{{building}} binasındaki {{elevator}} asansörü için {{via}}arıza bildirildi{{stopped}}. Bildirim numarası {{reference}}.",
+      "fault_emergency": "{{building}} binasındaki {{elevator}} asansöründe mahsur kalan olduğu bildirildi. Bildirim numarası {{reference}}.",
+      "fault_assigned": "{{building}} binasındaki {{elevator}} asansörünün {{reference}} numaralı arızası size atandı.",
+      "fault_resolved": "{{building}} binasındaki {{elevator}} asansörünün {{reference}} numaralı arızası çözüldü olarak işaretlendi. Kapatmadan önce yapılan işi kontrol edebilirsiniz.",
+      "fault_resolved_by": "{{building}} binasındaki {{elevator}} asansörünün {{reference}} numaralı arızası {{technician}} tarafından çözüldü olarak işaretlendi. Kapatmadan önce yapılan işi kontrol edebilirsiniz."
     },
     "unknown": {
       "title": "Yeni bildirim",
@@ -1278,13 +1289,25 @@
       "contract_auto_renewed": "Sözleşme otomatik olarak yenilendi",
       "contract_auto_renewal_blocked": "Sözleşme otomatik olarak yenilenemedi",
       "maintenance_overdue": "Bakım gecikti",
-      "visit_assigned": "Bakım ziyareti atandı"
+      "visit_assigned": "Bakım ziyareti atandı",
+      "fault_reported": "Arıza bildirildi",
+      "fault_emergency": "Acil arıza (mahsur kalan var)",
+      "fault_assigned": "Arıza size atandı",
+      "fault_resolved": "Arıza çözüldü"
     },
     "preferences": {
       "title": "Bildirimler",
       "hint": "Bildirimler uygulamada her zaman görünür. İşaretlediğiniz türler ayrıca e-posta ile de gönderilir.",
       "email": "E-posta ile de gönder",
-      "saved": "Bildirim tercihleriniz kaydedildi"
+      "saved": "Bildirim tercihleriniz kaydedildi",
+      "locked": "Mahsur kalan bildirimleri her zaman e-postayla da gönderilir."
+    },
+    "fragment": {
+      "viaQr": "QR etiketinden ",
+      "notRunning": "; asansör çalışmıyor",
+      "notRunningSentence": "Asansör çalışmıyor.",
+      "trapped": "Asansörde mahsur kalan var.",
+      "description": "Açıklama: “{{description}}”"
     }
   },
   "plan": {
@@ -1342,6 +1365,133 @@
       "unassigned": "Atanmamış",
       "overdue": "Gecikmiş",
       "show": "Göster"
+    }
+  },
+  "fault": {
+    "title": "Arızalar",
+    "titleTechnician": "Arızalar",
+    "mine": "Arızalarım",
+    "mineEmpty": "Size atanmış açık arıza yok",
+    "mineTechnicianOnly": "Arızalarım listesi teknisyenler içindir.",
+    "goToBoard": "Arıza panosuna git",
+    "restricted": "Arızalar rolünüzde görünmüyor",
+    "empty": "Bu filtreye uyan arıza yok",
+    "emptyActive": "Şu anda açık arıza yok",
+    "report": "Arıza bildir",
+    "reportSubmit": "Arızayı kaydet",
+    "detailTitle": "Arıza {{reference}}",
+    "nobodySent": "Kimse gönderilmedi",
+    "reporter": "Bildiren",
+    "additionalReports": "Aynı arıza için {{count}} ek bildirim daha geldi",
+    "timeline": "Akış",
+    "resolution": "Yapılan iş",
+    "photos": "Fotoğraflar",
+    "officeCorrections": "Ofis düzeltmeleri",
+    "billableToggle": "Ücretli iş olarak faturalandır",
+    "billableYes": "Ücretli",
+    "billableNo": "Sözleşme kapsamında",
+    "billableUnknown": "Çözülünce belirlenecek",
+    "billableOverridden": "elle değiştirildi",
+    "emergencyTitle": "Kabinde mahsur kalan var",
+    "emergencyBody": "Bu arıza diğer tüm işlerden önce gelir.",
+    "stoppedNotice": "Asansör bu arıza nedeniyle hizmet dışı.",
+    "someoneTrapped": "Kabinde mahsur kalan var",
+    "elevatorStopped": "Asansör durdu",
+    "trappedMeansEmergency": "Kabinde mahsur kalan olduğu için arıza acil olarak kaydedilecek.",
+    "sendNow": "Hemen gönderilecek teknisyen",
+    "sendNowHint": "Boş bırakırsanız arıza panoda atanmamış olarak bekler.",
+    "sendLater": "Şimdi değil",
+    "selectTechnician": "Teknisyen seçin",
+    "responseRunning": "Bildirimden bu yana geçen süre; teknisyen varınca durur",
+    "responseFinal": "Bildirimden teknisyenin varışına kadar geçen süre",
+    "resolveTitle": "Arıza çözüldü",
+    "resolutionNotesHint": "Ne yapıldığını kısaca yazın; ofis kapatmadan önce bunu okur.",
+    "restoreService": "Asansörü yeniden hizmete al",
+    "cancelTitle": "Arıza iptal edilsin mi?",
+    "cancelBody": "İptal edilen arıza kayıtta kalır; nedeni de onunla birlikte saklanır.",
+    "cancelReason": "İptal nedeni",
+    "closeTitle": "{{reference}} numaralı arıza kapatılsın mı?",
+    "closeBody": "Yapılan işi kontrol ettiyseniz kapatın. Kapatılan arıza bir daha düzenlenemez.",
+    "actions": {
+      "arrive": "Vardım",
+      "resolve": "Çözüldü",
+      "assign": "Teknisyen gönder",
+      "reassign": "Başka teknisyen gönder",
+      "close": "Kapat",
+      "cancel": "İptal et"
+    },
+    "step": {
+      "reported": "Bildirildi",
+      "assigned": "Teknisyen atandı",
+      "on_site": "Teknisyen vardı",
+      "resolved": "Çözüldü",
+      "closed": "Kapatıldı",
+      "cancelled": "İptal edildi"
+    },
+    "duration": {
+      "underMinute": "1 dakikadan az",
+      "minutes": "{{minutes}} dk",
+      "hoursMinutes": "{{hours}} sa {{minutes}} dk",
+      "daysHours": "{{days}} gün {{hours}} sa"
+    },
+    "fields": {
+      "reference": "Referans",
+      "elevator": "Asansör",
+      "status": "Durum",
+      "priority": "Öncelik",
+      "technician": "Teknisyen",
+      "customer": "Müşteri",
+      "reportedAt": "Bildirildi",
+      "responseTime": "Varış süresi",
+      "resolutionTime": "Çözüm süresi",
+      "channel": "Kaynak",
+      "billable": "Faturalama",
+      "description": "Arıza açıklaması",
+      "resolutionNotes": "Yapılan iş",
+      "partsUsed": "Kullanılan parçalar"
+    },
+    "priority": {
+      "emergency": "Acil",
+      "high": "Yüksek",
+      "normal": "Normal"
+    },
+    "status": {
+      "open": "Açık",
+      "assigned": "Atandı",
+      "on_site": "Teknisyen yerinde",
+      "resolved": "Çözüldü",
+      "closed": "Kapatıldı",
+      "cancelled": "İptal edildi"
+    },
+    "channel": {
+      "staff": "Personel",
+      "public_qr": "QR etiketi"
+    }
+  },
+  "publicFault": {
+    "title": "Asansör arızası bildir",
+    "intro": "Bildiriminiz doğrudan asansörün bakım firmasına gider.",
+    "someoneTrapped": "Kabinde mahsur kalan var",
+    "elevatorStopped": "Asansör çalışmıyor",
+    "description": "Ne oldu?",
+    "descriptionPlaceholder": "Örneğin: kapı kapanmıyor, katlar arasında durdu",
+    "name": "Adınız",
+    "phone": "Telefonunuz",
+    "phoneHint": "İsteğe bağlı. Firma sizi geri arayabilsin diye.",
+    "submit": "Arızayı bildir",
+    "received": "Bildiriminiz alındı.",
+    "referenceLabel": "Referans:",
+    "referenceHint": "Firmayı ararsanız bu kodu söyleyin.",
+    "callEmergency": "Kabinde biri mahsur kaldıysa {{number}}'yi de arayın.",
+    "callButton": "{{number}}'yi ara",
+    "unknownSticker": "Bu QR etiketi tanınmadı. Lütfen bina yönetimini ya da bakım firmasını telefonla arayın.",
+    "throttled": "Bu asansör için kısa sürede çok sayıda bildirim yapıldı. Lütfen bina yönetimini ya da bakım firmasını telefonla arayın.",
+    "offline": "Bağlantı kurulamadı; yazdıklarınız duruyor. Bağlantınız düzelince tekrar gönderin.",
+    "privacy": "Adınız ve telefonunuz yalnızca bu arıza için kullanılır ve arıza kapandıktan 90 gün sonra silinir.",
+    "priorityNote": {
+      "emergency": "Mahsur kalan olduğu için bildiriminiz acil olarak iletilecek.",
+      "high": "Asansör çalışmadığı için bildiriminiz öncelikli olarak iletilecek.",
+      "normal": "Bildiriminiz bakım firmasına iletilecek."
     }
   }
 }

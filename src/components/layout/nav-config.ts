@@ -6,6 +6,8 @@ import {
   CalendarCheck,
   CalendarRange,
   ClipboardCheck,
+  Siren,
+  Wrench,
   FileText,
   QrCode,
   UserCog,
@@ -83,6 +85,21 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: "plan.today",
         icon: CalendarCheck,
         roles: ["technician"],
+      },
+      {
+        // A technician's faults, beside their day: the interruption to it.
+        to: "/my-faults",
+        labelKey: "fault.mine",
+        icon: Wrench,
+        roles: ["technician"],
+      },
+      {
+        // The board. The technician sees it too — narrowed by the server to
+        // their customers — to find the fault the office phoned about.
+        to: "/faults",
+        labelKey: "fault.title",
+        icon: Siren,
+        roles: ["owner", "admin", "operations", "technician"],
       },
       {
         // The office's month. Beside the visits it plans for.

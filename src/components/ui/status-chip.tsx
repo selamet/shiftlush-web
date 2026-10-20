@@ -1,5 +1,14 @@
 import * as React from "react";
-import { AlarmClock, Check, CircleHelp, Pause, RotateCcw, TriangleAlert } from "lucide-react";
+import {
+  AlarmClock,
+  Check,
+  CircleHelp,
+  MapPin,
+  Pause,
+  RotateCcw,
+  Siren,
+  TriangleAlert,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { enumLabel, isUnknownEnum } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
@@ -185,6 +194,40 @@ export function PlanFlagChips({
       )}
     </span>
   );
+}
+
+/**
+ * A fault's priority. An emergency is somebody trapped in a lift, and it has
+ * to be unmistakable on a board of twenty rows read across a room: the
+ * heaviest weight, a siren, and the word itself — none of which depends on
+ * telling one colour from another. A normal report is the quiet default.
+ */
+const FAULT_PRIORITY: Record<string, { weight: ChipWeight; icon?: typeof Pause }> = {
+  emergency: { weight: "ink", icon: Siren },
+  high: { weight: "outline", icon: TriangleAlert },
+  normal: { weight: "silent" },
+};
+
+export function FaultPriorityChip({ value }: { value: string }) {
+  return <EnumChip namespace="fault.priority" value={value} map={FAULT_PRIORITY} />;
+}
+
+/**
+ * Where a fault stands. "Open" — nobody sent yet — is the deviation the board
+ * exists to clear, so it carries the outline; the states in between are the
+ * work going as it should; the two endings recede.
+ */
+const FAULT_STATUS: Record<string, { weight: ChipWeight; icon?: typeof Pause }> = {
+  open: { weight: "outline" },
+  assigned: { weight: "silent" },
+  on_site: { weight: "outline", icon: MapPin },
+  resolved: { weight: "outline", icon: Check },
+  closed: { weight: "recessed" },
+  cancelled: { weight: "recessed" },
+};
+
+export function FaultStatusChip({ value }: { value: string }) {
+  return <EnumChip namespace="fault.status" value={value} map={FAULT_STATUS} />;
 }
 
 export function ChecklistResultChip({ value }: { value: string }) {

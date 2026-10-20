@@ -976,6 +976,171 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/faults/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Faults and their transitions.
+         *
+         *     Each transition is its own action so that no timestamp can be written by a
+         *     client. PATCH is the office's, and covers only what a person may correct:
+         *     priority, description and the billable flag. There is no DELETE — a fault
+         *     reported by mistake is cancelled, with a reason, and stays on the record.
+         *
+         *     `arrive` and `resolve` are open to technicians in the matrix, and narrowed
+         *     here to the one the fault is assigned to; the office may record either on
+         *     their behalf.
+         */
+        get: operations["faults_list"];
+        put?: never;
+        /**
+         * @description Faults and their transitions.
+         *
+         *     Each transition is its own action so that no timestamp can be written by a
+         *     client. PATCH is the office's, and covers only what a person may correct:
+         *     priority, description and the billable flag. There is no DELETE — a fault
+         *     reported by mistake is cancelled, with a reason, and stays on the record.
+         *
+         *     `arrive` and `resolve` are open to technicians in the matrix, and narrowed
+         *     here to the one the fault is assigned to; the office may record either on
+         *     their behalf.
+         */
+        post: operations["faults_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/faults/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Faults and their transitions.
+         *
+         *     Each transition is its own action so that no timestamp can be written by a
+         *     client. PATCH is the office's, and covers only what a person may correct:
+         *     priority, description and the billable flag. There is no DELETE — a fault
+         *     reported by mistake is cancelled, with a reason, and stays on the record.
+         *
+         *     `arrive` and `resolve` are open to technicians in the matrix, and narrowed
+         *     here to the one the fault is assigned to; the office may record either on
+         *     their behalf.
+         */
+        get: operations["faults_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description Faults and their transitions.
+         *
+         *     Each transition is its own action so that no timestamp can be written by a
+         *     client. PATCH is the office's, and covers only what a person may correct:
+         *     priority, description and the billable flag. There is no DELETE — a fault
+         *     reported by mistake is cancelled, with a reason, and stays on the record.
+         *
+         *     `arrive` and `resolve` are open to technicians in the matrix, and narrowed
+         *     here to the one the fault is assigned to; the office may record either on
+         *     their behalf.
+         */
+        patch: operations["faults_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/faults/{id}/arrive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The technician is at the lift. From `assigned`. */
+        post: operations["faults_arrive_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/faults/{id}/assign/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Send a technician, or send a different one. From `open` or `assigned`. */
+        post: operations["faults_assign_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/faults/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A duplicate or a false alarm. Any state before `resolved`; a reason is required. */
+        post: operations["faults_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/faults/{id}/close/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The office has checked the work. From `resolved`. */
+        post: operations["faults_close_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/faults/{id}/resolve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The work is done. From `on_site`. Derives `billable`. */
+        post: operations["faults_resolve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/geocode/reverse": {
         parameters: {
             query?: never;
@@ -1507,6 +1672,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/elevators/{qr_token}/faults/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report a fault from the lift's QR sticker, without an account
+         * @description Answers 202 with a reference and nothing else. A report on a lift that already has an open public report from the last 30 minutes is added to it, and that report's reference is returned. `someone_trapped` makes it an emergency and `elevator_stopped` makes it high priority; there is no other way to set a priority here. Throttled per sticker and per address.
+         */
+        post: operations["public_elevators_faults_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/": {
         parameters: {
             query?: never;
@@ -1633,6 +1818,10 @@ export interface components {
             /** Format: decimal */
             unit_price?: string | null;
         };
+        AssignRequest: {
+            /** Format: uuid */
+            technician: string;
+        };
         AssignedCustomersRequest: {
             customer_ids: string[];
         };
@@ -1691,9 +1880,10 @@ export interface components {
          *     * `company` - Company
          *     * `user` - User
          *     * `maintenance_visit` - Maintenance visit
+         *     * `fault` - Fault
          * @enum {string}
          */
-        AttachmentObjectType: "elevator" | "building" | "contract" | "customer" | "company" | "user" | "maintenance_visit";
+        AttachmentObjectType: "elevator" | "building" | "contract" | "customer" | "company" | "user" | "maintenance_visit" | "fault";
         AuditLog: {
             /** Format: uuid */
             readonly company_id: string;
@@ -1816,6 +2006,9 @@ export interface components {
         /** @description How many rows the bulk assignment covered, including any already theirs. */
         BulkAssignResult: {
             readonly count: number;
+        };
+        CancelRequest: {
+            reason: string;
         };
         Company: {
             /** Format: uuid */
@@ -2406,6 +2599,103 @@ export interface components {
         EmailVerifyRequest: {
             token: string;
         };
+        /**
+         * @description * `staff` - Staff
+         *     * `public_qr` - Public QR report
+         * @enum {string}
+         */
+        FaultChannel: "staff" | "public_qr";
+        /**
+         * @description A fault entered by somebody at the firm.
+         *
+         *     The state, the channel and every timestamp are the server's. A trapped
+         *     passenger makes it an emergency whatever `priority` says, so a phone form
+         *     in a hurry cannot under-state one.
+         */
+        FaultCreateRequest: {
+            /** Format: uuid */
+            elevator: string;
+            description: string;
+            /** @default normal */
+            priority: components["schemas"]["FaultPriority"];
+            /** Format: uuid */
+            technician?: string | null;
+            stopped_elevator?: boolean;
+            /** @default false */
+            someone_trapped: boolean;
+        };
+        /**
+         * @description * `emergency` - Emergency
+         *     * `high` - High
+         *     * `normal` - Normal
+         * @enum {string}
+         */
+        FaultPriority: "emergency" | "high" | "normal";
+        FaultRead: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly reference: string;
+            /** Format: uuid */
+            readonly elevator: string;
+            readonly elevator_name: string;
+            /** Format: uuid */
+            readonly building: string;
+            readonly building_name: string;
+            /** Format: uuid */
+            readonly customer: string;
+            readonly customer_name: string;
+            readonly channel: components["schemas"]["FaultChannel"];
+            /** Format: uuid */
+            readonly reported_by: string | null;
+            readonly reported_by_name: string | null;
+            readonly reporter_name: string;
+            readonly reporter_phone: string;
+            readonly description: string;
+            readonly additional_reports: {
+                [key: string]: unknown;
+            }[];
+            readonly priority: components["schemas"]["FaultPriority"];
+            readonly status: components["schemas"]["FaultStatus"];
+            /** Format: uuid */
+            readonly technician: string | null;
+            readonly technician_name: string | null;
+            readonly stopped_elevator: boolean;
+            /** Format: date-time */
+            readonly reported_at: string;
+            /** Format: date-time */
+            readonly assigned_at: string | null;
+            /** Format: date-time */
+            readonly on_site_at: string | null;
+            /** Format: date-time */
+            readonly resolved_at: string | null;
+            /** Format: date-time */
+            readonly closed_at: string | null;
+            /** Format: date-time */
+            readonly cancelled_at: string | null;
+            readonly cancel_reason: string;
+            readonly resolution_notes: string;
+            readonly parts_used: string;
+            readonly billable: boolean | null;
+            readonly billable_overridden: boolean;
+            /** @description Seconds from the report to the technician arriving; null until they arrive. */
+            readonly response_time_seconds: number | null;
+            /** @description Seconds from the report to its resolution; null until resolved. */
+            readonly resolution_time_seconds: number | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /**
+         * @description * `open` - Open
+         *     * `assigned` - Assigned
+         *     * `on_site` - On site
+         *     * `resolved` - Resolved
+         *     * `closed` - Closed
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        FaultStatus: "open" | "assigned" | "on_site" | "resolved" | "closed" | "cancelled";
         /** @description One level of the address, resolved to a row the client can select. */
         GeocodeMatch: {
             /** @description Feeds straight back into the province/district/neighborhood endpoints. */
@@ -2649,12 +2939,18 @@ export interface components {
          *     * `contract_auto_renewal_blocked` - Contract auto-renewal blocked
          *     * `maintenance_overdue` - Maintenance overdue
          *     * `visit_assigned` - Planned visits assigned
+         *     * `fault_reported` - Fault reported
+         *     * `fault_emergency` - Emergency fault reported
+         *     * `fault_assigned` - Fault assigned
+         *     * `fault_resolved` - Fault resolved
          * @enum {string}
          */
-        NotificationKind: "contract_renewal_due" | "contract_expired" | "contract_auto_renewed" | "contract_auto_renewal_blocked" | "maintenance_overdue" | "visit_assigned";
+        NotificationKind: "contract_renewal_due" | "contract_expired" | "contract_auto_renewed" | "contract_auto_renewal_blocked" | "maintenance_overdue" | "visit_assigned" | "fault_reported" | "fault_emergency" | "fault_assigned" | "fault_resolved";
         NotificationPreference: {
             kind: components["schemas"]["NotificationKind"];
             email: boolean;
+            /** @description Always e-mailed, whatever `email` is set to; turning it off is refused. */
+            readonly locked: boolean;
         };
         NotificationPreferenceRequest: {
             kind: components["schemas"]["NotificationKind"];
@@ -2755,6 +3051,19 @@ export interface components {
         };
         PaginatedElevatorListList: {
             results: components["schemas"]["ElevatorList"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedFaultReadList: {
+            results: components["schemas"]["FaultRead"][];
             pagination: {
                 /** @example 1 */
                 page: number;
@@ -3035,6 +3344,25 @@ export interface components {
             notes?: string;
         };
         /**
+         * @description A fault entered by somebody at the firm.
+         *
+         *     The state, the channel and every timestamp are the server's. A trapped
+         *     passenger makes it an emergency whatever `priority` says, so a phone form
+         *     in a hurry cannot under-state one.
+         */
+        PatchedFaultCreateRequest: {
+            /** Format: uuid */
+            elevator?: string;
+            description?: string;
+            /** @default normal */
+            priority: components["schemas"]["FaultPriority"];
+            /** Format: uuid */
+            technician?: string | null;
+            stopped_elevator?: boolean;
+            /** @default false */
+            someone_trapped: boolean;
+        };
+        /**
          * @description Rejects a field the client sent that this serializer does not declare.
          *
          *     Copied rather than imported - every app that needs this defines its own
@@ -3158,6 +3486,27 @@ export interface components {
             id: number;
             name: string;
         };
+        PublicFaultReceipt: {
+            /** @description Six characters to quote when calling about the fault. Nothing else is returned. */
+            reference: string;
+        };
+        /** @description What a resident standing at the lift can tell us, and nothing else. */
+        PublicFaultReportRequest: {
+            description: string;
+            /** @default false */
+            someone_trapped: boolean;
+            /** @default false */
+            elevator_stopped: boolean;
+            /** @default  */
+            reporter_name: string;
+            /** @default  */
+            reporter_phone: string;
+            /**
+             * @description Leave empty. A form that fills this in is treated as automated.
+             * @default
+             */
+            website: string;
+        };
         /**
          * @description Rejects fields it does not know about.
          *
@@ -3183,6 +3532,14 @@ export interface components {
             carry_elevators: boolean;
             /** @default true */
             copy_terms: boolean;
+        };
+        ResolveRequest: {
+            /** @default  */
+            resolution_notes: string;
+            /** @default  */
+            parts_used: string;
+            /** @default false */
+            restore_service: boolean;
         };
         /**
          * @description What a dropped pin resolves to.
@@ -3375,6 +3732,8 @@ export interface components {
          *     * `IDEMPOTENCY_KEY_REQUIRED` - This request must carry an Idempotency-Key header
          *     * `ELEVATOR_ALREADY_CONTRACTED` - Elevator is already covered by an open contract
          *     * `NO_ACTIVE_CONTRACT_FOR_ELEVATOR` - The named contract is not active or does not cover this elevator
+         *     * `FAULT_TRANSITION_NOT_ALLOWED` - The fault is not in a state this action can be taken from
+         *     * `NOTIFICATION_EMAIL_LOCKED` - This notification is always e-mailed and cannot be turned off
          *     * `LAST_OWNER_CANNOT_BE_DEACTIVATED` - A company must keep at least one active owner
          *     * `ONLY_TECHNICIANS_ARE_ASSIGNED` - Customer assignments apply to technicians only
          *     * `TECHNICIAN_RECORDS_OWN_VISITS` - A technician records maintenance visits in their own name only
@@ -3396,7 +3755,7 @@ export interface components {
          *     * `ATTACHMENT_TARGET_MISMATCH` - Attachment does not belong to the record it is being linked to
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
+        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "FAULT_TRANSITION_NOT_ALLOWED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
         /** @description The shape of every error response. There is no `message` field: the backend sends codes, and the words live in the client's translation file, so wording changes in one place and adding a language does not touch the API. */
         ErrorResponse: {
             error: {
@@ -3440,8 +3799,9 @@ export interface operations {
                  *     * `company` - Company
                  *     * `user` - User
                  *     * `maintenance_visit` - Maintenance visit
+                 *     * `fault` - Fault
                  */
-                object_type?: "building" | "company" | "contract" | "customer" | "elevator" | "maintenance_visit" | "user";
+                object_type?: "building" | "company" | "contract" | "customer" | "elevator" | "fault" | "maintenance_visit" | "user";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -5006,6 +5366,260 @@ export interface operations {
             };
         };
     };
+    faults_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description * `staff` - Staff
+                 *     * `public_qr` - Public QR report
+                 */
+                channel?: "public_qr" | "staff";
+                customer?: string;
+                elevator?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /**
+                 * @description * `emergency` - Emergency
+                 *     * `high` - High
+                 *     * `normal` - Normal
+                 */
+                priority?: "emergency" | "high" | "normal";
+                reported_at_after?: string;
+                reported_at_before?: string;
+                /**
+                 * @description * `open` - Open
+                 *     * `assigned` - Assigned
+                 *     * `on_site` - On site
+                 *     * `resolved` - Resolved
+                 *     * `closed` - Closed
+                 *     * `cancelled` - Cancelled
+                 */
+                status?: "assigned" | "cancelled" | "closed" | "on_site" | "open" | "resolved";
+                technician?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedFaultReadList"];
+                };
+            };
+        };
+    };
+    faults_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FaultCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["FaultCreateRequest"];
+                "multipart/form-data": components["schemas"]["FaultCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FaultRead"];
+                };
+            };
+        };
+    };
+    faults_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this fault. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FaultRead"];
+                };
+            };
+        };
+    };
+    faults_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this fault. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedFaultCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedFaultCreateRequest"];
+                "multipart/form-data": components["schemas"]["PatchedFaultCreateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FaultRead"];
+                };
+            };
+        };
+    };
+    faults_arrive_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this fault. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FaultRead"];
+                };
+            };
+        };
+    };
+    faults_assign_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this fault. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["AssignRequest"];
+                "multipart/form-data": components["schemas"]["AssignRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FaultRead"];
+                };
+            };
+        };
+    };
+    faults_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this fault. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CancelRequest"];
+                "multipart/form-data": components["schemas"]["CancelRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FaultRead"];
+                };
+            };
+        };
+    };
+    faults_close_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this fault. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FaultRead"];
+                };
+            };
+        };
+    };
+    faults_resolve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this fault. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ResolveRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ResolveRequest"];
+                "multipart/form-data": components["schemas"]["ResolveRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FaultRead"];
+                };
+            };
+        };
+    };
     geocode_reverse_retrieve: {
         parameters: {
             query: {
@@ -5394,8 +6008,12 @@ export interface operations {
                  *     * `contract_auto_renewal_blocked` - Contract auto-renewal blocked
                  *     * `maintenance_overdue` - Maintenance overdue
                  *     * `visit_assigned` - Planned visits assigned
+                 *     * `fault_reported` - Fault reported
+                 *     * `fault_emergency` - Emergency fault reported
+                 *     * `fault_assigned` - Fault assigned
+                 *     * `fault_resolved` - Fault resolved
                  */
-                kind?: "contract_auto_renewal_blocked" | "contract_auto_renewed" | "contract_expired" | "contract_renewal_due" | "maintenance_overdue" | "visit_assigned";
+                kind?: "contract_auto_renewal_blocked" | "contract_auto_renewed" | "contract_expired" | "contract_renewal_due" | "fault_assigned" | "fault_emergency" | "fault_reported" | "fault_resolved" | "maintenance_overdue" | "visit_assigned";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -5681,6 +6299,40 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Province"][];
                 };
+            };
+        };
+    };
+    public_elevators_faults_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qr_token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicFaultReportRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PublicFaultReportRequest"];
+                "multipart/form-data": components["schemas"]["PublicFaultReportRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicFaultReceipt"];
+                };
+            };
+            /** @description No lift carries this sticker. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

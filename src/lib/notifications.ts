@@ -28,6 +28,10 @@ const REQUIRED: Record<string, readonly string[]> = {
   contract_auto_renewal_blocked: ["contract_number", "end_date", "successor_contract_number"],
   maintenance_overdue: ["elevator_name", "next_maintenance_date"],
   visit_assigned: ["period", "count"],
+  fault_reported: ["reference", "elevator_name", "building_name"],
+  fault_emergency: ["reference", "elevator_name", "building_name"],
+  fault_assigned: ["reference", "elevator_name", "building_name"],
+  fault_resolved: ["reference", "elevator_name", "building_name"],
 };
 
 export interface NotificationText {
@@ -119,6 +123,11 @@ export function describeNotification(notification: AppNotification, t: TFunction
         known: true,
       };
     }
+    case "fault_reported":
+    case "fault_emergency":
+    case "fault_assigned":
+    case "fault_resolved":
+      return { ...describeFault(kind, data, t), known: true };
     case "visit_assigned": {
       // The month as the e-mail spells it — month name and year — from Intl rather
       // than a list of month names in this file.
@@ -140,6 +149,58 @@ export function describeNotification(notification: AppNotification, t: TFunction
 }
 
 /**
+ * The four fault kinds, worded as their e-mails are.
+ *
+ * The optional parts — "from the QR sticker", "the lift is not running", the
+ * resident's description, who resolved it — are fragments of their own in the
+ * catalogue, joined here exactly where the templates join them, so a sentence
+ * with a part missing still reads as a sentence.
+ */
+function describeFault(
+  kind: "fault_reported" | "fault_emergency" | "fault_assigned" | "fault_resolved",
+  data: AppNotification["data"],
+  t: TFunction,
+): Omit<NotificationText, "known"> {
+  const base = {
+    elevator: text(data, "elevator_name"),
+    building: text(data, "building_name"),
+    reference: text(data, "reference"),
+  };
+  const priority = text(data, "priority");
+  const description = text(data, "description");
+  const quoted = description ? ` ${t("notification.fragment.description", { description })}` : "";
+  const title = t(`notification.subject.${kind}`, base);
+
+  if (kind === "fault_reported") {
+    const body = t("notification.body.fault_reported", {
+      ...base,
+      via: text(data, "channel") === "public_qr" ? t("notification.fragment.viaQr") : "",
+      stopped: priority === "high" ? t("notification.fragment.notRunning") : "",
+    });
+    return { title, body: `${body}${quoted}` };
+  }
+  if (kind === "fault_emergency") {
+    return { title, body: `${t("notification.body.fault_emergency", base)}${quoted}` };
+  }
+  if (kind === "fault_assigned") {
+    const severity =
+      priority === "emergency"
+        ? ` ${t("notification.fragment.trapped")}`
+        : priority === "high"
+          ? ` ${t("notification.fragment.notRunningSentence")}`
+          : "";
+    return { title, body: `${t("notification.body.fault_assigned", base)}${severity}` };
+  }
+  const technician = text(data, "technician_name");
+  return {
+    title,
+    body: technician
+      ? t("notification.body.fault_resolved_by", { ...base, technician })
+      : t("notification.body.fault_resolved", base),
+  };
+}
+
+/**
  * Where a notification leads: the record it is about.
  *
  * `null` for a subject this client has no screen for. The row is still shown
@@ -153,10 +214,14 @@ export function notificationTarget(
   notification: Pick<AppNotification, "subject_type" | "subject_id">,
 ):
   | { to: "/contracts/$id" | "/elevators/$id"; params: { id: string } }
+  | { to: "/faults/$id"; params: { id: string } }
   | { to: "/today"; params?: undefined }
   | null {
   if (notification.subject_type === "plan") return { to: "/today" };
   if (!notification.subject_id) return null;
+  if (notification.subject_type === "fault") {
+    return { to: "/faults/$id", params: { id: notification.subject_id } };
+  }
   if (notification.subject_type === "contract") {
     return { to: "/contracts/$id", params: { id: notification.subject_id } };
   }

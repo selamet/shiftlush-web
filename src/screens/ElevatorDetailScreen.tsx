@@ -10,6 +10,7 @@ import {
   Printer,
   QrCode,
   RefreshCw,
+  Siren,
   TriangleAlert,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -44,6 +45,7 @@ import { InspectionLabel } from "@/components/ui/inspection-label";
 import { toDisplay } from "@/lib/date";
 import { canReadVisits, canRecordVisits } from "@/lib/visit";
 import { canReadPlan } from "@/lib/plan";
+import { canUseFaults } from "@/lib/faults";
 import { ElevatorPlanCard } from "@/components/plan/ElevatorPlanCard";
 import {
   RecordVisitAction,
@@ -230,6 +232,7 @@ export function ElevatorDetailScreen() {
   const recordsVisits = canRecordVisits(role);
   const visits = useElevatorVisits(elevatorId, showsVisits);
   const readsPlan = canReadPlan(role);
+  const reportsFaults = canUseFaults(role);
 
   const queryClient = useQueryClient();
   const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
@@ -395,6 +398,18 @@ export function ElevatorDetailScreen() {
           {/* The one action a technician has on this page, so it leads. With
               no contract it becomes the reason instead — see the component. */}
           {recordsVisits && <RecordVisitAction elevator={elevator} size="sm" />}
+          {/* A fault needs no contract: a stopped lift is reported whether or
+              not anybody is paid to fix it. */}
+          {reportsFaults && (
+            <Link
+              to="/elevators/$id/faults/new"
+              params={{ id: elevator.id }}
+              className={buttonVariants({ size: "sm", variant: "secondary" })}
+            >
+              <Siren />
+              {t("fault.report")}
+            </Link>
+          )}
           <PrintLabelButton
             size="sm"
             busy={labelSheet.isPending}
