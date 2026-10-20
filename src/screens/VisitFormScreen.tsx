@@ -250,7 +250,12 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
 
     if (entry) {
       const attempt = await attemptEntry(entry, sendVisit);
-      if (attempt.outcome === "sent") return delivered(attempt.progress);
+      if (attempt.outcome === "sent") {
+        // The form tells the person about any skipped photo itself, on the
+        // visit it opens next, so the outbox does not need to keep the note.
+        await discardEntry(entry.id).catch(() => undefined);
+        return delivered(attempt.progress);
+      }
       if (attempt.outcome === "queued") return { kind: "queued" };
       await discardEntry(entry.id).catch(() => undefined);
       throw attempt.error;

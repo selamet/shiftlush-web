@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CloudUpload, Inbox, Loader2, Trash2, TriangleAlert } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { CloudUpload, ImageOff, Inbox, Loader2, Trash2, TriangleAlert, X } from "lucide-react";
 import { ApiError, type ErrorCode } from "@/api/client";
 import { errorMessage } from "@/api/errors";
 import { discardEntry, drainOutbox, type DrainResult, type OutboxEntry } from "@/lib/outbox";
@@ -37,6 +38,10 @@ function lastError(entry: OutboxEntry, t: Parameters<typeof errorMessage>[1]): s
  * sending it again would get the same answer, so the only thing offered is to
  * discard it, with the server's reason beside it. The record is then entered
  * again from the elevator, where the form can say which field was wrong.
+ *
+ * A third kind arrived and lost photos on the way: the server refused them.
+ * It is a note, not a task — the visit exists — so it links to the visit and
+ * is dismissed without the heavy confirmation a waiting record needs.
  *
  * Read straight from this device's storage; there is nothing on the server to
  * fetch, which is also why every role gets the same screen.
@@ -115,6 +120,15 @@ export function OutboxScreen() {
       ) : (
         <ul className="flex flex-col gap-2">
           {entries.map((entry) => {
+            if (entry.state === "delivered-with-gaps") {
+              return (
+                <DeliveredWithGaps
+                  key={entry.id}
+                  entry={entry}
+                  onDismiss={() => void discard(entry)}
+                />
+              );
+            }
             const attention = entry.state === "needs-attention";
             const message = lastError(entry, t);
             return (
@@ -189,5 +203,46 @@ export function OutboxScreen() {
         onCancel={() => setPendingDiscard(null)}
       />
     </div>
+  );
+}
+
+function DeliveredWithGaps({ entry, onDismiss }: { entry: OutboxEntry; onDismiss: () => void }) {
+  const { t } = useTranslation();
+  const skipped = entry.progress.photosSkipped ?? [];
+  return (
+    <li className="flex flex-col gap-2 rounded-lg border border-warning bg-card p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-col leading-tight">
+          <span className="text-cardtitle">{entry.label}</span>
+          <span className="tnum text-help text-muted-foreground">
+            {formatDateTime(new Date(entry.createdAt).toISOString())}
+          </span>
+        </div>
+        <StatusChip weight="ink" icon={ImageOff}>
+          {t("outbox.state.deliveredWithGaps")}
+        </StatusChip>
+      </div>
+      <p className="text-body text-warning">
+        {t("outbox.photosSkipped", { count: skipped.length })} {skipped.join(", ")}
+        <span className="mt-1 block text-help text-muted-foreground">
+          {t("outbox.photosSkippedHint")}
+        </span>
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {entry.progress.recordId && (
+          <Link
+            to="/maintenance-visits/$id"
+            params={{ id: entry.progress.recordId }}
+            className="text-body font-medium text-primary underline-offset-2 hover:underline focus-ring"
+          >
+            {t("outbox.openVisit")}
+          </Link>
+        )}
+        <Button size="sm" variant="ghost" onClick={onDismiss}>
+          <X aria-hidden="true" />
+          {t("outbox.dismiss")}
+        </Button>
+      </div>
+    </li>
   );
 }

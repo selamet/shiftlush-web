@@ -258,11 +258,17 @@
     "resultNothing": "Gönderilecek kayıt yoktu.",
     "state": {
       "pending": "Sırada",
-      "needsAttention": "İnceleme gerekiyor"
+      "needsAttention": "İnceleme gerekiyor",
+      "deliveredWithGaps": "Gönderildi, fotoğraf eksik"
     },
     "kind": {
       "maintenance-visit": "Bakım kaydı"
-    }
+    },
+    "indicatorGaps": "Eksik fotoğraflı kayıt ({{count}})",
+    "photosSkipped": "Kayıt gönderildi ama {{count}} fotoğraf sunucu tarafından kabul edilmedi:",
+    "photosSkippedHint": "Fotoğrafları kayıt sayfasından yeniden ekleyebilirsiniz.",
+    "openVisit": "Kayda git",
+    "dismiss": "Kapat"
   },
   "contract": {
     "title": "Sözleşmeler",
