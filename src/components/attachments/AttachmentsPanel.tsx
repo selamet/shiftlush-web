@@ -4,34 +4,26 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FileText, Image as ImageIcon, Download, Trash2, X, Upload } from "lucide-react";
 import {
   attachmentDownloadUrl,
-  confirmUpload,
   deleteAttachment,
-  requestUploadTicket,
   type Attachment,
   type AttachmentCategory,
   type AttachmentObjectType,
 } from "@/api/queries";
 import { errorMessage } from "@/api/errors";
 import type { TFunction } from "i18next";
-import { putSignedFile, UploadError } from "@/lib/upload";
+import {
+  ALLOWED_UPLOAD_TYPES,
+  MAX_UPLOAD_BYTES,
+  uploadAttachment,
+  uploadRefusal,
+  UploadError,
+} from "@/lib/upload";
 import { formatFileSize } from "@/lib/format";
 import { enumLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-
-/**
- * What the server accepts, restated here to save a wasted transfer.
- *
- * These two numbers are the server's rule, not this file's: they are declared
- * in the contract as `MimeTypeEnum` and the maximum on `size_bytes`. Checking
- * them here only means a refusal arrives in a moment instead of after four
- * minutes of uploading a file that was never going to be accepted. The server
- * still decides — anything it rejects is shown as it explained it.
- */
-const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"] as const;
-const MAX_BYTES = 10 * 1024 * 1024;
 
 const CATEGORIES: AttachmentCategory[] = [
   "inspection_report",
@@ -146,11 +138,10 @@ export function AttachmentsPanel({
 
   /** The client-side refusals, in the server's own words where they exist. */
   function refuse(file: File): string | null {
-    if (!ALLOWED_TYPES.includes(file.type as (typeof ALLOWED_TYPES)[number])) {
-      return t("attachment.errors.type");
-    }
-    if (file.size > MAX_BYTES) {
-      return t("attachment.errors.tooLarge", { max: formatFileSize(MAX_BYTES) });
+    const refusal = uploadRefusal(file);
+    if (refusal === "type") return t("attachment.errors.type");
+    if (refusal === "tooLarge") {
+      return t("attachment.errors.tooLarge", { max: formatFileSize(MAX_UPLOAD_BYTES) });
     }
     return null;
   }
@@ -158,29 +149,17 @@ export function AttachmentsPanel({
   async function run(transfer: Transfer) {
     patchTransfer(transfer.id, { error: null, fraction: null });
     try {
-      // A fresh ticket every attempt. Retrying with the previous URL is the one
-      // thing guaranteed not to work when the reason for retrying was that it
-      // expired.
-      const ticket = await requestUploadTicket({
-        object_type: objectType,
-        object_id: objectId,
+      // The ticket, the bytes and the confirmation, in the one order that
+      // works; a fresh ticket each attempt. See `uploadAttachment`.
+      const record = await uploadAttachment({
+        objectType,
+        objectId,
         category: transfer.category,
-        mime_type: transfer.file.type as never,
-        size_bytes: transfer.file.size,
-      });
-
-      await putSignedFile({
-        url: ticket.upload_url,
         file: transfer.file,
-        contentType: ticket.content_type,
+        idempotencyKey: transfer.idempotencyKey,
         onProgress: (fraction) => patchTransfer(transfer.id, { fraction }),
         signal: transfer.controller.signal,
       });
-
-      const record = await confirmUpload(
-        { storage_key: ticket.storage_key, original_filename: transfer.file.name },
-        transfer.idempotencyKey,
-      );
 
       await queryClient.invalidateQueries({ queryKey: invalidateKey });
       dropTransfer(transfer.id);
@@ -190,7 +169,7 @@ export function AttachmentsPanel({
         dropTransfer(transfer.id);
         return;
       }
-      patchTransfer(transfer.id, { error: describeFailure(error, t) });
+      patchTransfer(transfer.id, { error: describeUploadFailure(error, t) });
     }
   }
 
@@ -276,7 +255,7 @@ export function AttachmentsPanel({
             ref={inputRef}
             type="file"
             multiple
-            accept={ALLOWED_TYPES.join(",")}
+            accept={ALLOWED_UPLOAD_TYPES.join(",")}
             className="hidden"
             onChange={(event) => {
               accept(event.target.files);
@@ -459,7 +438,7 @@ export function AttachmentsPanel({
  * through the API error messages. Anything else came from our own server and
  * already has a message worth showing.
  */
-function describeFailure(error: unknown, t: TFunction): string {
+export function describeUploadFailure(error: unknown, t: TFunction): string {
   if (error instanceof UploadError) {
     if (error.reason === "expired") return t("attachment.errors.expired");
     if (error.reason === "network") return t("attachment.errors.network");

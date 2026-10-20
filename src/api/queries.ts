@@ -18,7 +18,7 @@ import { api } from "@/api/client";
 // answers a slashless POST with a 301, and a browser turns a redirected POST
 // into a GET: the write silently becomes a read and the body is dropped.
 // `scripts/check-api-paths.mjs` checks every literal here against the contract.
-import type { components } from "@/api/generated";
+import type { components, operations } from "@/api/generated";
 
 type Schemas = components["schemas"];
 
@@ -624,6 +624,98 @@ export function attachmentDownloadUrl(id: string) {
 
 export function deleteAttachment(id: string) {
   return api.delete<void>(`/attachments/${id}/`);
+}
+
+// ---------------------------------------------------------------------------
+// Maintenance visits
+//
+// A visit is a technician's statement that they were at a lift on a day and
+// what they found. It is created and read here and never edited from this
+// client: the server keeps correcting a visit to owners and admins, and no
+// screen offers it yet.
+// ---------------------------------------------------------------------------
+
+export type MaintenanceVisit = Schemas["MaintenanceVisitRead"];
+export type MaintenanceVisitItem = Schemas["MaintenanceVisitItem"];
+export type MaintenanceVisitWrite = Schemas["MaintenanceVisitWriteRequest"];
+export type TechnicianOption = Schemas["TechnicianOption"];
+
+/**
+ * Hierarchical like every other key here, so invalidating `visitKeys.all`
+ * after a create reaches the elevator's history panel, the list screen and
+ * every detail at once — all three can show the visit that was just recorded.
+ */
+export const visitKeys = {
+  all: ["maintenance-visits"] as const,
+  list: (params: ListParams) => ["maintenance-visits", "list", params] as const,
+  detail: (id: string) => ["maintenance-visits", "detail", id] as const,
+  attachments: (id: string) => ["maintenance-visits", "attachments", id] as const,
+  technicians: ["maintenance-visits", "technicians"] as const,
+} as const;
+
+export function visitListQuery(params: ListParams = {}) {
+  return queryOptions({
+    queryKey: visitKeys.list(params),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<MaintenanceVisit>>("/maintenance-visits/", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function visitQuery(id: string) {
+  return queryOptions({
+    queryKey: visitKeys.detail(id),
+    queryFn: ({ signal }) => api.get<MaintenanceVisit>(`/maintenance-visits/${id}/`, { signal }),
+  });
+}
+
+/** The visit's photos. Same endpoint and page size as the elevator's own files. */
+export function visitAttachmentsQuery(id: string) {
+  return queryOptions({
+    queryKey: visitKeys.attachments(id),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<Attachment>>("/attachments/", {
+        query: { object_type: "maintenance_visit", object_id: id, page_size: 50 },
+        signal,
+      }),
+  });
+}
+
+/**
+ * Who a visit can be recorded against: the firm's active technicians.
+ *
+ * Its own endpoint rather than the user list filtered to technicians, because
+ * the user list is owner and admin only — and operations, who may record a
+ * visit on a technician's behalf, has to be able to name one. Two fields, not
+ * a colleague's whole record: a name on a picker needs nothing else.
+ *
+ * Unpaginated by design; a firm's technicians fit on one screen.
+ */
+export function visitTechniciansQuery() {
+  return queryOptions({
+    queryKey: visitKeys.technicians,
+    queryFn: ({ signal }) =>
+      api.get<TechnicianOption[]>("/maintenance-visits/technicians/", { signal }),
+  });
+}
+
+/**
+ * Recording a visit, checklist included, in one request.
+ *
+ * The Idempotency-Key is not optional here the way it is on the other creates:
+ * the server refuses this one without it (`IDEMPOTENCY_KEY_REQUIRED`). A visit
+ * is the record most likely to be sent from a machine room on one bar of
+ * signal and sent again when nothing seemed to happen, and two visits on one
+ * day for one lift is a false statement about the work, not a harmless
+ * duplicate.
+ *
+ * Answers with the visit as it is read back, id included — which is what the
+ * photos are attached to and where the form goes next.
+ */
+export function createVisit(body: MaintenanceVisitWrite, idempotencyKey: string) {
+  return api.post<
+    operations["maintenance_visits_create"]["responses"][201]["content"]["application/json"]
+  >("/maintenance-visits/", body, { idempotencyKey });
 }
 
 // ---------------------------------------------------------------------------

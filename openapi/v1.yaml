@@ -2379,6 +2379,16 @@ paths:
         schema:
           type: string
           format: uuid
+      - in: query
+        name: visit_date_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: visit_date_before
+        schema:
+          type: string
+          format: date
       tags:
       - maintenance-visits
       security:
@@ -2398,6 +2408,14 @@ paths:
         PUT is not routed: partial update is the only update verb. A full replace
         means the client has to send every field it does not want cleared, and the
         moment the model grows a column, old clients start wiping it.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Generated once per visit form and reused on every retry, so a
+          visit sent again from a device outbox is recorded once.
+        required: true
       tags:
       - maintenance-visits
       requestBody:
@@ -2419,7 +2437,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MaintenanceVisitWrite'
+                $ref: '#/components/schemas/MaintenanceVisitRead'
           description: ''
   /api/v1/maintenance-visits/{id}/:
     get:
@@ -2538,6 +2556,72 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MaintenanceVisitRead'
+          description: ''
+  /api/v1/maintenance-visits/technicians/:
+    get:
+      operationId: maintenance_visits_technicians_list
+      description: |-
+        The firm's active technicians, by name, for the visit form.
+
+        The user list is owners' and admins' only — it carries e-mail addresses,
+        phone numbers and roles. Operations records visits too, and needs to
+        say who did the work; this answers exactly that and nothing more.
+      parameters:
+      - in: query
+        name: customer
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: elevator
+        schema:
+          type: string
+          format: uuid
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - access_denied
+          - completed
+          - incomplete
+        description: |-
+          * `completed` - Completed
+          * `incomplete` - Incomplete
+          * `access_denied` - Access denied
+      - in: query
+        name: technician
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: visit_date_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: visit_date_before
+        schema:
+          type: string
+          format: date
+      tags:
+      - maintenance-visits
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TechnicianOption'
           description: ''
   /api/v1/neighborhoods/:
     get:
@@ -4748,6 +4832,16 @@ components:
         maintenance_interval_days:
           type: integer
           readOnly: true
+        last_maintenance_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        next_maintenance_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
         notes:
           type: string
           readOnly: true
@@ -4788,12 +4882,14 @@ components:
       - installer
       - internal_code
       - last_inspection_date
+      - last_maintenance_date
       - machine_room
       - maintenance_interval_days
       - manufacturer
       - model
       - name
       - next_inspection_date
+      - next_maintenance_date
       - notes
       - pit_depth_mm
       - qr_token
@@ -5610,11 +5706,14 @@ components:
           type: string
         parts_replaced:
           type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SetChecklistItem'
       required:
       - contract
       - elevator
       - status
-      - technician
       - visit_date
     MaintenanceVisitWriteRequest:
       type: object
@@ -5645,11 +5744,14 @@ components:
           type: string
         parts_replaced:
           type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SetChecklistItemRequest'
       required:
       - contract
       - elevator
       - status
-      - technician
       - visit_date
     MimeTypeEnum:
       enum:
@@ -6542,6 +6644,10 @@ components:
           type: string
         parts_replaced:
           type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SetChecklistItemRequest'
     PatchedUserUpdateRequest:
       type: object
       properties:
@@ -6736,6 +6842,45 @@ components:
       - last_used_at
       - signed_in_at
       - user_agent
+    SetChecklistItem:
+      type: object
+      properties:
+        item:
+          $ref: '#/components/schemas/MaintenanceChecklistItem'
+        result:
+          $ref: '#/components/schemas/MaintenanceChecklistResult'
+        note:
+          type: string
+          default: ''
+      required:
+      - item
+      - result
+    SetChecklistItemRequest:
+      type: object
+      properties:
+        item:
+          $ref: '#/components/schemas/MaintenanceChecklistItem'
+        result:
+          $ref: '#/components/schemas/MaintenanceChecklistResult'
+        note:
+          type: string
+          default: ''
+      required:
+      - item
+      - result
+    TechnicianOption:
+      type: object
+      description: One choice in the "who did the work" field — a name and nothing
+        else.
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+      - id
+      - name
     TerminateRequest:
       type: object
       properties:
@@ -6986,10 +7131,12 @@ components:
       - EMAIL_ALREADY_REGISTERED
       - INVITATION_ALREADY_PENDING
       - IDEMPOTENCY_KEY_REUSED
+      - IDEMPOTENCY_KEY_REQUIRED
       - ELEVATOR_ALREADY_CONTRACTED
       - NO_ACTIVE_CONTRACT_FOR_ELEVATOR
       - LAST_OWNER_CANNOT_BE_DEACTIVATED
       - ONLY_TECHNICIANS_ARE_ASSIGNED
+      - TECHNICIAN_RECORDS_OWN_VISITS
       - CANNOT_DEACTIVATE_SELF
       - BUILDING_CUSTOMER_MISMATCH
       - TERMINATION_REASON_REQUIRED
@@ -7030,10 +7177,12 @@ components:
         * `EMAIL_ALREADY_REGISTERED` - E-mail address is already registered
         * `INVITATION_ALREADY_PENDING` - This address already holds an invitation that has not been accepted
         * `IDEMPOTENCY_KEY_REUSED` - Idempotency key was reused with a different request body
+        * `IDEMPOTENCY_KEY_REQUIRED` - This request must carry an Idempotency-Key header
         * `ELEVATOR_ALREADY_CONTRACTED` - Elevator is already covered by an open contract
         * `NO_ACTIVE_CONTRACT_FOR_ELEVATOR` - The named contract is not active or does not cover this elevator
         * `LAST_OWNER_CANNOT_BE_DEACTIVATED` - A company must keep at least one active owner
         * `ONLY_TECHNICIANS_ARE_ASSIGNED` - Customer assignments apply to technicians only
+        * `TECHNICIAN_RECORDS_OWN_VISITS` - A technician records maintenance visits in their own name only
         * `CANNOT_DEACTIVATE_SELF` - A user cannot deactivate their own account
         * `BUILDING_CUSTOMER_MISMATCH` - A building in a complex must share the complex's customer
         * `TERMINATION_REASON_REQUIRED` - A termination reason is required

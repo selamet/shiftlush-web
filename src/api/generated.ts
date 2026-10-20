@@ -1212,6 +1212,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/maintenance-visits/technicians/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The firm's active technicians, by name, for the visit form.
+         *
+         *     The user list is owners' and admins' only — it carries e-mail addresses,
+         *     phone numbers and roles. Operations records visits too, and needs to
+         *     say who did the work; this answers exactly that and nothing more.
+         */
+        get: operations["maintenance_visits_technicians_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/neighborhoods/": {
         parameters: {
             query?: never;
@@ -2129,6 +2152,10 @@ export interface components {
             readonly inspection_report_number: string;
             readonly status: components["schemas"]["ElevatorStatus"];
             readonly maintenance_interval_days: number;
+            /** Format: date */
+            readonly last_maintenance_date: string | null;
+            /** Format: date */
+            readonly next_maintenance_date: string | null;
             readonly notes: string;
             /** Format: date-time */
             readonly created_at: string;
@@ -2480,13 +2507,14 @@ export interface components {
             /** Format: uuid */
             contract: string;
             /** Format: uuid */
-            technician: string;
+            technician?: string;
             /** Format: date */
             visit_date: string;
             status: components["schemas"]["MaintenanceVisitStatus"];
             status_note?: string;
             work_notes?: string;
             parts_replaced?: string;
+            items?: components["schemas"]["SetChecklistItem"][];
         };
         /**
          * @description Rejects a field the client sent that this serializer does not declare.
@@ -2501,13 +2529,14 @@ export interface components {
             /** Format: uuid */
             contract: string;
             /** Format: uuid */
-            technician: string;
+            technician?: string;
             /** Format: date */
             visit_date: string;
             status: components["schemas"]["MaintenanceVisitStatus"];
             status_note?: string;
             work_notes?: string;
             parts_replaced?: string;
+            items?: components["schemas"]["SetChecklistItemRequest"][];
         };
         /**
          * @description * `application/pdf` - application/pdf
@@ -2901,6 +2930,7 @@ export interface components {
             status_note?: string;
             work_notes?: string;
             parts_replaced?: string;
+            items?: components["schemas"]["SetChecklistItemRequest"][];
         };
         PatchedUserUpdateRequest: {
             first_name?: string;
@@ -2990,6 +3020,24 @@ export interface components {
              *     devices is asking.
              */
             readonly is_current: boolean;
+        };
+        SetChecklistItem: {
+            item: components["schemas"]["MaintenanceChecklistItem"];
+            result: components["schemas"]["MaintenanceChecklistResult"];
+            /** @default  */
+            note: string;
+        };
+        SetChecklistItemRequest: {
+            item: components["schemas"]["MaintenanceChecklistItem"];
+            result: components["schemas"]["MaintenanceChecklistResult"];
+            /** @default  */
+            note: string;
+        };
+        /** @description One choice in the "who did the work" field — a name and nothing else. */
+        TechnicianOption: {
+            /** Format: uuid */
+            id: string;
+            name: string;
         };
         TerminateRequest: {
             /** Format: date */
@@ -3108,10 +3156,12 @@ export interface components {
          *     * `EMAIL_ALREADY_REGISTERED` - E-mail address is already registered
          *     * `INVITATION_ALREADY_PENDING` - This address already holds an invitation that has not been accepted
          *     * `IDEMPOTENCY_KEY_REUSED` - Idempotency key was reused with a different request body
+         *     * `IDEMPOTENCY_KEY_REQUIRED` - This request must carry an Idempotency-Key header
          *     * `ELEVATOR_ALREADY_CONTRACTED` - Elevator is already covered by an open contract
          *     * `NO_ACTIVE_CONTRACT_FOR_ELEVATOR` - The named contract is not active or does not cover this elevator
          *     * `LAST_OWNER_CANNOT_BE_DEACTIVATED` - A company must keep at least one active owner
          *     * `ONLY_TECHNICIANS_ARE_ASSIGNED` - Customer assignments apply to technicians only
+         *     * `TECHNICIAN_RECORDS_OWN_VISITS` - A technician records maintenance visits in their own name only
          *     * `CANNOT_DEACTIVATE_SELF` - A user cannot deactivate their own account
          *     * `BUILDING_CUSTOMER_MISMATCH` - A building in a complex must share the complex's customer
          *     * `TERMINATION_REASON_REQUIRED` - A termination reason is required
@@ -3130,7 +3180,7 @@ export interface components {
          *     * `ATTACHMENT_TARGET_MISMATCH` - Attachment does not belong to the record it is being linked to
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
+        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
         /** @description The shape of every error response. There is no `message` field: the backend sends codes, and the words live in the client's translation file, so wording changes in one place and adding a language does not touch the API. */
         ErrorResponse: {
             error: {
@@ -4920,6 +4970,8 @@ export interface operations {
                  */
                 status?: "access_denied" | "completed" | "incomplete";
                 technician?: string;
+                visit_date_after?: string;
+                visit_date_before?: string;
             };
             header?: never;
             path?: never;
@@ -4940,7 +4992,10 @@ export interface operations {
     maintenance_visits_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Generated once per visit form and reused on every retry, so a visit sent again from a device outbox is recorded once. */
+                "Idempotency-Key": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4957,7 +5012,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MaintenanceVisitWrite"];
+                    "application/json": components["schemas"]["MaintenanceVisitRead"];
                 };
             };
         };
@@ -5051,6 +5106,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MaintenanceVisitRead"];
+                };
+            };
+        };
+    };
+    maintenance_visits_technicians_list: {
+        parameters: {
+            query?: {
+                customer?: string;
+                elevator?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /**
+                 * @description * `completed` - Completed
+                 *     * `incomplete` - Incomplete
+                 *     * `access_denied` - Access denied
+                 */
+                status?: "access_denied" | "completed" | "incomplete";
+                technician?: string;
+                visit_date_after?: string;
+                visit_date_before?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TechnicianOption"][];
                 };
             };
         };

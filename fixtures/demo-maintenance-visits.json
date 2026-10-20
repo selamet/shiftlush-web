@@ -1,0 +1,51 @@
+[
+  {
+    "id": "v1",
+    "elevator": "e1",
+    "elevator_name": "Sol asansör",
+    "contract": "k1",
+    "technician": "u3",
+    "technician_name": "Hakan Çelik",
+    "visit_date": "2026-10-14",
+    "status": "completed",
+    "status_note": "",
+    "work_notes": "Kapı kilitleri ayarlandı, ray yağlandı.",
+    "parts_replaced": "Kabin aydınlatma armatürü (1 adet)",
+    "items": [
+      { "id": "v1-i1", "item": "brake_system", "result": "ok", "note": "" },
+      { "id": "v1-i2", "item": "hoisting_ropes", "result": "attention_needed", "note": "Halatlarda yer yer aşınma var, üç ay içinde değişim önerildi." },
+      { "id": "v1-i3", "item": "landing_doors", "result": "ok", "note": "" },
+      { "id": "v1-i4", "item": "car_door_safety_edge", "result": "ok", "note": "" },
+      { "id": "v1-i5", "item": "limit_switches", "result": "ok", "note": "" },
+      { "id": "v1-i6", "item": "guide_rail_lubrication", "result": "ok", "note": "" },
+      { "id": "v1-i7", "item": "car_lighting", "result": "attention_needed", "note": "Armatür değiştirildi." },
+      { "id": "v1-i8", "item": "emergency_lighting", "result": "ok", "note": "" },
+      { "id": "v1-i9", "item": "emergency_alarm_intercom", "result": "ok", "note": "" },
+      { "id": "v1-i10", "item": "control_panel_buttons", "result": "ok", "note": "" },
+      { "id": "v1-i11", "item": "leveling_accuracy", "result": "ok", "note": "" },
+      { "id": "v1-i12", "item": "overload_device", "result": "ok", "note": "" },
+      { "id": "v1-i13", "item": "automatic_rescue_device", "result": "not_applicable", "note": "" },
+      { "id": "v1-i14", "item": "pit_condition", "result": "ok", "note": "" },
+      { "id": "v1-i15", "item": "machine_room_condition", "result": "ok", "note": "" },
+      { "id": "v1-i16", "item": "earthing_grounding", "result": "ok", "note": "" }
+    ],
+    "created_at": "2026-10-14T11:42:00Z",
+    "updated_at": "2026-10-14T11:42:00Z"
+  },
+  {
+    "id": "v2",
+    "elevator": "e1",
+    "elevator_name": "Sol asansör",
+    "contract": "k1",
+    "technician": "u3",
+    "technician_name": "Hakan Çelik",
+    "visit_date": "2026-09-15",
+    "status": "access_denied",
+    "status_note": "Makine dairesi kilitliydi, site yöneticisine ulaşılamadı.",
+    "work_notes": "",
+    "parts_replaced": "",
+    "items": [],
+    "created_at": "2026-09-15T09:10:00Z",
+    "updated_at": "2026-09-15T09:10:00Z"
+  }
+]

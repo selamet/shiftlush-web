@@ -188,3 +188,45 @@ export const auditLogFilters: ListFilter[] = [
 ];
 
 export const auditLogListSearch = listSearchSchema(auditLogFilters);
+
+/**
+ * What `GET /maintenance-visits/` narrows by.
+ *
+ * `technician` is a colleague's id, so its menu is handed its options on
+ * screen like the audit trail's actor. `elevator` arrives on a link — "all
+ * visits" under an elevator's history panel — and is shown as a chip, so a
+ * list narrowed to one lift never reads as the firm's whole register.
+ *
+ * The two days are inclusive on the server, and they are plain calendar days
+ * on both sides — `visit_date` is a date, not a timestamp — so unlike the audit
+ * trail's `until` there is no end-of-day to add on the way out.
+ *
+ * `customer` is left out for the reason building and customer are left off the
+ * elevator list — a reference into thousands needs a searchable picker, not a
+ * menu.
+ */
+export const visitFilters: ListFilter[] = [
+  enumFilter({
+    param: "status",
+    labelKey: "visit.fields.status",
+    namespace: "visit.status",
+    values: ["completed", "incomplete", "access_denied"],
+  }),
+  idMenuFilter({ param: "technician", labelKey: "visit.fields.technician" }),
+  dateFilter({ param: "visit_date_after", labelKey: "visit.fields.visitDateAfter" }),
+  dateFilter({ param: "visit_date_before", labelKey: "visit.fields.visitDateBefore" }),
+  scopeFilter({ param: "elevator", labelKey: "visit.elevatorScope" }),
+];
+
+export const visitListSearch = listSearchSchema(visitFilters);
+
+/**
+ * The list's request, newest visit first unless the URL says otherwise.
+ *
+ * One function for the route's prefetch and the screen's query, so the two ask
+ * for the same key — a default added in one place and not the other would
+ * warm a cache entry the screen never reads.
+ */
+export function visitListParams(raw: Record<string, unknown>) {
+  return { ordering: "-visit_date", ...visitListSearch.params(raw) };
+}

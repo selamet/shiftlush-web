@@ -34,7 +34,11 @@ import {
   companyQuery,
   currentUserQuery,
   sessionListQuery,
+  visitAttachmentsQuery,
+  visitListQuery,
+  visitQuery,
 } from "@/api/queries";
+import { elevatorHistoryParams } from "@/lib/visit";
 import { SessionProvider, ensureSession, type SessionOverride } from "@/lib/session";
 import type { ListSearch } from "@/lib/list-search";
 import type { Role } from "@/components/layout/nav-config";
@@ -46,6 +50,8 @@ import {
   customerListSearch,
   elevatorListSearch,
   userListSearch,
+  visitListParams,
+  visitListSearch,
 } from "@/screens/list-searches";
 // The one screen that is not split.
 //
@@ -169,6 +175,18 @@ const ScanScreen = lazyRouteComponent(() => import("@/screens/ScanScreen"), "Sca
 const QrResolveScreen = lazyRouteComponent(
   () => import("@/screens/QrResolveScreen"),
   "QrResolveScreen",
+);
+const VisitFormScreen = lazyRouteComponent(
+  () => import("@/screens/VisitFormScreen"),
+  "VisitFormScreen",
+);
+const VisitListScreen = lazyRouteComponent(
+  () => import("@/screens/VisitListScreen"),
+  "VisitListScreen",
+);
+const VisitDetailScreen = lazyRouteComponent(
+  () => import("@/screens/VisitDetailScreen"),
+  "VisitDetailScreen",
 );
 const RegisterScreen = lazyRouteComponent(
   () => import("@/screens/RegisterScreen"),
@@ -401,15 +419,26 @@ export const routeTree = rootRoute.addChildren([
     ),
     shellChild("/elevators/$id", ElevatorDetailScreen, async ({ params }) => {
       const id = params.id;
-      // The history is not prefetched: only owners and admins may read it, and
+      // The audit history is not prefetched: only owners and admins may read it, and
       // the route has no session to check. The component asks for it when the
       // role allows, which costs one request after paint on two roles out of
       // five rather than a guaranteed 403 on the other three.
+      //
+      // The visit history is, though. Every role that can open an elevator can
+      // read its visits — the accountant can do neither — so this is not the
+      // same bet.
       await Promise.all([
         queryClient.ensureQueryData(elevatorQuery(id)),
         queryClient.ensureQueryData(elevatorAttachmentsQuery(id)),
+        queryClient.ensureQueryData(visitListQuery(elevatorHistoryParams(id))),
       ]);
     }),
+    // The visit form needs the elevator for everything it draws first — its
+    // name, its contract, whether it has a contract at all — so it is warmed
+    // here, and a technician arriving from the elevator page finds it cached.
+    shellChild("/elevators/$id/visits/new", VisitFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(elevatorQuery(params.id)),
+    ),
     shellChild("/elevators/new", ElevatorFormScreen),
     shellChild("/elevators/$id/edit", ElevatorFormScreen, ({ params }) =>
       queryClient.ensureQueryData(elevatorQuery(params.id)),
@@ -546,6 +575,20 @@ export const routeTree = rootRoute.addChildren([
       }
     }),
     shellChild("/audit-logs", AuditLogListScreen, undefined, auditLogListSearch),
+    shellChild(
+      "/maintenance-visits",
+      VisitListScreen,
+      ({ deps }) => queryClient.ensureQueryData(visitListQuery(visitListParams(deps.search))),
+      visitListSearch,
+    ),
+    shellChild("/maintenance-visits/$id", VisitDetailScreen, async ({ params }) => {
+      // The record and its photos are one page; in sequence they would fill
+      // in as two visible steps.
+      await Promise.all([
+        queryClient.ensureQueryData(visitQuery(params.id)),
+        queryClient.ensureQueryData(visitAttachmentsQuery(params.id)),
+      ]);
+    }),
     // The company record only. The signed-in user's own details belong to the
     // profile tab, which is a route of its own — prefetching them here would
     // mean a request on every visit for a panel most visits never open.

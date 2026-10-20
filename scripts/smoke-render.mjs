@@ -61,6 +61,12 @@ const PATHS = [
   "/elevators/e1",
   "/elevators/new",
   "/elevators/e1/edit",
+  "/elevators/e1/visits/new",
+  "/maintenance-visits",
+  "/maintenance-visits?elevator=e1",
+  "/maintenance-visits?visit_date_after=2026-10-01&visit_date_before=2026-10-31",
+  "/maintenance-visits/v1",
+  "/maintenance-visits/v2",
   "/customers",
   "/customers/new",
   "/customers/c1",
@@ -257,6 +263,77 @@ const EXPECT_ABSENT = {
   "/settings/profile": ["88.230.14.7", "185.66.120.44", "AppleWebKit"],
 };
 
+/**
+ * Text that must, or must not, appear for one role in particular.
+ *
+ * The maintenance visit screens are the first whose content differs by role
+ * rather than merely narrowing: the accountant gets a statement that the
+ * screen is not theirs, a technician records a visit in their own name, and
+ * the office roles name a technician — or, for operations, are told they
+ * cannot list one. Asserting one string for every role would prove only the
+ * part they share.
+ *
+ * `all` applies to every role, `add` adds to it for one, and `replace` stands
+ * in for it entirely — the accountant's page shares nothing with the others.
+ */
+const VISITS_RESTRICTED = "Bakım kayıtları rolünüzde görünmüyor";
+const EXPECT_BY_ROLE = {
+  "/elevators/e1": {
+    // The maintenance dates as the server sends them on the elevator.
+    all: ["Bakım kaydı gir", "Bakım geçmişi", "14.10.2026", "13.11.2026"],
+    replace: { accountant: [] },
+  },
+  "/elevators/e1/visits/new": {
+    all: ["Fren sistemi", "Topraklama", "0/16", "2026-0043", "16 madde daha yanıtlanmalı"],
+    add: {
+      owner: ["Teknisyen seçin"],
+      operations: ["Teknisyen seçin"],
+      technician: ["Test User"],
+    },
+    replace: { accountant: [VISITS_RESTRICTED] },
+  },
+  "/maintenance-visits": {
+    all: ["Sol asansör", "Hakan Çelik", "Erişim sağlanamadı"],
+    replace: { accountant: [VISITS_RESTRICTED] },
+  },
+  "/maintenance-visits?elevator=e1": {
+    all: ["Sol asansör"],
+    replace: { accountant: [VISITS_RESTRICTED] },
+  },
+  // The October visit is in the range and the September one is not — the
+  // range reaches the request rather than stopping at the address bar.
+  "/maintenance-visits?visit_date_after=2026-10-01&visit_date_before=2026-10-31": {
+    all: ["14.10.2026", "01.10.2026"],
+    replace: { accountant: [VISITS_RESTRICTED] },
+  },
+  "/maintenance-visits/v1": {
+    all: ["Halatlarda yer yer", "2 madde dikkat gerektiriyor", "Kabin aydınlatma armatürü"],
+    replace: { accountant: [VISITS_RESTRICTED] },
+  },
+  "/maintenance-visits/v2": {
+    all: ["Makine dairesi kilitliydi", "Kontrol listesi doldurulmamış"],
+    replace: { accountant: [VISITS_RESTRICTED] },
+  },
+};
+
+/**
+ * The accountant has no business with visits, and the elevator page must not
+ * offer them a way in — the absence is the property being asserted.
+ */
+const EXPECT_ABSENT_BY_ROLE = {
+  "/elevators/e1": { replace: { accountant: ["Bakım kaydı gir", "Bakım geçmişi"] } },
+  "/maintenance-visits?visit_date_after=2026-10-01&visit_date_before=2026-10-31": {
+    all: ["15.09.2026"],
+  },
+};
+
+function forRole(table, path, role) {
+  const entry = table[path];
+  if (!entry) return [];
+  if (entry.replace?.[role]) return entry.replace[role];
+  return [...(entry.all ?? []), ...(entry.add?.[role] ?? [])];
+}
+
 const server = await createServer({
   // No HMR: this renders each route once and exits. The websocket server it
   // would otherwise open is a listening socket nobody connects to.
@@ -301,6 +378,18 @@ try {
         for (const needle of [EXPECT[path] ?? []].flat()) {
           if (!html.includes(needle)) {
             throw new Error(`data never reached the page — no "${needle}" in the markup`);
+          }
+        }
+
+        for (const needle of forRole(EXPECT_BY_ROLE, path, role)) {
+          if (!html.includes(needle)) {
+            throw new Error(`no "${needle}" in the markup for this role`);
+          }
+        }
+
+        for (const needle of forRole(EXPECT_ABSENT_BY_ROLE, path, role)) {
+          if (html.includes(needle)) {
+            throw new Error(`"${needle}" is offered to a role that has no access to it`);
           }
         }
 

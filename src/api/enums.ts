@@ -8,6 +8,12 @@ export type ContactRole = Schemas["ContactRole"];
 export type ContractScope = Schemas["ContractScope"];
 export type PricingType = Schemas["PricingTypeEnum"];
 export type BillingPeriod = Schemas["BillingPeriodEnum"];
+/* The three a maintenance visit is recorded with. All three are choices the
+   visit form offers — the status picker and every checklist row — and are
+   bound to their option lists in lib/visit.ts through `allOf` below. */
+export type MaintenanceVisitStatus = Schemas["MaintenanceVisitStatus"];
+export type MaintenanceChecklistItem = Schemas["MaintenanceChecklistItem"];
+export type MaintenanceChecklistResult = Schemas["MaintenanceChecklistResult"];
 /* `VatStatusEnum` is deliberately not listed here. Every type above names a set
    of options a form offers, which is what `allOf` below exists to bind. VAT
    status is nobody's choice — the server derives it from `vat_rate` and sends

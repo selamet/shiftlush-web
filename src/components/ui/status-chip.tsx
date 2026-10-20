@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CircleHelp, Pause } from "lucide-react";
+import { CircleHelp, Pause, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { enumLabel, isUnknownEnum } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
@@ -109,6 +109,37 @@ export function ElevatorStatusChip({ value }: { value: string }) {
 
 export function ContractStatusChip({ value }: { value: string }) {
   return <EnumChip namespace="contract.status" value={value} map={CONTRACT_STATUS} />;
+}
+
+/**
+ * A completed visit is the expected row and stays silent. The two that are not
+ * mean a lift went without its maintenance, which is a regulatory fact rather
+ * than a style choice — so `access_denied`, where nobody even reached the lift,
+ * takes the heaviest weight, and `incomplete` the reversible one.
+ */
+const VISIT_STATUS: Record<string, { weight: ChipWeight; icon?: typeof Pause }> = {
+  completed: { weight: "silent" },
+  incomplete: { weight: "outline" },
+  access_denied: { weight: "ink" },
+};
+
+export function VisitStatusChip({ value }: { value: string }) {
+  return <EnumChip namespace="visit.status" value={value} map={VISIT_STATUS} />;
+}
+
+/**
+ * The one checklist answer that asks somebody to do something carries the only
+ * icon. "OK" is most of every visit and stays plain text; "not applicable" is
+ * on file but says nothing about the lift, so it recedes.
+ */
+const CHECKLIST_RESULT: Record<string, { weight: ChipWeight; icon?: typeof Pause }> = {
+  ok: { weight: "silent" },
+  attention_needed: { weight: "outline", icon: TriangleAlert },
+  not_applicable: { weight: "recessed" },
+};
+
+export function ChecklistResultChip({ value }: { value: string }) {
+  return <EnumChip namespace="visit.checklistResult" value={value} map={CHECKLIST_RESULT} />;
 }
 
 /**

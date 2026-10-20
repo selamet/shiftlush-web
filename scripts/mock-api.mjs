@@ -177,6 +177,43 @@ function resolve(path, search, method, body) {
 
   if (path === "/api/v1/audit-logs/") return page(fixture("demo-audit-logs-elevator"));
 
+  // Maintenance visits. The create answers with the read shape — the view
+  // serializes the new row with its read serializer, whatever the contract
+  // says about the 201 — because the form needs the new id to attach photos
+  // to and to navigate to.
+  const visits = fixture("demo-maintenance-visits");
+  if (method === "POST" && path === "/api/v1/maintenance-visits/") {
+    return { ...visits[0], ...body, id: "v-new", items: body?.items ?? [] };
+  }
+  // Before the detail route, whose pattern would otherwise read "technicians"
+  // as a visit id.
+  if (path === "/api/v1/maintenance-visits/technicians/") {
+    return fixture("demo-users")
+      .filter((one) => one.role === "technician" && one.is_active)
+      .map((one) => ({ id: one.id, name: one.full_name }));
+  }
+  const visit = /^\/api\/v1\/maintenance-visits\/([^/]+)\/$/.exec(path);
+  if (visit && method === "GET") {
+    return visits.find((row) => row.id === visit[1]) ?? null;
+  }
+  if (path === "/api/v1/maintenance-visits/") {
+    // Narrowed the way the server narrows it. The elevator page asks for one
+    // lift's visits, and for its latest completed one; a mock that ignored
+    // either would show the history of every lift in the firm under this one.
+    let rows = visits;
+    for (const param of ["elevator", "status", "technician"]) {
+      const value = search.get(param);
+      if (value) rows = rows.filter((row) => row[param] === value);
+    }
+    // Inclusive at both ends, as the server's filter is. ISO days compare
+    // correctly as strings, which is the point of the format.
+    const after = search.get("visit_date_after");
+    const before = search.get("visit_date_before");
+    if (after) rows = rows.filter((row) => row.visit_date >= after);
+    if (before) rows = rows.filter((row) => row.visit_date <= before);
+    return page(rows);
+  }
+
   // The address typeahead, answering with the town the rest of these fixtures
   // are in. The ids are the real ones from the address dataset — 25 is
   // Erzurum's plate code and therefore its primary key — so what a form picks
