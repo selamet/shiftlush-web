@@ -1786,28 +1786,6 @@ export interface components {
          * @enum {string}
          */
         BuildingType: "residential" | "commercial" | "mixed_use" | "public" | "hospital" | "mall" | "hotel" | "school" | "industrial";
-        BuildingWrite: {
-            /** Format: uuid */
-            customer: string;
-            /** Format: uuid */
-            complex?: string | null;
-            name: string;
-            type: components["schemas"]["BuildingType"];
-            /** Format: int64 */
-            neighborhood?: number | null;
-            street?: string;
-            building_number?: string;
-            address_note: string;
-            /** Format: decimal */
-            latitude?: string | null;
-            /** Format: decimal */
-            longitude?: string | null;
-            /** Format: int64 */
-            floor_count?: number | null;
-            /** Format: int64 */
-            unit_count?: number | null;
-            is_active?: boolean;
-        };
         BuildingWriteRequest: {
             /** Format: uuid */
             customer: string;
@@ -1899,20 +1877,6 @@ export interface components {
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
-        };
-        ComplexWrite: {
-            /** Format: uuid */
-            customer: string;
-            name: string;
-            /** Format: int64 */
-            neighborhood?: number | null;
-            street?: string;
-            building_number?: string;
-            /** Format: decimal */
-            latitude?: string | null;
-            /** Format: decimal */
-            longitude?: string | null;
-            notes?: string;
         };
         ComplexWriteRequest: {
             /** Format: uuid */
@@ -2014,28 +1978,6 @@ export interface components {
          * @enum {string}
          */
         ContractStatus: "draft" | "active" | "expired" | "terminated" | "renewed";
-        ContractWrite: {
-            /** Format: uuid */
-            customer: string;
-            contract_number?: string;
-            status?: components["schemas"]["ContractStatus"];
-            scope: components["schemas"]["ContractScope"];
-            /** Format: date */
-            start_date: string;
-            /** Format: date */
-            end_date: string;
-            pricing_type: components["schemas"]["PricingTypeEnum"];
-            /** Format: decimal */
-            monthly_fee?: string | null;
-            currency?: string;
-            /** Format: decimal */
-            vat_rate: string;
-            billing_period?: components["schemas"]["BillingPeriodEnum"];
-            auto_renew?: boolean;
-            /** Format: int64 */
-            renewal_notice_days?: number;
-            notes?: string;
-        };
         ContractWriteRequest: {
             /** Format: uuid */
             customer: string;
@@ -2149,23 +2091,6 @@ export interface components {
          *     DRF ignores them, so a mistyped key returns 200 and the value silently
          *     never arrives.
          */
-        CustomerContactWrite: {
-            /** Format: uuid */
-            customer: string;
-            full_name: string;
-            /** @default other */
-            role: components["schemas"]["ContactRole"];
-            phone?: string;
-            email?: string;
-            is_primary?: boolean;
-            notes?: string;
-        };
-        /**
-         * @description Rejects fields the serializer does not declare.
-         *
-         *     DRF ignores them, so a mistyped key returns 200 and the value silently
-         *     never arrives.
-         */
         CustomerContactWriteRequest: {
             /** Format: uuid */
             customer: string;
@@ -2225,27 +2150,6 @@ export interface components {
          * @enum {string}
          */
         CustomerType: "complex_management" | "building_management" | "corporate" | "public" | "individual";
-        /**
-         * @description Rejects fields the serializer does not declare.
-         *
-         *     DRF ignores them, so a mistyped key returns 200 and the value silently
-         *     never arrives.
-         */
-        CustomerWrite: {
-            type: components["schemas"]["CustomerType"];
-            legal_name: string;
-            tax_office?: string;
-            tax_number?: string;
-            phone?: string;
-            email?: string;
-            /** Format: int64 */
-            neighborhood?: number | null;
-            street?: string;
-            building_number?: string;
-            unit_number?: string;
-            notes?: string;
-            is_active?: boolean;
-        };
         /**
          * @description Rejects fields the serializer does not declare.
          *
@@ -2431,59 +2335,6 @@ export interface components {
          * @enum {string}
          */
         ElevatorStatus: "active" | "suspended" | "sealed" | "out_of_service" | "uncontracted";
-        ElevatorWrite: {
-            /** Format: uuid */
-            building: string;
-            registration_number?: string;
-            internal_code?: string;
-            name?: string;
-            category?: components["schemas"]["ElevatorCategory"] | components["schemas"]["BlankEnum"];
-            drive_type?: components["schemas"]["DriveTypeEnum"] | components["schemas"]["BlankEnum"];
-            control_type?: components["schemas"]["ControlTypeEnum"] | components["schemas"]["BlankEnum"];
-            door_type?: components["schemas"]["DoorTypeEnum"] | components["schemas"]["BlankEnum"];
-            has_car_door?: boolean | null;
-            machine_room?: components["schemas"]["MachineRoomEnum"] | components["schemas"]["BlankEnum"];
-            /** Format: int64 */
-            capacity_kg?: number | null;
-            /** Format: int64 */
-            capacity_persons?: number | null;
-            /** Format: int64 */
-            stop_count?: number | null;
-            /** Format: int64 */
-            entrance_count?: number | null;
-            /** Format: decimal */
-            speed_mps?: string | null;
-            /** Format: int64 */
-            pit_depth_mm?: number | null;
-            /** Format: int64 */
-            headroom_mm?: number | null;
-            /** Format: int64 */
-            car_weight_kg?: number | null;
-            brand?: string;
-            model?: string;
-            serial_number?: string;
-            manufacturer?: string;
-            installer?: string;
-            /** Format: date */
-            installation_date?: string | null;
-            /** Format: date */
-            commissioning_date?: string | null;
-            ce_certificate_number?: string;
-            /** Format: date */
-            warranty_end_date?: string | null;
-            /** Format: date */
-            last_inspection_date?: string | null;
-            /** @default none */
-            inspection_label: components["schemas"]["InspectionLabelEnum"];
-            /** Format: date */
-            next_inspection_date?: string | null;
-            inspection_body?: string;
-            inspection_report_number?: string;
-            status?: components["schemas"]["ElevatorWriteStatusEnum"];
-            /** Format: int64 */
-            maintenance_interval_days?: number;
-            notes?: string;
-        };
         ElevatorWriteRequest: {
             /** Format: uuid */
             building: string;
@@ -2728,28 +2579,6 @@ export interface components {
          * @enum {string}
          */
         MaintenanceVisitStatus: "completed" | "incomplete" | "access_denied";
-        /**
-         * @description Rejects a field the client sent that this serializer does not declare.
-         *
-         *     Copied rather than imported - every app that needs this defines its own
-         *     (see apps/contracts, apps/customers, apps/elevators, apps/properties);
-         *     there is no shared core.serializers module to pull it from.
-         */
-        MaintenanceVisitWrite: {
-            /** Format: uuid */
-            elevator: string;
-            /** Format: uuid */
-            contract: string;
-            /** Format: uuid */
-            technician?: string;
-            /** Format: date */
-            visit_date: string;
-            status: components["schemas"]["MaintenanceVisitStatus"];
-            status_note?: string;
-            work_notes?: string;
-            parts_replaced?: string;
-            items?: components["schemas"]["SetChecklistItem"][];
-        };
         /**
          * @description Rejects a field the client sent that this serializer does not declare.
          *
@@ -3319,19 +3148,6 @@ export interface components {
          */
         PlannedVisitStatus: "planned" | "done" | "cancelled";
         /**
-         * @description Rejects a field the client sent that this serializer does not declare.
-         *
-         *     Copied rather than imported - every app that needs this defines its own
-         *     (see apps/contracts, apps/customers, apps/elevators, apps/properties);
-         *     there is no shared core.serializers module to pull it from.
-         */
-        PlannedVisitWrite: {
-            /** Format: uuid */
-            technician?: string | null;
-            /** Format: date */
-            planned_date?: string | null;
-        };
-        /**
          * @description * `per_elevator` - Per elevator
          *     * `flat` - Flat
          * @enum {string}
@@ -3410,12 +3226,6 @@ export interface components {
              *     devices is asking.
              */
             readonly is_current: boolean;
-        };
-        SetChecklistItem: {
-            item: components["schemas"]["MaintenanceChecklistItem"];
-            result: components["schemas"]["MaintenanceChecklistResult"];
-            /** @default  */
-            note: string;
         };
         SetChecklistItemRequest: {
             item: components["schemas"]["MaintenanceChecklistItem"];
@@ -4147,7 +3957,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BuildingWrite"];
+                    "application/json": components["schemas"]["BuildingRead"];
                 };
             };
         };
@@ -4218,7 +4028,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BuildingWrite"];
+                    "application/json": components["schemas"]["BuildingRead"];
                 };
             };
         };
@@ -4314,7 +4124,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ComplexWrite"];
+                    "application/json": components["schemas"]["ComplexRead"];
                 };
             };
         };
@@ -4385,7 +4195,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ComplexWrite"];
+                    "application/json": components["schemas"]["ComplexRead"];
                 };
             };
         };
@@ -4452,7 +4262,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractWrite"];
+                    "application/json": components["schemas"]["ContractRead"];
                 };
             };
         };
@@ -4523,7 +4333,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractWrite"];
+                    "application/json": components["schemas"]["ContractRead"];
                 };
             };
         };
@@ -4691,7 +4501,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomerContactWrite"];
+                    "application/json": components["schemas"]["CustomerContactRead"];
                 };
             };
         };
@@ -4762,7 +4572,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomerContactWrite"];
+                    "application/json": components["schemas"]["CustomerContactRead"];
                 };
             };
         };
@@ -4823,7 +4633,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomerWrite"];
+                    "application/json": components["schemas"]["CustomerRead"];
                 };
             };
         };
@@ -4894,7 +4704,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomerWrite"];
+                    "application/json": components["schemas"]["CustomerRead"];
                 };
             };
         };
@@ -5051,7 +4861,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ElevatorWrite"];
+                    "application/json": components["schemas"]["ElevatorDetail"];
                 };
             };
         };
@@ -5122,7 +4932,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ElevatorWrite"];
+                    "application/json": components["schemas"]["ElevatorDetail"];
                 };
             };
         };
@@ -5489,7 +5299,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MaintenanceVisitWrite"];
+                    "application/json": components["schemas"]["MaintenanceVisitRead"];
                 };
             };
         };
@@ -5800,7 +5610,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlannedVisitWrite"];
+                    "application/json": components["schemas"]["PlannedVisitRead"];
                 };
             };
         };
