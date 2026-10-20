@@ -631,6 +631,7 @@
     "INVITATION_ALREADY_PENDING": "Bu adrese gönderilmiş, henüz kabul edilmemiş bir davet var. Yeni davet yerine mevcut daveti tekrar gönderin.",
     "IDEMPOTENCY_KEY_REUSED": "Bu işlem farklı bilgilerle tekrarlandı",
     "ELEVATOR_ALREADY_CONTRACTED": "Bu asansör zaten aktif bir sözleşmede",
+    "NO_ACTIVE_CONTRACT_FOR_ELEVATOR": "Seçilen sözleşme aktif değil ya da bu asansörü kapsamıyor",
     "LAST_OWNER_CANNOT_BE_DEACTIVATED": "Firmada en az bir aktif sahip kalmalı",
     "ONLY_TECHNICIANS_ARE_ASSIGNED": "Müşteri ataması yalnızca teknisyenler için yapılır",
     "CANNOT_DEACTIVATE_SELF": "Kendi hesabınızı kapatamazsınız",

@@ -1121,6 +1121,97 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/maintenance-visits/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description CRUD over a company-owned model.
+         *
+         *     PUT is not routed: partial update is the only update verb. A full replace
+         *     means the client has to send every field it does not want cleared, and the
+         *     moment the model grows a column, old clients start wiping it.
+         */
+        get: operations["maintenance_visits_list"];
+        put?: never;
+        /**
+         * @description CRUD over a company-owned model.
+         *
+         *     PUT is not routed: partial update is the only update verb. A full replace
+         *     means the client has to send every field it does not want cleared, and the
+         *     moment the model grows a column, old clients start wiping it.
+         */
+        post: operations["maintenance_visits_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maintenance-visits/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description CRUD over a company-owned model.
+         *
+         *     PUT is not routed: partial update is the only update verb. A full replace
+         *     means the client has to send every field it does not want cleared, and the
+         *     moment the model grows a column, old clients start wiping it.
+         */
+        get: operations["maintenance_visits_retrieve"];
+        put?: never;
+        post?: never;
+        /**
+         * @description CRUD over a company-owned model.
+         *
+         *     PUT is not routed: partial update is the only update verb. A full replace
+         *     means the client has to send every field it does not want cleared, and the
+         *     moment the model grows a column, old clients start wiping it.
+         */
+        delete: operations["maintenance_visits_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description CRUD over a company-owned model.
+         *
+         *     PUT is not routed: partial update is the only update verb. A full replace
+         *     means the client has to send every field it does not want cleared, and the
+         *     moment the model grows a column, old clients start wiping it.
+         */
+        patch: operations["maintenance_visits_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/maintenance-visits/{id}/set-checklist/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Replace this visit's checklist rows with exactly what is sent.
+         *
+         *     A second call, matching how Contract's elevators are managed via
+         *     add-elevators rather than nested inside the contract payload - see
+         *     the plan's file-structure note on why this diverges from the design
+         *     doc's original nested-serializer sketch.
+         */
+        post: operations["maintenance_visits_set_checklist_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/neighborhoods/": {
         parameters: {
             query?: never;
@@ -1152,7 +1243,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description All 81, unpaginated. Small enough to be a dropdown. */
+        /**
+         * @description Every province this deployment serves, unpaginated.
+         *
+         *     Turkey has 81 and a deployment may serve as few as one, so this is a list to
+         *     render rather than a count to rely on. Small enough to be a dropdown either
+         *     way.
+         */
         get: operations["provinces_list"];
         put?: never;
         post?: never;
@@ -1345,9 +1442,10 @@ export interface components {
          *     * `customer` - Customer
          *     * `company` - Company
          *     * `user` - User
+         *     * `maintenance_visit` - Maintenance visit
          * @enum {string}
          */
-        AttachmentObjectType: "elevator" | "building" | "contract" | "customer" | "company" | "user";
+        AttachmentObjectType: "elevator" | "building" | "contract" | "customer" | "company" | "user" | "maintenance_visit";
         AuditLog: {
             /** Format: uuid */
             readonly company_id: string;
@@ -2301,6 +2399,117 @@ export interface components {
          */
         MachineRoomEnum: "present" | "absent" | "partial";
         /**
+         * @description * `brake_system` - Brake system
+         *     * `hoisting_ropes` - Hoisting ropes and cables
+         *     * `landing_doors` - Landing doors and locks
+         *     * `car_door_safety_edge` - Car door and safety edge
+         *     * `limit_switches` - Limit switches
+         *     * `guide_rail_lubrication` - Guide rail lubrication
+         *     * `car_lighting` - Car lighting
+         *     * `emergency_lighting` - Emergency lighting
+         *     * `emergency_alarm_intercom` - Emergency alarm / intercom
+         *     * `control_panel_buttons` - Control panel and call buttons
+         *     * `leveling_accuracy` - Floor leveling accuracy
+         *     * `overload_device` - Overload sensor
+         *     * `automatic_rescue_device` - Automatic rescue device (ARD) test
+         *     * `pit_condition` - Pit condition and cleanliness
+         *     * `machine_room_condition` - Machine room condition and ventilation
+         *     * `earthing_grounding` - Earthing / grounding
+         * @enum {string}
+         */
+        MaintenanceChecklistItem: "brake_system" | "hoisting_ropes" | "landing_doors" | "car_door_safety_edge" | "limit_switches" | "guide_rail_lubrication" | "car_lighting" | "emergency_lighting" | "emergency_alarm_intercom" | "control_panel_buttons" | "leveling_accuracy" | "overload_device" | "automatic_rescue_device" | "pit_condition" | "machine_room_condition" | "earthing_grounding";
+        /**
+         * @description * `ok` - OK
+         *     * `attention_needed` - Attention needed
+         *     * `not_applicable` - Not applicable
+         * @enum {string}
+         */
+        MaintenanceChecklistResult: "ok" | "attention_needed" | "not_applicable";
+        MaintenanceVisitItem: {
+            /** Format: uuid */
+            readonly id: string;
+            item: components["schemas"]["MaintenanceChecklistItem"];
+            result: components["schemas"]["MaintenanceChecklistResult"];
+            note?: string;
+        };
+        MaintenanceVisitItemRequest: {
+            item: components["schemas"]["MaintenanceChecklistItem"];
+            result: components["schemas"]["MaintenanceChecklistResult"];
+            note?: string;
+        };
+        MaintenanceVisitRead: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly elevator: string;
+            readonly elevator_name: string;
+            /** Format: uuid */
+            readonly contract: string;
+            /** Format: uuid */
+            readonly technician: string;
+            readonly technician_name: string;
+            /** Format: date */
+            readonly visit_date: string;
+            readonly status: components["schemas"]["MaintenanceVisitStatus"];
+            readonly status_note: string;
+            readonly work_notes: string;
+            readonly parts_replaced: string;
+            readonly items: components["schemas"]["MaintenanceVisitItem"][];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /**
+         * @description * `completed` - Completed
+         *     * `incomplete` - Incomplete
+         *     * `access_denied` - Access denied
+         * @enum {string}
+         */
+        MaintenanceVisitStatus: "completed" | "incomplete" | "access_denied";
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported - every app that needs this defines its own
+         *     (see apps/contracts, apps/customers, apps/elevators, apps/properties);
+         *     there is no shared core.serializers module to pull it from.
+         */
+        MaintenanceVisitWrite: {
+            /** Format: uuid */
+            elevator: string;
+            /** Format: uuid */
+            contract: string;
+            /** Format: uuid */
+            technician: string;
+            /** Format: date */
+            visit_date: string;
+            status: components["schemas"]["MaintenanceVisitStatus"];
+            status_note?: string;
+            work_notes?: string;
+            parts_replaced?: string;
+        };
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported - every app that needs this defines its own
+         *     (see apps/contracts, apps/customers, apps/elevators, apps/properties);
+         *     there is no shared core.serializers module to pull it from.
+         */
+        MaintenanceVisitWriteRequest: {
+            /** Format: uuid */
+            elevator: string;
+            /** Format: uuid */
+            contract: string;
+            /** Format: uuid */
+            technician: string;
+            /** Format: date */
+            visit_date: string;
+            status: components["schemas"]["MaintenanceVisitStatus"];
+            status_note?: string;
+            work_notes?: string;
+            parts_replaced?: string;
+        };
+        /**
          * @description * `application/pdf` - application/pdf
          *     * `image/jpeg` - image/jpeg
          *     * `image/png` - image/png
@@ -2432,6 +2641,19 @@ export interface components {
         };
         PaginatedInvitationList: {
             results: components["schemas"]["Invitation"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedMaintenanceVisitReadList: {
+            results: components["schemas"]["MaintenanceVisitRead"][];
             pagination: {
                 /** @example 1 */
                 page: number;
@@ -2659,6 +2881,27 @@ export interface components {
             maintenance_interval_days?: number;
             notes?: string;
         };
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported - every app that needs this defines its own
+         *     (see apps/contracts, apps/customers, apps/elevators, apps/properties);
+         *     there is no shared core.serializers module to pull it from.
+         */
+        PatchedMaintenanceVisitWriteRequest: {
+            /** Format: uuid */
+            elevator?: string;
+            /** Format: uuid */
+            contract?: string;
+            /** Format: uuid */
+            technician?: string;
+            /** Format: date */
+            visit_date?: string;
+            status?: components["schemas"]["MaintenanceVisitStatus"];
+            status_note?: string;
+            work_notes?: string;
+            parts_replaced?: string;
+        };
         PatchedUserUpdateRequest: {
             first_name?: string;
             last_name?: string;
@@ -2866,6 +3109,7 @@ export interface components {
          *     * `INVITATION_ALREADY_PENDING` - This address already holds an invitation that has not been accepted
          *     * `IDEMPOTENCY_KEY_REUSED` - Idempotency key was reused with a different request body
          *     * `ELEVATOR_ALREADY_CONTRACTED` - Elevator is already covered by an open contract
+         *     * `NO_ACTIVE_CONTRACT_FOR_ELEVATOR` - The named contract is not active or does not cover this elevator
          *     * `LAST_OWNER_CANNOT_BE_DEACTIVATED` - A company must keep at least one active owner
          *     * `ONLY_TECHNICIANS_ARE_ASSIGNED` - Customer assignments apply to technicians only
          *     * `CANNOT_DEACTIVATE_SELF` - A user cannot deactivate their own account
@@ -2886,7 +3130,7 @@ export interface components {
          *     * `ATTACHMENT_TARGET_MISMATCH` - Attachment does not belong to the record it is being linked to
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "ELEVATOR_ALREADY_CONTRACTED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
+        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
         /** @description The shape of every error response. There is no `message` field: the backend sends codes, and the words live in the client's translation file, so wording changes in one place and adding a language does not touch the API. */
         ErrorResponse: {
             error: {
@@ -2929,8 +3173,9 @@ export interface operations {
                  *     * `customer` - Customer
                  *     * `company` - Company
                  *     * `user` - User
+                 *     * `maintenance_visit` - Maintenance visit
                  */
-                object_type?: "building" | "company" | "contract" | "customer" | "elevator" | "user";
+                object_type?: "building" | "company" | "contract" | "customer" | "elevator" | "maintenance_visit" | "user";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -4653,6 +4898,159 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InvitationPreview"];
+                };
+            };
+        };
+    };
+    maintenance_visits_list: {
+        parameters: {
+            query?: {
+                customer?: string;
+                elevator?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /**
+                 * @description * `completed` - Completed
+                 *     * `incomplete` - Incomplete
+                 *     * `access_denied` - Access denied
+                 */
+                status?: "access_denied" | "completed" | "incomplete";
+                technician?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedMaintenanceVisitReadList"];
+                };
+            };
+        };
+    };
+    maintenance_visits_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MaintenanceVisitWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["MaintenanceVisitWriteRequest"];
+                "multipart/form-data": components["schemas"]["MaintenanceVisitWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceVisitWrite"];
+                };
+            };
+        };
+    };
+    maintenance_visits_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this maintenance visit. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceVisitRead"];
+                };
+            };
+        };
+    };
+    maintenance_visits_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this maintenance visit. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    maintenance_visits_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this maintenance visit. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedMaintenanceVisitWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedMaintenanceVisitWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedMaintenanceVisitWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceVisitWrite"];
+                };
+            };
+        };
+    };
+    maintenance_visits_set_checklist_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this maintenance visit. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceVisitRead"];
                 };
             };
         };
