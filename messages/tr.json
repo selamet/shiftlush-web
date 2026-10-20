@@ -147,7 +147,9 @@
       "registrationMissing": "Kimlik no girilmedi"
     },
     "add": "Asansör ekle",
-    "selectBuilding": "Bina seçin"
+    "selectBuilding": "Bina seçin",
+    "inspectionReadOnly": "Muayene bilgileri muayene kayıtlarından gelir; yeni muayene kaydı yakında buradan girilecek.",
+    "inspectionNone": "Bu asansör için henüz muayene kaydı yok."
   },
   "visit": {
     "title": "Bakım kayıtları",
