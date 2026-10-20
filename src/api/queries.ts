@@ -1176,7 +1176,9 @@ export function notificationPreferencesQuery() {
  * row for each — see EMAIL_DEFAULTS on the server for why an explicit choice
  * matters: a kind left at "the default" moves when the default does.
  */
-export function updateNotificationPreferences(preferences: NotificationPreference[]) {
+export function updateNotificationPreferences(
+  preferences: Schemas["NotificationPreferenceRequest"][],
+) {
   return api.put<NotificationPreference[]>("/notifications/preferences/", preferences);
 }
 
@@ -1244,4 +1246,119 @@ export function bulkAssignPlannedVisits(ids: string[], technician: string) {
     ids,
     technician,
   });
+}
+
+// --------------------------------------------------------------------------
+// Faults
+//
+// A fault moves open → assigned → on site → resolved → closed, or is
+// cancelled on the way. Every step is its own endpoint, so no timestamp is
+// ever written by a client: the screen asks for a transition and the server
+// records when it happened and who did it.
+// --------------------------------------------------------------------------
+
+export type Fault = Schemas["FaultRead"];
+export type FaultCreate = Schemas["FaultCreateRequest"];
+export type PublicFaultReport = Schemas["PublicFaultReportRequest"];
+
+/**
+ * What the office may correct on a fault.
+ *
+ * Written out rather than taken from the contract: the contract describes the
+ * PATCH body with the create serializer (`PatchedFaultCreateRequest`, which
+ * even requires `priority` and `someone_trapped`), while the view validates it
+ * with `FaultEditSerializer` — priority, description and billable, nothing
+ * else, and a strict one that refuses any other key. The view is what answers;
+ * the schema annotation sits on `update` rather than `partial_update`, which is
+ * the thing to correct in shiftlush-api.
+ */
+export interface FaultEdit {
+  priority?: Fault["priority"];
+  description?: string;
+  /** Stating it marks the fault as overridden by hand. */
+  billable?: boolean;
+}
+
+export const faultKeys = {
+  all: ["faults"] as const,
+  list: (params: ListParams) => ["faults", "list", params] as const,
+  detail: (id: string) => ["faults", "detail", id] as const,
+  attachments: (id: string) => ["faults", "attachments", id] as const,
+} as const;
+
+export function faultListQuery(params: ListParams = {}) {
+  return queryOptions({
+    queryKey: faultKeys.list(params),
+    queryFn: ({ signal }) => api.get<Paginated<Fault>>("/faults/", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function faultQuery(id: string) {
+  return queryOptions({
+    queryKey: faultKeys.detail(id),
+    queryFn: ({ signal }) => api.get<Fault>(`/faults/${id}/`, { signal }),
+  });
+}
+
+export function faultAttachmentsQuery(id: string) {
+  return queryOptions({
+    queryKey: faultKeys.attachments(id),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<Attachment>>("/attachments/", {
+        query: { object_type: "fault", object_id: id, page_size: 50 },
+        signal,
+      }),
+  });
+}
+
+/**
+ * Recording a fault from inside the firm.
+ *
+ * No Idempotency-Key: the endpoint does not take one. A trapped passenger
+ * makes it an emergency on the server whatever `priority` says, so a form
+ * filled in a hurry cannot under-state one.
+ */
+export function createFault(body: FaultCreate) {
+  return api.post<Fault>("/faults/", body);
+}
+
+export function updateFault(id: string, body: FaultEdit) {
+  return api.patch<Fault>(`/faults/${id}/`, body);
+}
+
+export function assignFault(id: string, technician: string) {
+  return api.post<Fault>(`/faults/${id}/assign/`, { technician });
+}
+
+export function arriveAtFault(id: string) {
+  return api.post<Fault>(`/faults/${id}/arrive/`);
+}
+
+export function resolveFault(id: string, body: Schemas["ResolveRequest"]) {
+  return api.post<Fault>(`/faults/${id}/resolve/`, body);
+}
+
+export function closeFault(id: string) {
+  return api.post<Fault>(`/faults/${id}/close/`);
+}
+
+export function cancelFault(id: string, reason: string) {
+  return api.post<Fault>(`/faults/${id}/cancel/`, { reason });
+}
+
+/**
+ * A resident's report from the sticker on the lift.
+ *
+ * The product's only unauthenticated write, and sent as one: `anonymous`
+ * keeps the bearer token off it and skips the refresh cycle, so a phone that
+ * happens to be signed in to the app reports as a resident, not as staff.
+ * The answer is a reference and nothing else, by design.
+ */
+export function reportPublicFault(qrToken: string, body: PublicFaultReport) {
+  return api.post<Schemas["PublicFaultReceipt"]>(
+    `/public/elevators/${qrToken}/faults/`,
+    body,
+    { anonymous: true },
+  );
 }

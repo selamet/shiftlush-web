@@ -2,13 +2,14 @@ import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import type { Elevator, MaintenanceVisit } from "@/api/queries";
 import type { Role } from "@/components/layout/nav-config";
-import { QrCode, WifiOff, TriangleAlert, Paperclip, MapPin } from "lucide-react";
+import { QrCode, WifiOff, TriangleAlert, Paperclip, MapPin, Siren } from "lucide-react";
 import { enumLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { formatDate, formatNumber } from "@/lib/format";
 import { toDisplay } from "@/lib/date";
 import { canRecordVisits } from "@/lib/visit";
 import { canReadPlan } from "@/lib/plan";
+import { canUseFaults } from "@/lib/faults";
 import { ElevatorPlanCard } from "@/components/plan/ElevatorPlanCard";
 import { buttonVariants } from "@/components/ui/button";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
@@ -200,6 +201,18 @@ export function ElevatorDetailMobile({
       <div className="sticky bottom-0 flex flex-col gap-2 border-t border-border bg-card p-3">
         {recordsVisits && (
           <RecordVisitAction elevator={elevator} size="xl" className="w-full" />
+        )}
+        {/* Beside recording the visit: the same hand, the same moment — a
+            technician who finds a fault on a round reports it from here. */}
+        {canUseFaults(role) && (
+          <Link
+            to="/elevators/$id/faults/new"
+            params={{ id: elevator.id }}
+            className={cn(buttonVariants({ size: "lg", variant: "secondary" }), "w-full")}
+          >
+            <Siren />
+            {t("fault.report")}
+          </Link>
         )}
         <Link
           to="/scan"

@@ -120,6 +120,13 @@ const PATHS = [
   "/plan?unassigned=%22true%22",
   "/today",
   "/week",
+  "/faults",
+  "/faults?status=%22closed%22",
+  "/faults/f1",
+  "/faults/f2",
+  "/faults/f4",
+  "/my-faults",
+  "/elevators/e1/faults/new",
   "/settings",
   // Its own route rather than a tab behind a click, which is what makes it
   // renderable here at all: the password form and the session list are the two
@@ -265,8 +272,10 @@ const EXPECT = {
     "Safari · iOS",
     "Edge · Windows",
     "Bu cihaz",
-    // The e-mail choices, one per kind, as the server stored them.
+    // The e-mail choices, one per kind, as the server stored them — and the
+    // one the server will not let anybody turn off, said as such.
     "E-posta ile de gönder",
+    "Mahsur kalan bildirimleri her zaman e-postayla da gönderilir.",
     "Bakım gecikti",
   ],
 };
@@ -313,8 +322,50 @@ const VISITS_RESTRICTED = "Bakım kayıtları rolünüzde görünmüyor";
 const EXPECT_BY_ROLE = {
   "/elevators/e1": {
     // The maintenance dates as the server sends them on the elevator.
-    all: ["Bakım kaydı gir", "Bakım geçmişi", "14.10.2026", "13.11.2026", "Bu ayın planı", "Hakan Çelik"],
+    all: ["Bakım kaydı gir", "Bakım geçmişi", "14.10.2026", "13.11.2026", "Bu ayın planı", "Hakan Çelik", "Arıza bildir"],
     replace: { accountant: [] },
+  },
+  // The live board: the emergency first and named as one, the resident's
+  // report marked, nobody sent yet said in words. Technicians read it too.
+  "/faults": {
+    all: ["K7M2QX", "Acil", "Kimse gönderilmedi", "P4N8TR", "M6C3LS"],
+    replace: { accountant: ["Arızalar rolünüzde görünmüyor"] },
+  },
+  // History by status: the closed one, as a paged list.
+  "/faults?status=%22closed%22": {
+    all: ["Z9Q1AA"],
+    replace: { accountant: ["Arızalar rolünüzde görünmüyor"] },
+  },
+  "/faults/f1": {
+    all: ["Kabinde mahsur kalan var", "Ayşe Kaya", "Bildirildi", "Alarm çalıyor"],
+    add: {
+      owner: ["Teknisyen gönder", "İptal et"],
+      operations: ["Teknisyen gönder", "İptal et"],
+    },
+    replace: { accountant: ["Arızalar rolünüzde görünmüyor"] },
+  },
+  // Assigned to the signed-in id: the technician gets "Vardım", and so does
+  // the office, recording it on their behalf.
+  "/faults/f2": {
+    all: ["Vardım", "Teknisyen atandı"],
+    replace: { accountant: ["Arızalar rolünüzde görünmüyor"] },
+  },
+  "/faults/f4": {
+    all: ["elle değiştirildi", "Buton kontağı temizlendi."],
+    add: { owner: ["Kapat"], operations: ["Kapat"] },
+    replace: { accountant: ["Arızalar rolünüzde görünmüyor"] },
+  },
+  "/my-faults": {
+    all: ["Arızalarım listesi teknisyenler içindir"],
+    replace: {
+      technician: ["Sağ asansör", "P4N8TR", "Arızalarım"],
+      accountant: ["Arızalar rolünüzde görünmüyor"],
+    },
+  },
+  "/elevators/e1/faults/new": {
+    all: ["Kabinde mahsur kalan var", "Asansör durdu", "Arızayı kaydet"],
+    add: { owner: ["Hemen gönderilecek teknisyen"], operations: ["Hemen gönderilecek teknisyen"] },
+    replace: { accountant: ["Arızalar rolünüzde görünmüyor"] },
   },
   // The office's month: the summary, the rows in route order, an unassigned
   // row named as such, and a row somebody tried and was turned away from.
@@ -387,8 +438,15 @@ const EXPECT_BY_ROLE = {
  */
 const EXPECT_ABSENT_BY_ROLE = {
   "/elevators/e1": {
-    replace: { accountant: ["Bakım kaydı gir", "Bakım geçmişi", "Bu ayın planı"] },
+    replace: { accountant: ["Bakım kaydı gir", "Bakım geçmişi", "Bu ayın planı", "Arıza bildir"] },
   },
+  // The board is live work; closed history is behind the status filter.
+  "/faults": { all: ["Z9Q1AA"] },
+  // Not theirs: a technician is offered nothing on somebody else's fault.
+  "/faults/f1": { add: { technician: ["Teknisyen gönder", "İptal et"] } },
+  // Only the office sends a technician from the create form.
+  "/elevators/e1/faults/new": { add: { technician: ["Hemen gönderilecek teknisyen"] } },
+
   // Only the unassigned row: the filter reached the request.
   "/plan?unassigned=%22true%22": { all: ["Sol asansör"] },
   // An unassigned row is the office's to give, never on a technician's day.
@@ -515,6 +573,28 @@ try {
     failures += 1;
   } else {
     console.log("  OK    anonymous visitor asks only whether they have a session");
+  }
+
+  // The sticker, scanned by a resident with no account: the public report
+  // form, not a sign-in page — and not a single request beyond the guard's
+  // own question. The firm's endpoint for the sticker is for staff; a resident
+  // asking it would be a 401 at best.
+  requested.length = 0;
+  const resident = createRouterForPath("/q/qr-demo-token");
+  await resident.load();
+  const residentHtml = renderToString(React.createElement(RouterProvider, { router: resident }));
+  const residentAsked = requested.filter((path) => path !== "/api/v1/auth/refresh");
+  const residentMissing = ["Asansör arızası bildir", "Kabinde mahsur kalan var", 'name="website"', 'tabindex="-1"'].filter(
+    (needle) => !residentHtml.includes(needle),
+  );
+  if (residentAsked.length > 0) {
+    console.error(`  FAIL  a resident at the sticker requested ${residentAsked[0]}`);
+    failures += 1;
+  } else if (residentMissing.length > 0 || residentHtml.includes("data-error-boundary")) {
+    console.error(`  FAIL  the public report did not render — no "${residentMissing[0]}"`);
+    failures += 1;
+  } else {
+    console.log("  OK    a resident at the sticker gets the public report, and asks nothing else");
   }
   // The styleguide renders above, on a dev server, which is the only place it
   // is a route at all — `router.tsx` builds it inside an `import.meta.env.DEV`

@@ -236,7 +236,11 @@ function resolve(path, search, method, body) {
       { kind: "contract_auto_renewal_blocked", email: true },
       { kind: "maintenance_overdue", email: false },
       { kind: "visit_assigned", email: true },
-    ];
+      { kind: "fault_reported", email: true },
+      { kind: "fault_emergency", email: true, locked: true },
+      { kind: "fault_assigned", email: true },
+      { kind: "fault_resolved", email: true },
+    ].map((row) => ({ locked: false, ...row }));
   }
   if (path === "/api/v1/notifications/") {
     // Narrowed the way the server narrows it: `true` is unread, `false` read.
@@ -311,6 +315,53 @@ function resolve(path, search, method, body) {
     if (path === "/api/v1/planned-visits/") {
       const size = Number(search.get("page_size")) || narrowed.length;
       return page(narrowed.slice(0, size));
+    }
+  }
+
+  // A resident's report from the sticker. Only the demo token is a lift; any
+  // other answers 404, as the server does for a sticker it does not know.
+  const publicReport = /^\/api\/v1\/public\/elevators\/([^/]+)\/faults\/$/.exec(path);
+  if (method === "POST" && publicReport) {
+    return publicReport[1] === "qr-demo-token" ? { reference: "K7M2QX" } : null;
+  }
+
+  // Faults. Filtered the way the server filters them, one status at a time —
+  // the board asks once per active status and would show closed ones under
+  // "open" if this ignored the parameter.
+  if (path.startsWith("/api/v1/faults/")) {
+    const faults = fixture("demo-faults");
+    const action = /^\/api\/v1\/faults\/([^/]+)\/(assign|arrive|resolve|close|cancel)\/$/.exec(path);
+    if (method === "POST" && action) {
+      const row = faults.find((one) => one.id === action[1]);
+      if (!row) return null;
+      const now = "2026-10-20T09:00:00Z";
+      const next = {
+        assign: { status: "assigned", assigned_at: now, technician: body?.technician },
+        arrive: { status: "on_site", on_site_at: now },
+        resolve: { status: "resolved", resolved_at: now, ...body },
+        close: { status: "closed", closed_at: now },
+        cancel: { status: "cancelled", cancelled_at: now, cancel_reason: body?.reason ?? "" },
+      }[action[2]];
+      return { ...row, ...next };
+    }
+    const one = /^\/api\/v1\/faults\/([^/]+)\/$/.exec(path);
+    if (one) {
+      const row = faults.find((candidate) => candidate.id === one[1]);
+      if (!row) return null;
+      return method === "PATCH"
+        ? { ...row, ...body, billable_overridden: row.billable_overridden || "billable" in (body ?? {}) }
+        : row;
+    }
+    if (method === "POST" && path === "/api/v1/faults/") {
+      return { ...faults[0], ...body, id: "f-new", reference: "N3W0NE", status: body?.technician ? "assigned" : "open" };
+    }
+    if (path === "/api/v1/faults/") {
+      let rows = faults;
+      for (const param of ["status", "technician", "priority", "elevator", "customer"]) {
+        const value = search.get(param);
+        if (value) rows = rows.filter((row) => row[param] === value);
+      }
+      return page(rows);
     }
   }
 

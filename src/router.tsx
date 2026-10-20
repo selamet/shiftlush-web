@@ -34,6 +34,9 @@ import {
   companyQuery,
   currentUserQuery,
   sessionListQuery,
+  faultAttachmentsQuery,
+  faultListQuery,
+  faultQuery,
   plannedVisitListQuery,
   planSummaryQuery,
   notificationListQuery,
@@ -45,6 +48,7 @@ import {
 import { elevatorHistoryParams } from "@/lib/visit";
 import { elevatorPlanParams, homePath, myPlanParams, periodOf } from "@/lib/plan";
 import { todayIso } from "@/lib/date";
+import { ACTIVE_STATUSES, MY_ACTIVE_STATUSES, boardParams, myFaultParams } from "@/lib/faults";
 import { SessionProvider, ensureSession, type SessionOverride } from "@/lib/session";
 import type { ListSearch } from "@/lib/list-search";
 import type { Role } from "@/components/layout/nav-config";
@@ -56,6 +60,7 @@ import {
   customerListSearch,
   elevatorListSearch,
   userListSearch,
+  faultListSearch,
   planListParams,
   planListSearch,
   notificationListSearch,
@@ -214,6 +219,26 @@ const WeekScreen = lazyRouteComponent(
   () => import("@/screens/TechnicianPlanScreen"),
   "WeekScreen",
 );
+const PublicFaultReportScreen = lazyRouteComponent(
+  () => import("@/screens/PublicFaultReportScreen"),
+  "PublicFaultReportScreen",
+);
+const FaultBoardScreen = lazyRouteComponent(
+  () => import("@/screens/FaultBoardScreen"),
+  "FaultBoardScreen",
+);
+const FaultDetailScreen = lazyRouteComponent(
+  () => import("@/screens/FaultDetailScreen"),
+  "FaultDetailScreen",
+);
+const FaultCreateScreen = lazyRouteComponent(
+  () => import("@/screens/FaultCreateScreen"),
+  "FaultCreateScreen",
+);
+const MyFaultsScreen = lazyRouteComponent(
+  () => import("@/screens/MyFaultsScreen"),
+  "MyFaultsScreen",
+);
 const RegisterScreen = lazyRouteComponent(
   () => import("@/screens/RegisterScreen"),
   "RegisterScreen",
@@ -358,6 +383,63 @@ function shellChild(
   });
 }
 
+/**
+ * The URL printed on every sticker (spec 11.2), and the one route that answers
+ * two different people.
+ *
+ * Somebody signed in gets the scan-to-elevator flow inside the shell, as
+ * before: resolving a token needs a session, because the endpoint is scoped to
+ * the signed-in user's firm — the whole reason another firm's token answers
+ * 404 instead of handing over a record. Somebody who is not — a resident at
+ * the lift (M4) — gets the public fault report instead of a sign-in form they
+ * have no account for.
+ *
+ * So it sits beside the shell rather than inside it: the shell's guard would
+ * send the resident to /login. Its own guard asks the one question the shell's
+ * asks — is there a session — through the same cached promise, and nothing
+ * else: no refresh beyond that, and for the resident no request at all until
+ * they press send.
+ *
+ * The screens are fetched in the loader, whichever one this visitor needs,
+ * because they are rendered from inside a component rather than as the
+ * route's own: the router preloads only the latter, and a screen still
+ * downloading at render time would suspend instead of drawing.
+ */
+const qrRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/q/$token",
+  beforeLoad: async () => ({
+    signedIn: sessionOverride ? true : Boolean(await ensureSession()),
+  }),
+  loader: async ({ params, context }) => {
+    if (!context.signedIn) {
+      await PublicFaultReportScreen.preload?.();
+      return;
+    }
+    // Prefetched so the screen names the lift on its first paint. The response
+    // is small by design, and it arriving ahead of the thirty-one-field record
+    // is what makes the wait a confirmation rather than a spinner. A failure is
+    // the screen's to show, as everywhere else.
+    await Promise.all([
+      QrResolveScreen.preload?.(),
+      queryClient.ensureQueryData(elevatorByQrQuery(params.token)).catch(() => undefined),
+    ]);
+  },
+  component: QrRoute,
+});
+
+function QrRoute() {
+  const { signedIn } = qrRoute.useRouteContext();
+  if (!signedIn) return <PublicFaultReportScreen />;
+  return (
+    <AppShell>
+      <ScreenBoundary>
+        <QrResolveScreen />
+      </ScreenBoundary>
+    </AppShell>
+  );
+}
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
@@ -425,6 +507,7 @@ const devRoutes = import.meta.env.DEV
 export const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
+  qrRoute,
   ...devRoutes,
   publicRoute("/register", RegisterScreen),
   publicRoute("/password-reset", PasswordResetRequestScreen),
@@ -471,6 +554,9 @@ export const routeTree = rootRoute.addChildren([
     // name, its contract, whether it has a contract at all — so it is warmed
     // here, and a technician arriving from the elevator page finds it cached.
     shellChild("/elevators/$id/visits/new", VisitFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(elevatorQuery(params.id)),
+    ),
+    shellChild("/elevators/$id/faults/new", FaultCreateScreen, ({ params }) =>
       queryClient.ensureQueryData(elevatorQuery(params.id)),
     ),
     shellChild("/elevators/new", ElevatorFormScreen),
@@ -564,17 +650,6 @@ export const routeTree = rootRoute.addChildren([
     ),
     shellChild("/qr-labels", QrLabelScreen),
     shellChild("/scan", ScanScreen),
-    // The URL printed on every sticker (spec 11.2). It lives inside the shell
-    // because resolving a token needs a session — the endpoint is scoped to the
-    // signed-in user's firm, which is the whole reason another firm's token
-    // answers 404 instead of handing over a record.
-    //
-    // Prefetched so the screen names the lift on its first paint. The response
-    // is small by design, and it arriving ahead of the thirty-one-field record
-    // is what makes the wait a confirmation rather than a spinner.
-    shellChild("/q/$token", QrResolveScreen, ({ params }) =>
-      queryClient.ensureQueryData(elevatorByQrQuery(params.token)),
-    ),
     shellChild(
       "/users",
       UserListScreen,
@@ -609,6 +684,46 @@ export const routeTree = rootRoute.addChildren([
       }
     }),
     shellChild("/audit-logs", AuditLogListScreen, undefined, auditLogListSearch),
+    // The board: one request per active status when no status is chosen, the
+    // same keys the screen reads (see FaultBoardScreen), or one paged list.
+    shellChild(
+      "/faults",
+      FaultBoardScreen,
+      async ({ deps }) => {
+        const params = faultListSearch.params(deps.search);
+        const { status, page: _page, page_size: _size, ...narrowing } = params;
+        if (status) {
+          await queryClient.ensureQueryData(
+            faultListQuery({ ...params, ordering: "priority_rank,reported_at" }),
+          );
+          return;
+        }
+        await Promise.all(
+          ACTIVE_STATUSES.map((one) => queryClient.ensureQueryData(faultListQuery(boardParams(narrowing, one)))),
+        );
+      },
+      faultListSearch,
+    ),
+    shellChild("/faults/$id", FaultDetailScreen, async ({ params }) => {
+      // The record and its photos are one page.
+      await Promise.all([
+        queryClient.ensureQueryData(faultQuery(params.id)),
+        queryClient.ensureQueryData(faultAttachmentsQuery(params.id)),
+      ]);
+    }),
+    // The request names the signed-in technician, so the loader asks the
+    // session for who that is — the cached answer the shell's guard has
+    // already awaited, not a second call. Nobody else has this list.
+    shellChild("/my-faults", MyFaultsScreen, async () => {
+      const me = sessionOverride
+        ? { id: sessionOverride.userId, role: sessionOverride.role }
+        : await ensureSession();
+      if (!me?.id || me.role !== "technician") return;
+      const id = me.id;
+      await Promise.all(
+        MY_ACTIVE_STATUSES.map((status) => queryClient.ensureQueryData(faultListQuery(myFaultParams(id, status)))),
+      );
+    }),
     // The office's month. The summary is the whole month whatever the table
     // is narrowed to, so it is keyed on the period alone.
     shellChild(

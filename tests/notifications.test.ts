@@ -140,6 +140,45 @@ describe("describeNotification", () => {
     expect(describeNotification(notification("visit_assigned", { period: "2026-11", count: "many" }), t).known).toBe(false);
   });
 
+  it("words a fault reported from the sticker, with the lift stopped and the resident's words", () => {
+    const words = describeNotification(
+      notification(
+        "fault_reported",
+        {
+          reference: "K7M2QX",
+          elevator_name: "Sol asansör",
+          building_name: "A Blok",
+          priority: "high",
+          channel: "public_qr",
+          description: "Katlar arasında durdu",
+        },
+        { subject_type: "fault", subject_id: "f1" },
+      ),
+      t,
+    );
+    expect(words).toEqual({
+      title: "Arıza bildirildi: Sol asansör (A Blok)",
+      body:
+        "A Blok binasındaki Sol asansör asansörü için QR etiketinden arıza bildirildi; asansör çalışmıyor. " +
+        "Bildirim numarası K7M2QX. Açıklama: “Katlar arasında durdu”",
+      known: true,
+    });
+  });
+
+  it("words an emergency, an assignment and a resolution as their e-mails do", () => {
+    const base = { reference: "K7M2QX", elevator_name: "Sol asansör", building_name: "A Blok" };
+    expect(describeNotification(notification("fault_emergency", { ...base, priority: "emergency" }), t)).toMatchObject({
+      title: "ACİL: Sol asansör (A Blok) asansöründe mahsur kalan var",
+      body: "A Blok binasındaki Sol asansör asansöründe mahsur kalan olduğu bildirildi. Bildirim numarası K7M2QX.",
+    });
+    expect(describeNotification(notification("fault_assigned", { ...base, priority: "emergency" }), t).body).toBe(
+      "A Blok binasındaki Sol asansör asansörünün K7M2QX numaralı arızası size atandı. Asansörde mahsur kalan var.",
+    );
+    expect(
+      describeNotification(notification("fault_resolved", { ...base, technician_name: "Hakan Çelik" }), t).body,
+    ).toContain("Hakan Çelik tarafından çözüldü olarak işaretlendi");
+  });
+
   it("falls back to a plain notice for a kind this client does not know", () => {
     const words = describeNotification(notification("invoice_overdue", { amount: "100" }), t);
     expect(words).toEqual({
@@ -165,6 +204,13 @@ describe("notificationTarget", () => {
     expect(notificationTarget({ subject_type: "elevator", subject_id: "e1" })).toEqual({
       to: "/elevators/$id",
       params: { id: "e1" },
+    });
+  });
+
+  it("leads a fault notice to the fault", () => {
+    expect(notificationTarget({ subject_type: "fault", subject_id: "f1" })).toEqual({
+      to: "/faults/$id",
+      params: { id: "f1" },
     });
   });
 

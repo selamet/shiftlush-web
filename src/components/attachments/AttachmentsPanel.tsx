@@ -84,6 +84,12 @@ interface AttachmentsPanelProps {
    * happened. Invalidating the list is not enough — the caller needs the id.
    */
   onUploaded?: (attachment: Attachment) => void;
+  /**
+   * Opens the camera on a phone rather than the file picker — for a panel of
+   * photos taken at the lift. Narrows the picker to images, since a camera
+   * produces nothing else and `capture` is ignored for a PDF.
+   */
+  capture?: "environment" | "user";
 }
 
 export function AttachmentsPanel({
@@ -94,6 +100,7 @@ export function AttachmentsPanel({
   canWrite,
   fixedCategory,
   onUploaded,
+  capture,
 }: AttachmentsPanelProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -255,7 +262,12 @@ export function AttachmentsPanel({
             ref={inputRef}
             type="file"
             multiple
-            accept={ALLOWED_UPLOAD_TYPES.join(",")}
+            accept={
+              capture
+                ? ALLOWED_UPLOAD_TYPES.filter((type) => type.startsWith("image/")).join(",")
+                : ALLOWED_UPLOAD_TYPES.join(",")
+            }
+            capture={capture}
             className="hidden"
             onChange={(event) => {
               accept(event.target.files);

@@ -19,6 +19,7 @@ import {
 } from "@/lib/plan";
 import { ListError, TableSkeleton } from "@/components/list/ListStates";
 import { PlanRestricted } from "@/components/plan/PlanRestricted";
+import { TechnicianTabs } from "@/components/plan/TechnicianTabs";
 import { PlanFlagChips, PlanStatusChip } from "@/components/ui/status-chip";
 
 type Scope = "today" | "week";
@@ -111,26 +112,7 @@ export function TechnicianPlanScreen({ scope }: { scope: Scope }) {
         </p>
       </div>
 
-      {/* Two tabs that are links, so each list has its own address — the
-          landing route is one of them — and each is a full gloved-hand
-          target. */}
-      <nav className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted p-1">
-        {(["today", "week"] as const).map((key) => (
-          <Link
-            key={key}
-            to={key === "today" ? "/today" : "/week"}
-            aria-current={scope === key ? "page" : undefined}
-            className={cn(
-              "flex min-h-control-lg items-center justify-center rounded-md text-body transition-colors focus-ring",
-              scope === key
-                ? "border border-border-strong bg-card font-medium text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {key === "today" ? t("plan.today") : t("plan.week")}
-          </Link>
-        ))}
-      </nav>
+      <TechnicianTabs active={scope} />
 
       {pending ? (
         <TableSkeleton columns={1} rows={4} />

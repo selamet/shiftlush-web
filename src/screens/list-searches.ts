@@ -309,3 +309,29 @@ export function planListParams(raw: Record<string, unknown>) {
   const period = typeof params.period === "string" ? params.period : currentPeriod();
   return { ...params, period };
 }
+
+/**
+ * What the fault board narrows by. `status` is one value at a time on the
+ * server; with none chosen the board shows every still-active status at once
+ * (see FaultBoardScreen), which no single filter value expresses. `technician`
+ * and `customer` are ids whose names arrive with data, so their menus are
+ * handed options on screen.
+ */
+export const faultFilters: ListFilter[] = [
+  enumFilter({
+    param: "status",
+    labelKey: "fault.fields.status",
+    namespace: "fault.status",
+    values: ["open", "assigned", "on_site", "resolved", "closed", "cancelled"],
+  }),
+  enumFilter({
+    param: "priority",
+    labelKey: "fault.fields.priority",
+    namespace: "fault.priority",
+    values: ["emergency", "high", "normal"],
+  }),
+  idMenuFilter({ param: "technician", labelKey: "fault.fields.technician" }),
+  idMenuFilter({ param: "customer", labelKey: "fault.fields.customer" }),
+];
+
+export const faultListSearch = listSearchSchema(faultFilters);
