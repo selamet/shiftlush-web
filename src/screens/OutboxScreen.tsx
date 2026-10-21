@@ -152,7 +152,7 @@ export function OutboxScreen() {
                     </span>
                   </div>
                   {attention ? (
-                    <StatusChip weight="ink" icon={TriangleAlert}>
+                    <StatusChip weight="outline" icon={TriangleAlert}>
                       {t("outbox.state.needsAttention")}
                     </StatusChip>
                   ) : (
@@ -218,7 +218,7 @@ function DeliveredWithGaps({ entry, onDismiss }: { entry: OutboxEntry; onDismiss
             {formatDateTime(new Date(entry.createdAt).toISOString())}
           </span>
         </div>
-        <StatusChip weight="ink" icon={ImageOff}>
+        <StatusChip weight="outline" icon={ImageOff}>
           {t("outbox.state.deliveredWithGaps")}
         </StatusChip>
       </div>

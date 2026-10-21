@@ -12,14 +12,13 @@ import {
   type CustomerContactWrite,
 } from "@/api/queries";
 import { allOf, type ContactRole } from "@/api/enums";
-import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, ListError, DetailError } from "@/components/list/ListStates";
 
 const ROLES = allOf<ContactRole>()([
   "manager",
@@ -48,11 +47,7 @@ export function ContactFormScreen() {
   if (customer.isPending) return <DetailSkeleton />;
   if (customer.isError || !customer.data) {
     return (
-      <ListError
-        message={errorMessage(customer.error, t)}
-        reference={supportReference(customer.error)}
-        onRetry={() => void customer.refetch()}
-      />
+      <DetailError error={customer.error} onRetry={() => void customer.refetch()} back={{ to: "/customers", labelKey: "customer.title" }} />
     );
   }
 

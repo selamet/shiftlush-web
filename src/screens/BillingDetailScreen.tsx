@@ -17,15 +17,15 @@ import {
   type InvoiceDraft,
   type InvoiceLine,
 } from "@/api/queries";
-import { errorMessage, supportReference } from "@/api/errors";
+import { errorMessage } from "@/api/errors";
 import { toDisplay, todayIso } from "@/lib/date";
-import { formatDate, formatMoney, formatPercent } from "@/lib/format";
+import { formatDate, formatMoney, formatPercent, formatDecimal } from "@/lib/format";
 import { enumLabel } from "@/lib/i18n";
 import { parseMoneyInput, parseQuantityInput } from "@/lib/money";
 import { useSession } from "@/lib/session";
 import { canUseBilling, draftActions, issueBlocker } from "@/lib/billing";
 import { FileOffer } from "@/components/billing/FileOffer";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { PlanRestricted } from "@/components/plan/PlanRestricted";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -68,11 +68,7 @@ export function BillingDetailScreen() {
   if (query.isPending) return <DetailSkeleton />;
   if (query.isError || !query.data) {
     return (
-      <ListError
-        message={errorMessage(query.error, t)}
-        reference={supportReference(query.error)}
-        onRetry={() => void query.refetch()}
-      />
+      <DetailError error={query.error} onRetry={() => void query.refetch()} back={{ to: "/billing", labelKey: "billing.title" }} />
     );
   }
 
@@ -234,7 +230,7 @@ function LineRow({ line, currency, editable }: { line: InvoiceLine; currency: st
           <span className="flex flex-wrap items-center gap-1.5 text-help text-muted-foreground">
             {enumLabel("billing.lineKind", line.kind)}
             {line.needs_price && (
-              <StatusChip weight="ink" icon={CircleDollarSign}>
+              <StatusChip weight="outline" icon={CircleDollarSign}>
                 {t("billing.needsPrice")}
               </StatusChip>
             )}
@@ -242,7 +238,7 @@ function LineRow({ line, currency, editable }: { line: InvoiceLine; currency: st
           {failure && <span className="text-help text-destructive">{errorMessage(failure, t)}</span>}
         </span>
       </td>
-      <td className="tnum px-3 py-2 text-right">{line.quantity}</td>
+      <td className="tnum px-3 py-2 text-right">{formatDecimal(line.quantity)}</td>
       <td className="px-3 py-2 text-right">
         {editable && line.needs_price ? (
           <form

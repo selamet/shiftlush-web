@@ -21,7 +21,7 @@ import {
   type MaintenanceVisitWrite,
 } from "@/api/queries";
 import type { MaintenanceVisitStatus } from "@/api/enums";
-import { errorMessage, supportReference } from "@/api/errors";
+import { errorMessage } from "@/api/errors";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { toDisplay, todayIso } from "@/lib/date";
 import { enumLabel } from "@/lib/i18n";
@@ -45,7 +45,7 @@ import {
   submitBlocker,
   type Checklist,
 } from "@/lib/visit";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Field, Textarea } from "@/components/ui/field";
@@ -117,11 +117,7 @@ export function VisitFormScreen() {
   if (query.isPending) return <DetailSkeleton />;
   if (query.isError || !query.data) {
     return (
-      <ListError
-        message={errorMessage(query.error, t)}
-        reference={supportReference(query.error)}
-        onRetry={() => void query.refetch()}
-      />
+      <DetailError error={query.error} onRetry={() => void query.refetch()} back={{ to: "/elevators", labelKey: "elevator.title" }} />
     );
   }
 

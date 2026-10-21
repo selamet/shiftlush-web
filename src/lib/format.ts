@@ -73,3 +73,44 @@ export function formatFileSize(bytes: number): string {
   if (kilobytes < 1024) return `${Math.round(kilobytes)} KB`;
   return `${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 1 }).format(kilobytes / 1024)} MB`;
 }
+
+/**
+ * A decimal from the API — "1.0000", "0.63" — as people here read one: a comma
+ * for the decimal, trailing zeros dropped, so a quantity of one reads "1" and
+ * not "1.0000", which in Turkish notation is one thousand. The string goes to
+ * Intl as it is, so nothing is rounded on the way.
+ */
+export function formatDecimal(value: string | number | null | undefined, maximumFractionDigits = 4): string {
+  if (value === null || value === undefined || value === "") return "";
+  return new Intl.NumberFormat(DEFAULT_LOCALE, { maximumFractionDigits }).format(
+    value as unknown as number,
+  );
+}
+
+/**
+ * A Turkish phone number grouped the way it is said: "0532 100 00 00".
+ *
+ * Numbers arrive in E.164 ("+905321000000") or as typed. A Turkish number —
+ * ten digits after the country code or the leading zero — is regrouped; any
+ * other number is shown as it came, because guessing a foreign format is worse
+ * than not grouping it.
+ */
+export function formatPhone(value: string | null | undefined): string {
+  if (!value) return "";
+  const digits = value.replace(/\D/g, "");
+  const national = digits.startsWith("90") && digits.length === 12
+    ? digits.slice(2)
+    : digits.startsWith("0") && digits.length === 11
+      ? digits.slice(1)
+      : digits.length === 10
+        ? digits
+        : null;
+  if (!national) return value.trim();
+  return `0${national.slice(0, 3)} ${national.slice(3, 6)} ${national.slice(6, 8)} ${national.slice(8)}`;
+}
+
+/** The same number for a `tel:` link: digits and a leading plus, nothing else. */
+export function telHref(value: string): string {
+  const digits = value.replace(/[^\d+]/g, "");
+  return `tel:${digits}`;
+}

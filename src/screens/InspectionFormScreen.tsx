@@ -14,7 +14,6 @@ import {
   type InspectionCreate,
 } from "@/api/queries";
 import type { InspectionKind, InspectionResultLabel } from "@/api/enums";
-import { errorMessage, supportReference } from "@/api/errors";
 import { toDisplay, todayIso } from "@/lib/date";
 import { formValues, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
@@ -29,7 +28,7 @@ import {
 } from "@/lib/inspections";
 import { uploadAttachment, uploadRefusal } from "@/lib/upload";
 import { describeUploadFailure } from "@/components/attachments/AttachmentsPanel";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { PlanRestricted } from "@/components/plan/PlanRestricted";
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -84,11 +83,7 @@ export function InspectionFormScreen() {
   if (elevator.isPending) return <DetailSkeleton />;
   if (elevator.isError || !elevator.data) {
     return (
-      <ListError
-        message={errorMessage(elevator.error, t)}
-        reference={supportReference(elevator.error)}
-        onRetry={() => void elevator.refetch()}
-      />
+      <DetailError error={elevator.error} onRetry={() => void elevator.refetch()} back={{ to: "/elevators", labelKey: "elevator.title" }} />
     );
   }
 

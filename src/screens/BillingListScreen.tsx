@@ -96,7 +96,7 @@ export function BillingListScreen() {
         <span className="flex flex-wrap items-center gap-1">
           <InvoiceStatusChip value={row.status} />
           {row.needs_price && (
-            <StatusChip weight="ink" icon={CircleDollarSign}>
+            <StatusChip weight="outline" icon={CircleDollarSign}>
               {t("billing.needsPrice")}
             </StatusChip>
           )}

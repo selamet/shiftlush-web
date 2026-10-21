@@ -13,11 +13,10 @@ import {
   type Customer,
   type CustomerContact,
 } from "@/api/queries";
-import { errorMessage, supportReference } from "@/api/errors";
 import { useSubmit } from "@/lib/form";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { enumLabel } from "@/lib/i18n";
-import { formatDate, formatMoney } from "@/lib/format";
+import { formatDate, formatMoney, formatPhone, telHref } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { canManagePortal } from "@/lib/portal";
 import { PortalAccessCard } from "@/components/customers/PortalAccessCard";
@@ -178,7 +177,9 @@ function ContactList({ customer, canWrite }: { customer: Customer; canWrite: boo
           {contact.phone && (
             <span className="flex items-center gap-1.5 text-help text-muted-foreground">
               <Phone className="size-3.5 shrink-0" aria-hidden="true" />
-              {contact.phone}
+              <a href={telHref(contact.phone)} className="hover:underline">
+                {formatPhone(contact.phone)}
+              </a>
             </span>
           )}
           {/* The contact's own address, not the customer's. */}
@@ -232,11 +233,7 @@ export function CustomerDetailScreen() {
 
   if (query.isError || !query.data) {
     return (
-      <ListError
-        message={errorMessage(query.error, t)}
-        reference={supportReference(query.error)}
-        onRetry={() => void query.refetch()}
-      />
+      <DetailError error={query.error} onRetry={() => void query.refetch()} back={{ to: "/customers", labelKey: "customer.title" }} />
     );
   }
 
@@ -288,7 +285,7 @@ export function CustomerDetailScreen() {
                   ) : null
                 }
               />
-              <Row label={t("customer.fields.phone")} value={customer.phone} />
+              <Row label={t("customer.fields.phone")} value={formatPhone(customer.phone)} />
               <Row label={t("customer.fields.email")} value={customer.email} />
               <Row
                 label={t("customerDetail.billingAddress")}

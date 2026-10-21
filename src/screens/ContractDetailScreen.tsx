@@ -25,7 +25,7 @@ import {
   type Contract as ContractRecord,
   type ContractLine,
 } from "@/api/queries";
-import { errorMessage, supportReference } from "@/api/errors";
+import { errorMessage } from "@/api/errors";
 import { useSubmit } from "@/lib/form";
 import {
   buildingNames,
@@ -36,7 +36,7 @@ import {
   reminderDate,
   vatUnstated,
 } from "@/lib/contract";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { cn } from "@/lib/utils";
 import { todayIso } from "@/lib/date";
 import { enumLabel } from "@/lib/i18n";
@@ -327,11 +327,7 @@ export function ContractDetailScreen() {
   if (query.isPending) return <DetailSkeleton />;
   if (query.isError || !query.data) {
     return (
-      <ListError
-        message={errorMessage(query.error, t)}
-        reference={supportReference(query.error)}
-        onRetry={() => void query.refetch()}
-      />
+      <DetailError error={query.error} onRetry={() => void query.refetch()} back={{ to: "/contracts", labelKey: "contract.title" }} />
     );
   }
 

@@ -13,13 +13,12 @@ import {
   type FaultCreate,
 } from "@/api/queries";
 import type { FaultPriority } from "@/api/enums";
-import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useSession } from "@/lib/session";
 import { FAULT_PRIORITIES, canUseFaults, isOffice, staffPriority } from "@/lib/faults";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { PlanRestricted } from "@/components/plan/PlanRestricted";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -68,11 +67,7 @@ export function FaultCreateScreen() {
   if (elevator.isPending) return <DetailSkeleton />;
   if (elevator.isError || !elevator.data) {
     return (
-      <ListError
-        message={errorMessage(elevator.error, t)}
-        reference={supportReference(elevator.error)}
-        onRetry={() => void elevator.refetch()}
-      />
+      <DetailError error={elevator.error} onRetry={() => void elevator.refetch()} back={{ to: "/elevators", labelKey: "elevator.title" }} />
     );
   }
 

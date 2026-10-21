@@ -11,7 +11,6 @@ import {
   type Customer,
   type CustomerWrite,
 } from "@/api/queries";
-import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
 import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
@@ -19,7 +18,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { AddressSelect } from "@/components/forms/AddressSelect";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 
 const TYPES = [
   "complex_management",
@@ -41,7 +40,6 @@ type CustomerTypeValue = (typeof TYPES)[number];
  * of the form.
  */
 export function CustomerFormScreen() {
-  const { t } = useTranslation();
   const { id } = useParams({ strict: false }) as { id?: string };
   const editing = Boolean(id);
 
@@ -50,11 +48,7 @@ export function CustomerFormScreen() {
   if (editing && existing.isPending) return <DetailSkeleton />;
   if (editing && (existing.isError || !existing.data)) {
     return (
-      <ListError
-        message={errorMessage(existing.error, t)}
-        reference={supportReference(existing.error)}
-        onRetry={() => void existing.refetch()}
-      />
+      <DetailError error={existing.error} onRetry={() => void existing.refetch()} back={{ to: "/customers", labelKey: "customer.title" }} />
     );
   }
 

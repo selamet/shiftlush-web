@@ -1,7 +1,17 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal, X } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Link as LinkIcon,
+  MoveHorizontal,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
 import type { ListParams } from "@/api/queries";
@@ -130,6 +140,7 @@ export function ListPage<T>({
   const selected = useSelection(ids, total, state.params);
 
   const lastPage = Math.max(1, Math.ceil(total / state.pageSize));
+  const scroll = useHorizontalScroll(rows.length, shown.length);
   const activeFilters = describeFilters(state, filters, t);
   const hasActiveFilters = activeFilters.length > 0;
 
@@ -156,13 +167,18 @@ export function ListPage<T>({
 
       {headerExtra && <div className="px-6 pb-4">{headerExtra}</div>}
 
+      {/* The search row: the search box, the filter toggle on a phone, and on
+          the right the two things that are about the list rather than its
+          contents — which columns, and the link to this exact view. Kept on
+          one line so "Kolonlar" is always in the same place. */}
       <div className="flex flex-wrap items-center gap-2 px-6 pb-3">
         {searchable && <SearchBox state={state} />}
-        {filters && filters.length > 0 && (
+        {filters && filters.some((filter) => filter.kind !== "scope") && (
           <Button
             variant="secondary"
             size="sm"
             className="md:hidden"
+            aria-expanded={filtersOpen}
             onClick={() => setFiltersOpen((open) => !open)}
           >
             <SlidersHorizontal />
@@ -174,14 +190,25 @@ export function ListPage<T>({
             )}
           </Button>
         )}
+        <span className="ml-auto flex items-center gap-2">
+          <CopyLinkButton />
+          {/* Outside the collapsing block: a column is not a filter, and a
+              list with no filters has no button to open that block with. */}
+          <ColumnMenu columns={columns} preferences={preferences} />
+        </span>
+      </div>
 
+      {/* Filters on a grid, each label above its control, so a row of five
+          never wraps one orphan onto a line of its own and every control sits
+          at the same height. Collapsed behind the button on a phone. */}
+      {filters && filters.some((filter) => filter.kind !== "scope") && (
         <div
           className={cn(
-            "w-full flex-wrap items-center gap-2 md:flex md:w-auto md:flex-1",
-            filtersOpen ? "flex" : "hidden",
+            "grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-x-3 gap-y-2 px-6 pb-3 md:grid",
+            filtersOpen ? "grid" : "hidden",
           )}
         >
-          {filters?.map((filter) => {
+          {filters.map((filter) => {
             const value = state.filters[filter.param];
 
             // Nothing to draw: the value arrived on a link rather than being
@@ -189,37 +216,37 @@ export function ListPage<T>({
             // is applied and the way to drop it.
             if (filter.kind === "scope") return null;
 
+            const controlId = `filter-${filter.param}`;
             if (filter.kind === "date") {
               return (
-                <label key={filter.param} className="flex items-center gap-1.5">
-                  <span className="text-help whitespace-nowrap text-muted-foreground">
+                <div key={filter.param} className="flex min-w-0 flex-col gap-1">
+                  <label htmlFor={controlId} className="text-help text-muted-foreground">
                     {t(filter.labelKey)}
-                  </span>
+                  </label>
                   <DatePicker
+                    id={controlId}
                     value={value ?? ""}
                     // "" is what the picker reports when the box is emptied,
                     // and null is what removes a filter — so the two have to be
                     // mapped onto each other here or clearing the date would
                     // put an empty parameter in the URL.
                     onChange={(iso) => state.setFilter(filter.param, iso || null)}
-                    className="w-40"
                   />
-                </label>
+                </div>
               );
             }
 
             // A searchable picker like every other choice in the product,
             // cleared to "all" — the filter's absence — by its cross.
             return (
-              <label key={filter.param} className="flex items-center gap-1.5">
-                <span className="text-help whitespace-nowrap text-muted-foreground">
+              <div key={filter.param} className="flex min-w-0 flex-col gap-1">
+                <label htmlFor={controlId} className="text-help text-muted-foreground">
                   {t(filter.labelKey)}
-                </span>
+                </label>
                 <SearchableSelect
+                  id={controlId}
                   size="sm"
-                  className="w-44"
                   clearable
-                  aria-label={t(filter.labelKey)}
                   placeholder={t("list.allOption")}
                   value={value ?? ""}
                   onChange={(next) => state.setFilter(filter.param, next || null)}
@@ -228,16 +255,11 @@ export function ListPage<T>({
                     label: optionLabel(option, t),
                   }))}
                 />
-              </label>
+              </div>
             );
           })}
         </div>
-
-        {/* Outside the collapsing block: a column is not a filter, and a list
-            with no filters has no button to open that block with — which left
-            this one unreachable on a phone. */}
-        <ColumnMenu columns={columns} preferences={preferences} className="ml-auto" />
-      </div>
+      )}
 
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2 px-6 pb-4">
@@ -312,7 +334,17 @@ export function ListPage<T>({
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Said above the table, and only when there is something to
+                scroll to — under the pager it was read after the fact, and
+                where nothing scrolled it was a promise of nothing. */}
+            {scroll.scrollable && (
+              <p className="flex items-center gap-1.5 border-b border-border-subtle px-3 py-1.5 text-help text-muted-foreground">
+                <MoveHorizontal className="size-3.5 shrink-0" aria-hidden="true" />
+                {t("list.swipeHint")}
+              </p>
+            )}
+            <div className="relative">
+            <div ref={scroll.ref} onScroll={scroll.update} className="overflow-x-auto">
               <table className="w-full border-collapse text-cell">
                 <thead className="border-b border-border bg-background">
                   <tr>
@@ -413,6 +445,14 @@ export function ListPage<T>({
                 </tbody>
               </table>
             </div>
+            {/* The edge fades while more columns wait to the right. */}
+            {scroll.scrollable && !scroll.atEnd && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-card to-transparent"
+              />
+            )}
+            </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle px-4 py-3">
               <span className="tnum text-help text-muted-foreground">
@@ -467,13 +507,71 @@ export function ListPage<T>({
         )}
       </div>
 
-      <p className="flex flex-wrap items-center gap-2 px-6 pb-8 text-help text-muted-foreground">
-        <span className="inline-flex items-center gap-1 rounded-sm border border-border-strong px-1.5 md:hidden">
-          {t("list.swipeHint")}
-        </span>
-        {t("list.sharableFilters")}
-      </p>
+      <div className="pb-8" />
     </div>
+  );
+}
+
+/**
+ * Whether the table is wider than its frame, and whether it has been scrolled
+ * to the end — measured, because which columns fit depends on the screen, the
+ * columns chosen and the data in them, none of which is known in advance.
+ */
+function useHorizontalScroll(rowCount: number, columnCount: number) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [state, setState] = useState({ scrollable: false, atEnd: true });
+
+  const update = useCallback(() => {
+    const element = ref.current;
+    if (!element) return;
+    const scrollable = element.scrollWidth > element.clientWidth + 1;
+    const atEnd = element.scrollLeft + element.clientWidth >= element.scrollWidth - 1;
+    setState((previous) =>
+      previous.scrollable === scrollable && previous.atEnd === atEnd ? previous : { scrollable, atEnd },
+    );
+  }, []);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    update();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [update, rowCount, columnCount]);
+
+  return { ref, update, ...state };
+}
+
+/**
+ * The link to this exact view — search, filters, page — copied in one press.
+ * The filters already live in the address; this replaces the sentence under
+ * every list that said so with the thing the sentence was telling people to do.
+ */
+function CopyLinkButton() {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // A browser that refuses the clipboard leaves the address bar, which
+      // holds the same link; nothing to report.
+    }
+  }
+  return (
+    <Button
+      size="icon"
+      variant="ghost"
+      aria-label={copied ? t("list.linkCopied") : t("list.copyLink")}
+      title={copied ? t("list.linkCopied") : t("list.copyLink")}
+      onClick={() => void copy()}
+    >
+      {copied ? <Check /> : <LinkIcon />}
+    </Button>
   );
 }
 
