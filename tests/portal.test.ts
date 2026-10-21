@@ -128,6 +128,13 @@ describe("what the home screen says about a lift", () => {
     );
   });
 
+  it("flags an open correction deadline ahead of an overdue inspection, but after a fault", () => {
+    const red = { ...lift, correction_deadline: "2026-11-20", next_inspection_date: "2026-10-01" };
+    expect(liftAttention(red, [], today).attention).toBe("correction");
+    expect(liftAttention(red, [{ elevator: "e1", status: "open" }], today).attention).toBe("fault");
+    expect(liftAttention({ ...lift, correction_deadline: null }, [], today).attention).toBe("ok");
+  });
+
   it("treats open, assigned and on site as open, and the rest as done", () => {
     expect(["open", "assigned", "on_site"].every((status) => isOpenFault(status as never))).toBe(true);
     expect(["resolved", "closed", "cancelled"].some((status) => isOpenFault(status as never))).toBe(false);

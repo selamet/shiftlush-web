@@ -21,6 +21,7 @@ export function isOpenFault(status: FaultStatus): boolean {
 export type LiftAttention =
   | "out_of_service"
   | "fault"
+  | "correction"
   | "inspection_overdue"
   | "maintenance_overdue"
   | "ok";
@@ -29,13 +30,21 @@ export type LiftAttention =
  * The one thing to say first about a lift, most serious first.
  *
  * A lift that is not running is what the manager is fielding calls about, so
- * it leads; an open fault is the next thing they want news of; an inspection
- * past its date is a legal matter for the building; a late maintenance visit
+ * it leads; an open fault is the next thing they want news of; a defect the
+ * inspector found, with its legal deadline still running, is the building's
+ * to see before it ends in a seal; an inspection past its date is a legal
+ * matter for the building; a late maintenance visit
  * is the firm's to chase. Otherwise, nothing to worry about — said as such,
  * because a manager reading a list of lifts wants to know that too.
  */
 export function liftAttention(
-  lift: { id: string; status: string; next_inspection_date: string | null; next_maintenance_date: string | null },
+  lift: {
+    id: string;
+    status: string;
+    next_inspection_date: string | null;
+    next_maintenance_date: string | null;
+    correction_deadline?: string | null;
+  },
   faults: ReadonlyArray<{ elevator: string; status: FaultStatus }>,
   today: string,
 ): { attention: LiftAttention; openFaults: number } {
@@ -45,6 +54,8 @@ export function liftAttention(
     attention = "out_of_service";
   } else if (openFaults > 0) {
     attention = "fault";
+  } else if (lift.correction_deadline) {
+    attention = "correction";
   } else if (lift.next_inspection_date && lift.next_inspection_date < today) {
     attention = "inspection_overdue";
   } else if (lift.next_maintenance_date && lift.next_maintenance_date < today) {

@@ -43,6 +43,7 @@ import { canReadPlan } from "@/lib/plan";
 import { canUseFaults } from "@/lib/faults";
 import { canReadInspections, canRecordInspections } from "@/lib/inspections";
 import { InspectionHistory, RecordInspectionLink } from "@/components/inspections/InspectionHistory";
+import { correctionSummary } from "@/components/inspections/CorrectionDeadline";
 import { ElevatorPlanCard } from "@/components/plan/ElevatorPlanCard";
 import {
   RecordVisitAction,
@@ -514,6 +515,15 @@ export function ElevatorDetailScreen() {
                   label={t("elevator.fields.nextInspectionDate")}
                   value={formatDate(insp.next_inspection_date)}
                 />
+                {/* Beside the next inspection, not only in the history below:
+                    a red label's deadline is weeks away, the next inspection a
+                    year, and the second alone reads as "nothing due". */}
+                {insp.correction_deadline && (
+                  <FieldRow
+                    label={t("inspection.correctionDeadline")}
+                    value={correctionSummary(insp, t)}
+                  />
+                )}
                 <FieldRow
                   label={t("elevator.fields.inspectionBody")}
                   value={insp.inspection_body}

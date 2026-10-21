@@ -136,11 +136,18 @@ export function PublicFaultReportScreen() {
           <span className="text-cardtitle">{t("publicFault.elevatorStopped")}</span>
         </label>
 
-        <Field label={t("publicFault.description")} htmlFor="public-description" required>
+        {/* Not required once somebody is trapped: the tick is the whole
+            report, and nobody in a stuck cabin should be held by a text box. */}
+        <Field
+          label={t("publicFault.description")}
+          htmlFor="public-description"
+          required={!trapped}
+          hint={trapped ? t("fault.descriptionOptionalTrapped") : undefined}
+        >
           <Textarea
             name="description"
             rows={4}
-            required
+            required={!trapped}
             maxLength={1000}
             placeholder={t("publicFault.descriptionPlaceholder")}
             className="text-[1rem]"

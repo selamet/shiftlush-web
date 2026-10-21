@@ -5,7 +5,6 @@ import { CalendarCheck, ChevronRight, MapPin } from "lucide-react";
 import { plannedVisitListQuery, type PlannedVisit } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { toDisplay, todayIso } from "@/lib/date";
-import { enumLabel } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import {
@@ -15,12 +14,12 @@ import {
   myPlanParams,
   periodOf,
   periodsForWeek,
-  triedNotDone,
 } from "@/lib/plan";
 import { ListError, TableSkeleton } from "@/components/list/ListStates";
 import { PlanRestricted } from "@/components/plan/PlanRestricted";
 import { TechnicianTabs } from "@/components/plan/TechnicianTabs";
-import { PlanFlagChips, PlanStatusChip } from "@/components/ui/status-chip";
+import { PlanStatusChip } from "@/components/ui/status-chip";
+import { PlanRowFlags } from "@/components/plan/PlanRowFlags";
 
 type Scope = "today" | "week";
 
@@ -164,14 +163,7 @@ export function TechnicianPlanScreen({ scope }: { scope: Scope }) {
                         : t("plan.dueOn", { date: toDisplay(row.due_date) })}
                     </span>
                     <PlanStatusChip value={row.status} />
-                    <PlanFlagChips
-                      overdue={row.is_overdue}
-                      tried={triedNotDone(row)}
-                      overdueLabel={t("plan.flags.overdue")}
-                      triedLabel={t("plan.flags.tried", {
-                        status: enumLabel("visit.status", row.latest_visit_status),
-                      })}
-                    />
+                    <PlanRowFlags row={row} />
                   </span>
                 </span>
                 <ChevronRight className="size-5 shrink-0 text-subtle" aria-hidden="true" />

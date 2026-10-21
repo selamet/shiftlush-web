@@ -12,6 +12,7 @@ import { canReadPlan } from "@/lib/plan";
 import { canUseFaults } from "@/lib/faults";
 import { canReadInspections, canRecordInspections } from "@/lib/inspections";
 import { InspectionHistory, RecordInspectionLink } from "@/components/inspections/InspectionHistory";
+import { correctionSummary } from "@/components/inspections/CorrectionDeadline";
 import { ElevatorPlanCard } from "@/components/plan/ElevatorPlanCard";
 import { buttonVariants } from "@/components/ui/button";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
@@ -85,6 +86,9 @@ export function ElevatorDetailMobile({
     [t("elevator.fields.speedMps"), tech.speed_mps ? `${formatDecimal(tech.speed_mps)} m/s` : "—"],
     [t("elevator.fields.lastInspectionDate"), formatDate(insp.last_inspection_date)],
     [t("elevator.fields.nextInspectionDate"), formatDate(insp.next_inspection_date)],
+    ...(insp.correction_deadline
+      ? ([[t("inspection.correctionDeadline"), correctionSummary(insp, t)]] as Array<[string, React.ReactNode]>)
+      : []),
     // Next to the inspection dates rather than in a section of their own: on
     // site the question is "is this lift due?", and both pairs answer it.
     ...(visits

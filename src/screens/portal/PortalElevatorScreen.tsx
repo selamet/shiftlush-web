@@ -20,6 +20,7 @@ import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { InspectionLabel } from "@/components/ui/inspection-label";
 import { ChecklistResultChip, ElevatorStatusChip, VisitStatusChip } from "@/components/ui/status-chip";
+import { correctionSummary } from "@/components/inspections/CorrectionDeadline";
 
 /**
  * One lift, as its building manager sees it: what was done on each visit and
@@ -79,6 +80,11 @@ export function PortalElevatorScreen() {
         <Fact label={t("portal.home.label")}>
           <InspectionLabel value={data.inspection_label} />
         </Fact>
+        {data.correction_deadline && (
+          // The label's legal deadline, beside the year-away next inspection
+          // that would otherwise read as "nothing due".
+          <Fact label={t("inspection.correctionDeadline")} wide>{correctionSummary(data, t)}</Fact>
+        )}
       </section>
 
       <section className="flex flex-col gap-2">
@@ -118,9 +124,9 @@ export function PortalElevatorScreen() {
   );
 }
 
-function Fact({ label, children }: { label: string; children: React.ReactNode }) {
+function Fact({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
   return (
-    <div className="flex flex-col gap-0.5 bg-card p-3">
+    <div className={cn("flex flex-col gap-0.5 bg-card p-3", wide && "col-span-2")}>
       <span className="text-help text-muted-foreground">{label}</span>
       <span className="tnum text-body">{children}</span>
     </div>

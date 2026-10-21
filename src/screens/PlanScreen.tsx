@@ -17,7 +17,6 @@ import {
 } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { endOfMonth, monthYearLabel, toDisplay, todayIso } from "@/lib/date";
-import { enumLabel } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { useListSearch, type ListState } from "@/lib/list-search";
 import {
@@ -25,7 +24,6 @@ import {
   nextPeriod,
   overdueFilter,
   previousPeriod,
-  triedNotDone,
 } from "@/lib/plan";
 import { currentPeriod, planFilters as filters } from "@/screens/list-searches";
 import { ListPage, Stacked, type ListColumn, type ListSelection } from "@/components/list/ListPage";
@@ -34,7 +32,8 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { PlanFlagChips, PlanStatusChip } from "@/components/ui/status-chip";
+import { PlanStatusChip } from "@/components/ui/status-chip";
+import { PlanRowFlags } from "@/components/plan/PlanRowFlags";
 
 /** One row being edited in place: the technician ("" for nobody) and the day ("" for none). */
 interface Editing {
@@ -224,14 +223,7 @@ export function PlanScreen() {
       cell: (row) => (
         <span className="flex flex-col items-start gap-1">
           <PlanStatusChip value={row.status} />
-          <PlanFlagChips
-            overdue={row.is_overdue}
-            tried={triedNotDone(row)}
-            overdueLabel={t("plan.flags.overdue")}
-            triedLabel={t("plan.flags.tried", {
-              status: enumLabel("visit.status", row.latest_visit_status),
-            })}
-          />
+          <PlanRowFlags row={row} />
         </span>
       ),
     },
@@ -407,8 +399,9 @@ function SummaryHeader({ summary, list }: { summary?: PlanSummary; list: ListSta
             <thead className="border-b border-border bg-background text-colhead uppercase text-subtle">
               <tr>
                 <th className="px-3 py-2 text-left font-medium">{t("plan.fields.technician")}</th>
-                <th className="px-3 py-2 text-right font-medium">{t("plan.summary.planned")}</th>
+                <th className="px-3 py-2 text-right font-medium">{t("plan.summary.technicianTotal")}</th>
                 <th className="px-3 py-2 text-right font-medium">{t("plan.summary.done")}</th>
+                <th className="px-3 py-2 text-right font-medium">{t("plan.summary.remaining")}</th>
                 <th className="px-3 py-2 text-right font-medium">{t("plan.summary.overdue")}</th>
               </tr>
             </thead>
@@ -424,8 +417,9 @@ function SummaryHeader({ summary, list }: { summary?: PlanSummary; list: ListSta
                       {entry.technician_name}
                     </button>
                   </td>
-                  <td className="tnum px-3 py-1.5 text-right">{entry.planned}</td>
+                  <td className="tnum px-3 py-1.5 text-right">{entry.total}</td>
                   <td className="tnum px-3 py-1.5 text-right">{entry.done}</td>
+                  <td className="tnum px-3 py-1.5 text-right">{entry.remaining}</td>
                   <td
                     className={`tnum px-3 py-1.5 text-right ${entry.overdue > 0 ? "font-semibold text-warning" : ""}`}
                   >

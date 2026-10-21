@@ -1391,12 +1391,14 @@
     },
     "flags": {
       "overdue": "Gecikmiş",
+      "overdueDays": "{{days}} gün gecikti",
       "tried": "Denendi: {{status}}"
     },
     "summary": {
       "total": "Bu ay toplam",
       "done": "Yapılan",
-      "planned": "Planlanan",
+      "technicianTotal": "Toplam",
+      "remaining": "Kalan",
       "unassigned": "Atanmamış",
       "overdue": "Gecikmiş",
       "show": "Göster"
@@ -1433,6 +1435,8 @@
     "someoneTrapped": "Kabinde mahsur kalan var",
     "elevatorStopped": "Asansör durdu",
     "trappedMeansEmergency": "Kabinde mahsur kalan olduğu için arıza acil olarak kaydedilecek.",
+    "descriptionOptionalTrapped": "Mahsur kalan varsa açıklama yazmanız gerekmez, hemen gönderebilirsiniz.",
+    "noDescription": "Açıklama yazılmadı.",
     "sendNow": "Hemen gönderilecek teknisyen",
     "sendNowHint": "Boş bırakırsanız arıza panoda atanmamış olarak bekler.",
     "sendLater": "Şimdi değil",
@@ -1553,6 +1557,7 @@
     "historyEmpty": "Bu asansör için henüz muayene kaydı yok",
     "moreOnDesktop": "{{count}} eski muayene daha var; tamamı geniş ekranda görünür",
     "correctionBy": "Kusurlar {{date}} tarihine kadar giderilmeli",
+    "correctionDeadline": "Düzeltme son tarihi",
     "reportPdf": "Rapor (PDF)",
     "reportNo": "Rapor no {{number}}",
     "fixedOn": "{{date}} tarihinde giderildi",
@@ -1655,6 +1660,7 @@
     "attention": {
       "out_of_service": "Asansör şu anda çalışmıyor",
       "fault": "{{count}} arıza üzerinde çalışılıyor",
+      "correction": "Muayenede bulunan kusurların düzeltme süresi işliyor",
       "inspection_overdue": "Periyodik muayene tarihi geçti",
       "maintenance_overdue": "Bakım tarihi geçti",
       "ok": "Her şey yolunda"
