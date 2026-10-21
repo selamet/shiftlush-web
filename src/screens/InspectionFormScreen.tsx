@@ -18,6 +18,7 @@ import { errorMessage, supportReference } from "@/api/errors";
 import { toDisplay, todayIso } from "@/lib/date";
 import { formValues, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
+import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
 import { useSession } from "@/lib/session";
 import {
   INSPECTION_KINDS,
@@ -52,9 +53,6 @@ interface Defect {
   description: string;
   severity: InspectionResultLabel;
 }
-
-const selectClass =
-  "h-control-md w-full rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg";
 
 /**
  * Recording what the inspector's report says, for one lift.
@@ -271,21 +269,23 @@ function InspectionForm({ elevatorId }: { elevatorId: string }) {
           required
           hint={t("inspection.followsHint")}
           error={state.fields.follows}
+          bindChild={false}
         >
-          <select
+          <SearchableSelect
+            id="inspection-follows"
             value={follows}
             required
-            onChange={(event) => setFollows(event.target.value)}
-            className={selectClass}
-          >
-            <option value="">{t("inspection.selectFollows")}</option>
-            {(periodics.data?.results ?? []).map((one) => (
-              <option key={one.id} value={one.id}>
-                {toDisplay(one.inspected_on)} · {enumLabel("elevator.inspectionLabel", one.label)}
-                {one.report_number ? ` · ${one.report_number}` : ""}
-              </option>
-            ))}
-          </select>
+            onChange={setFollows}
+            placeholder={t("inspection.selectFollows")}
+            invalid={Boolean(state.fields.follows)}
+            aria-describedby={state.fields.follows ? "inspection-follows-error" : "inspection-follows-hint"}
+            options={(periodics.data?.results ?? []).map((one) => ({
+              value: one.id,
+              label: `${toDisplay(one.inspected_on)} · ${enumLabel("elevator.inspectionLabel", one.label)}`,
+              // Searchable by the report number, which is what is on the paper.
+              hint: one.report_number || undefined,
+            }))}
+          />
         </Field>
       )}
 
@@ -379,26 +379,24 @@ function InspectionForm({ elevatorId }: { elevatorId: string }) {
                   <Trash2 aria-hidden="true" />
                 </Button>
               </div>
-              <label className="flex flex-wrap items-center gap-2 text-help text-muted-foreground">
-                {t("inspection.severity")}
-                <select
+              <span className="flex flex-wrap items-center gap-2 text-help text-muted-foreground">
+                <label htmlFor={`defect-severity-${defect.key}`}>{t("inspection.severity")}</label>
+                <SearchableSelect
+                  id={`defect-severity-${defect.key}`}
+                  size="sm"
+                  className="w-40"
                   value={defect.severity}
-                  onChange={(event) =>
+                  onChange={(next) => {
+                    if (!next) return;
                     setDefects((current) =>
                       current.map((one) =>
-                        one.key === defect.key ? { ...one, severity: event.target.value as InspectionResultLabel } : one,
+                        one.key === defect.key ? { ...one, severity: next as InspectionResultLabel } : one,
                       ),
-                    )
-                  }
-                  className="h-control-sm rounded-md border border-input bg-card px-2 text-body focus-ring"
-                >
-                  {INSPECTION_LABELS.map((value) => (
-                    <option key={value} value={value}>
-                      {enumLabel("elevator.inspectionLabel", value)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                    );
+                  }}
+                  options={enumOptions(INSPECTION_LABELS, (value) => enumLabel("elevator.inspectionLabel", value))}
+                />
+              </span>
             </li>
           ))}
         </ol>

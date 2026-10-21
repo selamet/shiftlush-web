@@ -16,6 +16,7 @@ import type { FaultPriority } from "@/api/enums";
 import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useSession } from "@/lib/session";
 import { FAULT_PRIORITIES, canUseFaults, isOffice, staffPriority } from "@/lib/faults";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
@@ -181,20 +182,20 @@ export function FaultCreateScreen() {
             htmlFor="fault-technician"
             hint={t("fault.sendNowHint")}
             error={state.fields.technician}
+            bindChild={false}
           >
-            <select
+            {/* Optional: empty is "send later", said as the placeholder and
+                restored by clearing. */}
+            <SearchableSelect
+              id="fault-technician"
               name="technician"
-              defaultValue=""
+              clearable
               disabled={technicians.isPending}
-              className="h-control-md w-full rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg"
-            >
-              <option value="">{t("fault.sendLater")}</option>
-              {(technicians.data ?? []).map((one) => (
-                <option key={one.id} value={one.id}>
-                  {one.name}
-                </option>
-              ))}
-            </select>
+              placeholder={t("fault.sendLater")}
+              invalid={Boolean(state.fields.technician)}
+              aria-describedby={state.fields.technician ? "fault-technician-error" : "fault-technician-hint"}
+              options={(technicians.data ?? []).map((one) => ({ value: one.id, label: one.name }))}
+            />
           </Field>
         )}
 

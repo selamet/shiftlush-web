@@ -33,6 +33,7 @@ import { PlanRestricted } from "@/components/plan/PlanRestricted";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PlanFlagChips, PlanStatusChip } from "@/components/ui/status-chip";
 
 /** One row being edited in place: the technician ("" for nobody) and the day ("" for none). */
@@ -41,9 +42,6 @@ interface Editing {
   technician: string;
   plannedDate: string;
 }
-
-const selectClass =
-  "h-control-sm rounded-md border border-input bg-card px-2 text-body focus-ring pointer-coarse:h-control-md";
 
 /**
  * The month's maintenance plan, for the office.
@@ -197,19 +195,19 @@ export function PlanScreen() {
             <label htmlFor={`plan-tech-${row.id}`} className="sr-only">
               {t("plan.fields.technician")}
             </label>
-            <select
+            {/* "Unassigned" is a real answer here — the office may take a row
+                back — so it is an option of its own, not just an empty field. */}
+            <SearchableSelect
               id={`plan-tech-${row.id}`}
+              size="sm"
+              className="w-48"
               value={editing.technician}
-              onChange={(event) => setEditing({ ...editing, technician: event.target.value })}
-              className={selectClass}
-            >
-              <option value="">{t("plan.unassigned")}</option>
-              {technicianList.map((technician) => (
-                <option key={technician.id} value={technician.id}>
-                  {technician.name}
-                </option>
-              ))}
-            </select>
+              onChange={(next) => setEditing({ ...editing, technician: next })}
+              options={[
+                { value: "", label: t("plan.unassigned") },
+                ...technicianList.map((technician) => ({ value: technician.id, label: technician.name })),
+              ]}
+            />
           </>
         ) : row.technician_name ? (
           row.technician_name
@@ -318,23 +316,22 @@ function MonthPicker({ period, list }: { period: string; list: ListState }) {
   if (!choices.includes(period)) choices.push(period);
 
   return (
-    <label className="flex flex-wrap items-center gap-2">
-      <span className="text-label">{t("plan.fields.period")}</span>
-      <select
+    <span className="flex flex-wrap items-center gap-2">
+      <label htmlFor="plan-period" className="text-label">
+        {t("plan.fields.period")}
+      </label>
+      <SearchableSelect
+        id="plan-period"
+        size="sm"
+        className="w-48"
         value={period}
         // The current month is the default and is never written into the URL.
-        onChange={(event) =>
-          list.setFilter("period", event.target.value === current ? null : event.target.value)
-        }
-        className={selectClass}
-      >
-        {choices.map((value) => (
-          <option key={value} value={value}>
-            {monthYearLabel(`${value}-01`)}
-          </option>
-        ))}
-      </select>
-    </label>
+        onChange={(next) => {
+          if (next) list.setFilter("period", next === current ? null : next);
+        }}
+        options={choices.map((value) => ({ value, label: monthYearLabel(`${value}-01`) }))}
+      />
+    </span>
   );
 }
 
@@ -503,22 +500,18 @@ function BulkAssign({
       <label className="sr-only" htmlFor="plan-bulk-technician">
         {t("plan.fields.technician")}
       </label>
-      <select
+      <SearchableSelect
         id="plan-bulk-technician"
+        size="sm"
+        className="w-52"
         value={technician}
-        onChange={(event) => {
-          setTechnician(event.target.value);
+        onChange={(next) => {
+          setTechnician(next);
           assign.reset();
         }}
-        className={selectClass}
-      >
-        <option value="">{t("plan.selectTechnician")}</option>
-        {technicians.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.name}
-          </option>
-        ))}
-      </select>
+        placeholder={t("plan.selectTechnician")}
+        options={technicians.map((option) => ({ value: option.id, label: option.name }))}
+      />
       <Button
         size="sm"
         disabled={!technician || assign.isPending}

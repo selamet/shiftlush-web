@@ -37,7 +37,8 @@
     "change": "Değiştir",
     "noMatch": "Eşleşen kayıt yok",
     "selectRequired": "Listeden bir kayıt seçin",
-    "searchMinChars": "Aramak için en az {{count}} karakter yazın"
+    "searchMinChars": "Aramak için en az {{count}} karakter yazın",
+    "clearSelection": "Seçimi temizle"
   },
   "elevator": {
     "title": "Asansörler",

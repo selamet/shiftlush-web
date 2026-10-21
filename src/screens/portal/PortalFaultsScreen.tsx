@@ -19,6 +19,7 @@ import { ListError, TableSkeleton } from "@/components/list/ListStates";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Textarea } from "@/components/ui/field";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { FaultStatusChip } from "@/components/ui/status-chip";
 
 /** The emergency services' number — not the firm's. */
@@ -132,20 +133,15 @@ function ReportForm({
     >
       {report.isError && <Alert tone="error" block title={errorMessage(report.error, t)} />}
 
-      <Field label={t("portal.faults.lift")} htmlFor="portal-fault-lift" required>
-        <select
+      <Field label={t("portal.faults.lift")} htmlFor="portal-fault-lift" required bindChild={false}>
+        <SearchableSelect
+          id="portal-fault-lift"
           name="elevator"
           required
           defaultValue={preselected || (lifts.length === 1 ? lifts[0].id : "")}
-          className="h-control-lg w-full rounded-md border border-input bg-card px-3 text-body focus-ring"
-        >
-          <option value="">{t("portal.faults.selectLift")}</option>
-          {lifts.map((lift) => (
-            <option key={lift.id} value={lift.id}>
-              {lift.name} · {lift.building_name}
-            </option>
-          ))}
-        </select>
+          placeholder={t("portal.faults.selectLift")}
+          options={lifts.map((lift) => ({ value: lift.id, label: lift.name, hint: lift.building_name }))}
+        />
       </Field>
 
       <label className="flex min-h-control-xl items-center gap-3 rounded-lg border-2 border-border p-3 text-body has-[:checked]:border-foreground">

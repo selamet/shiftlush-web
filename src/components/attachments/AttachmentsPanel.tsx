@@ -20,6 +20,7 @@ import {
 } from "@/lib/upload";
 import { formatFileSize } from "@/lib/format";
 import { enumLabel } from "@/lib/i18n";
+import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -231,18 +232,16 @@ export function AttachmentsPanel({
                 <label className="sr-only" htmlFor="attachment-category">
                   {t("attachment.categoryLabel")}
                 </label>
-                <select
+                <SearchableSelect
                   id="attachment-category"
+                  size="sm"
+                  className="w-52"
                   value={category}
-                  onChange={(event) => setCategory(event.target.value as AttachmentCategory)}
-                  className="h-control-sm rounded-md border border-input bg-card px-2 text-body focus-ring pointer-coarse:h-control-md"
-                >
-                  {CATEGORIES.map((value) => (
-                    <option key={value} value={value}>
-                      {enumLabel("attachment.category", value)}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(next) => {
+                    if (next) setCategory(next as AttachmentCategory);
+                  }}
+                  options={enumOptions(CATEGORIES, (value) => enumLabel("attachment.category", value))}
+                />
               </>
             )}
             <Button

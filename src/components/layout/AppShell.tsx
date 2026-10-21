@@ -6,6 +6,7 @@ import { VerificationBanner } from "@/components/layout/VerificationBanner";
 import { useSession } from "@/lib/session";
 import { useTheme } from "@/lib/theme";
 import { enumLabel } from "@/lib/i18n";
+import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { OutboxDriver, OutboxIndicator } from "@/components/outbox/Outbox";
@@ -53,21 +54,19 @@ function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
             fields can be reviewed without five accounts. Remove once the real
             auth flow lands. */}
         {role && (
-          <label className="hidden items-center gap-1.5 rounded-sm bg-muted py-1 pl-2 pr-1 md:inline-flex">
+          <span className="hidden items-center gap-1.5 md:inline-flex">
             <FlaskConical className="size-3.5 shrink-0 text-subtle" aria-hidden="true" />
-            <span className="sr-only">{t("user.fields.role")}</span>
-            <select
+            <SearchableSelect
+              size="sm"
+              className="w-40"
+              aria-label={t("user.fields.role")}
               value={role}
-              onChange={(event) => setRole(event.target.value as Role)}
-              className="cursor-pointer border-0 bg-transparent pr-1 text-help text-muted-foreground focus-ring"
-            >
-              {ROLES.map((value) => (
-                <option key={value} value={value}>
-                  {enumLabel("user.role", value)}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={(next) => {
+                if (next) setRole(next as Role);
+              }}
+              options={enumOptions(ROLES, (value) => enumLabel("user.role", value))}
+            />
+          </span>
         )}
         {/* Every role has notifications — each person's own — so the bell is
             not role-gated. Only once there is a session to ask under; the

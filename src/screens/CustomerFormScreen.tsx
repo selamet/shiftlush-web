@@ -14,6 +14,7 @@ import {
 import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
+import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
@@ -144,21 +145,20 @@ function CustomerForm({ record }: { record?: Customer }) {
           required
           hint={individual ? t("customer.individualHint") : t("customer.organisationHint")}
           error={state.fields.type}
+          bindChild={false}
         >
-          <select
+          <SearchableSelect
             id="cf-type"
             name="type"
             required
             value={type}
-            onChange={(event) => setType(event.target.value as CustomerTypeValue)}
-            className="h-control-md rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg"
-          >
-            {TYPES.map((value) => (
-              <option key={value} value={value}>
-                {enumLabel("customer.type", value)}
-              </option>
-            ))}
-          </select>
+            onChange={(next) => {
+              if (next) setType(next as CustomerTypeValue);
+            }}
+            invalid={Boolean(state.fields.type)}
+            aria-describedby={state.fields.type ? "cf-type-error" : "cf-type-hint"}
+            options={enumOptions(TYPES, (value) => enumLabel("customer.type", value))}
+          />
         </Field>
 
         <Field
