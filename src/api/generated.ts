@@ -775,6 +775,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/customers/{customer_id}/portal-accounts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description `GET /customers/{id}/portal-accounts/` — the customer's accounts. */
+        get: operations["customers_portal_accounts_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/{customer_id}/portal-invitations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description `POST /customers/{id}/portal-invitations/` — invite a contact. */
+        post: operations["customers_portal_invitations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/customers/{id}/": {
         parameters: {
             query?: never;
@@ -1787,6 +1821,309 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portal-accounts/{id}/deactivate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Close the account now: no sign-in, and its sessions end. */
+        post: operations["portal_accounts_deactivate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/auth/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Accept an invitation: set a password and sign in. */
+        post: operations["portal_auth_accept_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Sign in with e-mail and password; the staff lockout rules apply. */
+        post: operations["portal_auth_login_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description End this session and clear the `portal_refresh` cookie. */
+        post: operations["portal_auth_logout_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/auth/password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Mail a reset link. 202 whether or not the address has an account. */
+        post: operations["portal_auth_password_reset_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/auth/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Set a new password from the mailed link; every session ends. */
+        post: operations["portal_auth_password_reset_confirm_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Exchange the `portal_refresh` cookie for a new access token; rotates. */
+        post: operations["portal_auth_refresh_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/elevators/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["portal_elevators_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/elevators/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["portal_elevators_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/faults/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The customer's faults — the contact's own and everybody else's at the
+         *     customer — and reporting a new one.
+         */
+        get: operations["portal_faults_list"];
+        put?: never;
+        /**
+         * @description Report a fault on one of the customer's lifts.
+         *
+         *     The public QR report's fields and priority mapping: `someone_trapped`
+         *     makes it an emergency, `elevator_stopped` high, otherwise normal. Raises
+         *     the same notifications as any report. Replay-protected by
+         *     `Idempotency-Key`, keyed by this portal account.
+         */
+        post: operations["portal_faults_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/faults/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The customer's faults — the contact's own and everybody else's at the
+         *     customer — and reporting a new one.
+         */
+        get: operations["portal_faults_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/files/{id}/download-url/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Signed download URLs, for the customer's own files only.
+         *
+         *     The same signed-URL flow as the staff endpoint; what differs is the set of
+         *     files: anything outside the customer's scope is a 404, as if it did not
+         *     exist.
+         */
+        get: operations["portal_files_download_url_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/inspections/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["portal_inspections_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/inspections/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["portal_inspections_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Who is signed in, for whom, and whom to call. */
+        get: operations["portal_me_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/visits/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["portal_visits_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/visits/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["portal_visits_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/provinces/": {
         parameters: {
             query?: never;
@@ -2751,9 +3088,10 @@ export interface components {
         /**
          * @description * `staff` - Staff
          *     * `public_qr` - Public QR report
+         *     * `customer_portal` - Customer portal
          * @enum {string}
          */
-        FaultChannel: "staff" | "public_qr";
+        FaultChannel: "staff" | "public_qr" | "customer_portal";
         /**
          * @description A fault entered by somebody at the firm.
          *
@@ -3398,6 +3736,71 @@ export interface components {
                 total_pages: number;
             };
         };
+        PaginatedPortalAccountList: {
+            results: components["schemas"]["PortalAccount"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedPortalElevatorList: {
+            results: components["schemas"]["PortalElevator"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedPortalFaultList: {
+            results: components["schemas"]["PortalFault"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedPortalInspectionList: {
+            results: components["schemas"]["PortalInspection"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedPortalVisitList: {
+            results: components["schemas"]["PortalVisit"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
         PaginatedUserList: {
             results: components["schemas"]["User"][];
             pagination: {
@@ -3757,6 +4160,204 @@ export interface components {
          */
         PlannedVisitStatus: "planned" | "done" | "cancelled";
         /**
+         * @description Rejects fields it does not know about.
+         *
+         *     DRF ignores unknown keys by default, which silently swallows a typo: the
+         *     client sends `emial`, gets a 200, and the value never arrives. Failing is
+         *     the kinder answer.
+         */
+        PortalAcceptRequest: {
+            token: string;
+            password: string;
+        };
+        PortalAccount: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: email */
+            readonly email: string;
+            /** Format: uuid */
+            readonly customer: string;
+            /** Format: uuid */
+            readonly contact: string;
+            readonly contact_name: string;
+            readonly status: components["schemas"]["PortalAccountStatus"];
+            /** Format: date-time */
+            readonly invited_at: string;
+            /** Format: date-time */
+            readonly accepted_at: string | null;
+            /** Format: date-time */
+            readonly deactivated_at: string | null;
+            /** Format: date-time */
+            readonly last_login_at: string | null;
+        };
+        /**
+         * @description * `invited` - Invited
+         *     * `active` - Active
+         *     * `inactive` - Inactive
+         * @enum {string}
+         */
+        PortalAccountStatus: "invited" | "active" | "inactive";
+        PortalElevator: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly name: string;
+            /** Format: uuid */
+            readonly building: string;
+            readonly building_name: string;
+            readonly status: components["schemas"]["ElevatorStatus"];
+            /** Format: date */
+            readonly last_maintenance_date: string | null;
+            /** Format: date */
+            readonly next_maintenance_date: string | null;
+            readonly inspection_label: components["schemas"]["InspectionLabelEnum"];
+            /** Format: date */
+            readonly next_inspection_date: string | null;
+        };
+        PortalFault: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly reference: string;
+            /** Format: uuid */
+            readonly elevator: string;
+            readonly elevator_name: string;
+            readonly building_name: string;
+            readonly channel: components["schemas"]["FaultChannel"];
+            readonly status: components["schemas"]["FaultStatus"];
+            readonly priority: components["schemas"]["FaultPriority"];
+            readonly description: string;
+            /** Format: date-time */
+            readonly reported_at: string;
+            /** Format: date-time */
+            readonly assigned_at: string | null;
+            /** Format: date-time */
+            readonly on_site_at: string | null;
+            /** Format: date-time */
+            readonly resolved_at: string | null;
+            /** Format: date-time */
+            readonly closed_at: string | null;
+            /** Format: date-time */
+            readonly cancelled_at: string | null;
+            readonly technician_first_name: string | null;
+            readonly resolution_notes: string;
+            readonly reported_by_me: boolean;
+        };
+        /** @description The public report's fields, from an identified contact. */
+        PortalFaultReportRequest: {
+            /** Format: uuid */
+            elevator: string;
+            description: string;
+            /** @default false */
+            someone_trapped: boolean;
+            /** @default false */
+            elevator_stopped: boolean;
+        };
+        PortalInspection: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly elevator: string;
+            readonly elevator_name: string;
+            readonly kind: components["schemas"]["InspectionKind"];
+            /** Format: date */
+            readonly inspected_on: string;
+            readonly inspection_body: string;
+            readonly report_number: string;
+            readonly label: components["schemas"]["InspectionResultLabel"];
+            /** Format: date */
+            readonly next_inspection_due: string;
+            /** Format: uuid */
+            readonly report: string | null;
+            readonly nonconformities: components["schemas"]["PortalNonConformity"][];
+        };
+        /**
+         * @description Rejects fields it does not know about.
+         *
+         *     DRF ignores unknown keys by default, which silently swallows a typo: the
+         *     client sends `emial`, gets a 200, and the value never arrives. Failing is
+         *     the kinder answer.
+         */
+        PortalInvitationRequest: {
+            /** Format: uuid */
+            contact: string;
+        };
+        /**
+         * @description Rejects fields it does not know about.
+         *
+         *     DRF ignores unknown keys by default, which silently swallows a typo: the
+         *     client sends `emial`, gets a 200, and the value never arrives. Failing is
+         *     the kinder answer.
+         */
+        PortalLoginRequest: {
+            /** Format: email */
+            email: string;
+            password: string;
+        };
+        PortalMe: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: email */
+            readonly email: string;
+            readonly contact_name: string;
+            readonly customer_name: string;
+            readonly company_name: string;
+            readonly company_phone: string;
+        };
+        PortalNonConformity: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly description: string;
+            readonly severity: components["schemas"]["InspectionResultLabel"];
+            readonly status: components["schemas"]["NonConformityStatus"];
+            /** Format: date */
+            readonly fixed_on: string | null;
+        };
+        /**
+         * @description Rejects fields it does not know about.
+         *
+         *     DRF ignores unknown keys by default, which silently swallows a typo: the
+         *     client sends `emial`, gets a 200, and the value never arrives. Failing is
+         *     the kinder answer.
+         */
+        PortalPasswordResetConfirmRequest: {
+            token: string;
+            password: string;
+        };
+        /**
+         * @description Rejects fields it does not know about.
+         *
+         *     DRF ignores unknown keys by default, which silently swallows a typo: the
+         *     client sends `emial`, gets a 200, and the value never arrives. Failing is
+         *     the kinder answer.
+         */
+        PortalPasswordResetRequestRequest: {
+            /** Format: email */
+            email: string;
+        };
+        PortalTokenResponse: {
+            access: string;
+            account: components["schemas"]["PortalMe"];
+        };
+        PortalVisit: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly elevator: string;
+            readonly elevator_name: string;
+            /** Format: date */
+            readonly visit_date: string;
+            readonly status: components["schemas"]["MaintenanceVisitStatus"];
+            readonly technician_first_name: string;
+            readonly parts_replaced: string;
+            readonly items: components["schemas"]["PortalVisitItem"][];
+            readonly photos: {
+                [key: string]: unknown;
+            }[];
+        };
+        PortalVisitItem: {
+            readonly item: components["schemas"]["MaintenanceChecklistItem"];
+            readonly result: components["schemas"]["MaintenanceChecklistResult"];
+        };
+        /**
          * @description * `per_elevator` - Per elevator
          *     * `flat` - Flat
          * @enum {string}
@@ -4013,6 +4614,10 @@ export interface components {
          *     * `IDEMPOTENCY_KEY_REQUIRED` - This request must carry an Idempotency-Key header
          *     * `ELEVATOR_ALREADY_CONTRACTED` - Elevator is already covered by an open contract
          *     * `NO_ACTIVE_CONTRACT_FOR_ELEVATOR` - The named contract is not active or does not cover this elevator
+         *     * `CONTACT_NOT_OF_CUSTOMER` - The contact does not belong to this customer
+         *     * `CONTACT_HAS_NO_EMAIL` - The contact has no e-mail address to send a portal invitation to
+         *     * `PORTAL_ACCOUNT_ALREADY_ACTIVE` - This contact already has an active portal account
+         *     * `PORTAL_EMAIL_IN_USE` - Another active portal account already uses this e-mail address
          *     * `FAULT_TRANSITION_NOT_ALLOWED` - The fault is not in a state this action can be taken from
          *     * `NOTIFICATION_EMAIL_LOCKED` - This notification is always e-mailed and cannot be turned off
          *     * `LAST_OWNER_CANNOT_BE_DEACTIVATED` - A company must keep at least one active owner
@@ -4036,7 +4641,7 @@ export interface components {
          *     * `ATTACHMENT_TARGET_MISMATCH` - Attachment does not belong to the record it is being linked to
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "FAULT_TRANSITION_NOT_ALLOWED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
+        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "FAULT_TRANSITION_NOT_ALLOWED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
         /** @description The shape of every error response. There is no `message` field: the backend sends codes, and the words live in the client's translation file, so wording changes in one place and adding a language does not touch the API. */
         ErrorResponse: {
             error: {
@@ -5280,6 +5885,61 @@ export interface operations {
             };
         };
     };
+    customers_portal_accounts_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                customer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedPortalAccountList"];
+                };
+            };
+        };
+    };
+    customers_portal_invitations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PortalInvitationRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PortalInvitationRequest"];
+                "multipart/form-data": components["schemas"]["PortalInvitationRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalAccount"];
+                };
+            };
+        };
+    };
     customers_retrieve: {
         parameters: {
             query?: never;
@@ -5654,8 +6314,9 @@ export interface operations {
                 /**
                  * @description * `staff` - Staff
                  *     * `public_qr` - Public QR report
+                 *     * `customer_portal` - Customer portal
                  */
-                channel?: "public_qr" | "staff";
+                channel?: "customer_portal" | "public_qr" | "staff";
                 customer?: string;
                 elevator?: string;
                 /** @description Which field to use when ordering the results. */
@@ -6809,6 +7470,433 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanSummary"];
+                };
+            };
+        };
+    };
+    portal_accounts_deactivate_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this portal account. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalAccount"];
+                };
+            };
+        };
+    };
+    portal_auth_accept_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PortalAcceptRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PortalAcceptRequest"];
+                "multipart/form-data": components["schemas"]["PortalAcceptRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalTokenResponse"];
+                };
+            };
+        };
+    };
+    portal_auth_login_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PortalLoginRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PortalLoginRequest"];
+                "multipart/form-data": components["schemas"]["PortalLoginRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalTokenResponse"];
+                };
+            };
+        };
+    };
+    portal_auth_logout_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    portal_auth_password_reset_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PortalPasswordResetRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PortalPasswordResetRequestRequest"];
+                "multipart/form-data": components["schemas"]["PortalPasswordResetRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    portal_auth_password_reset_confirm_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PortalPasswordResetConfirmRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PortalPasswordResetConfirmRequest"];
+                "multipart/form-data": components["schemas"]["PortalPasswordResetConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    portal_auth_refresh_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalTokenResponse"];
+                };
+            };
+        };
+    };
+    portal_elevators_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedPortalElevatorList"];
+                };
+            };
+        };
+    };
+    portal_elevators_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this elevator. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalElevator"];
+                };
+            };
+        };
+    };
+    portal_faults_list: {
+        parameters: {
+            query?: {
+                elevator?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /**
+                 * @description * `open` - Open
+                 *     * `assigned` - Assigned
+                 *     * `on_site` - On site
+                 *     * `resolved` - Resolved
+                 *     * `closed` - Closed
+                 *     * `cancelled` - Cancelled
+                 */
+                status?: "assigned" | "cancelled" | "closed" | "on_site" | "open" | "resolved";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedPortalFaultList"];
+                };
+            };
+        };
+    };
+    portal_faults_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PortalFaultReportRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PortalFaultReportRequest"];
+                "multipart/form-data": components["schemas"]["PortalFaultReportRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalFault"];
+                };
+            };
+        };
+    };
+    portal_faults_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this fault. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalFault"];
+                };
+            };
+        };
+    };
+    portal_files_download_url_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this attachment. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadUrl"];
+                };
+            };
+        };
+    };
+    portal_inspections_list: {
+        parameters: {
+            query?: {
+                elevator?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedPortalInspectionList"];
+                };
+            };
+        };
+    };
+    portal_inspections_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this inspection. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalInspection"];
+                };
+            };
+        };
+    };
+    portal_me_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalMe"];
+                };
+            };
+        };
+    };
+    portal_visits_list: {
+        parameters: {
+            query?: {
+                elevator?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedPortalVisitList"];
+                };
+            };
+        };
+    };
+    portal_visits_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this maintenance visit. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalVisit"];
                 };
             };
         };

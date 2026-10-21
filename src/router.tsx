@@ -7,6 +7,7 @@ import {
   Outlet,
   RouterProvider,
   redirect,
+  useRouterState,
   type RouteComponent,
 } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
@@ -34,6 +35,7 @@ import {
   companyQuery,
   currentUserQuery,
   sessionListQuery,
+  portalAccountsQuery,
   inspectionDueQuery,
   inspectionListQuery,
   faultAttachmentsQuery,
@@ -53,6 +55,20 @@ import { todayIso } from "@/lib/date";
 import { elevatorInspectionParams } from "@/lib/inspections";
 import { ACTIVE_STATUSES, MY_ACTIVE_STATUSES, boardParams, myFaultParams } from "@/lib/faults";
 import { SessionProvider, ensureSession, type SessionOverride } from "@/lib/session";
+import {
+  PortalSessionProvider,
+  ensurePortalSession,
+  type PortalSessionOverride,
+} from "@/lib/portal-session";
+import {
+  portalElevatorQuery,
+  portalElevatorsQuery,
+  portalFaultsQuery,
+  portalInspectionsQuery,
+  portalVisitsQuery,
+  type PortalMe,
+} from "@/api/portal-queries";
+import { canManagePortal } from "@/lib/portal";
 import type { ListSearch } from "@/lib/list-search";
 import type { Role } from "@/components/layout/nav-config";
 import {
@@ -252,6 +268,35 @@ const InspectionFormScreen = lazyRouteComponent(
   () => import("@/screens/InspectionFormScreen"),
   "InspectionFormScreen",
 );
+const PortalLayout = lazyRouteComponent(() => import("@/screens/portal/PortalLayout"), "PortalLayout");
+const PortalLoginScreen = lazyRouteComponent(
+  () => import("@/screens/portal/PortalAuthScreens"),
+  "PortalLoginScreen",
+);
+const PortalAcceptScreen = lazyRouteComponent(
+  () => import("@/screens/portal/PortalAuthScreens"),
+  "PortalAcceptScreen",
+);
+const PortalPasswordResetScreen = lazyRouteComponent(
+  () => import("@/screens/portal/PortalAuthScreens"),
+  "PortalPasswordResetScreen",
+);
+const PortalPasswordResetConfirmScreen = lazyRouteComponent(
+  () => import("@/screens/portal/PortalAuthScreens"),
+  "PortalPasswordResetConfirmScreen",
+);
+const PortalHomeScreen = lazyRouteComponent(
+  () => import("@/screens/portal/PortalHomeScreen"),
+  "PortalHomeScreen",
+);
+const PortalElevatorScreen = lazyRouteComponent(
+  () => import("@/screens/portal/PortalElevatorScreen"),
+  "PortalElevatorScreen",
+);
+const PortalFaultsScreen = lazyRouteComponent(
+  () => import("@/screens/portal/PortalFaultsScreen"),
+  "PortalFaultsScreen",
+);
 const RegisterScreen = lazyRouteComponent(
   () => import("@/screens/RegisterScreen"),
   "RegisterScreen",
@@ -289,15 +334,38 @@ let sessionOverride: SessionOverride | undefined;
  */
 export const queryClient = createQueryClient();
 
-const rootRoute = createRootRoute({
-  component: () => (
+/** The portal's equivalent of `sessionOverride`, for the render check. */
+let portalSessionOverride: PortalSessionOverride | undefined;
+
+/**
+ * One provider or the other, never both.
+ *
+ * The customer portal (M6) is a different principal with its own session.
+ * Under /portal the staff provider is not mounted at all, so a portal page
+ * never asks whether there is a staff session — no staff refresh call, no
+ * staff token anywhere near it — and elsewhere the portal's provider is
+ * absent, so a staff page never touches the portal's cookie.
+ */
+function RootProviders() {
+  const inPortal = useRouterState({
+    select: (state) => state.location.pathname === "/portal" || state.location.pathname.startsWith("/portal/"),
+  });
+  return (
     <QueryClientProvider client={queryClient}>
-      <SessionProvider override={sessionOverride}>
-        <Outlet />
-      </SessionProvider>
+      {inPortal ? (
+        <PortalSessionProvider override={portalSessionOverride}>
+          <Outlet />
+        </PortalSessionProvider>
+      ) : (
+        <SessionProvider override={sessionOverride}>
+          <Outlet />
+        </SessionProvider>
+      )}
     </QueryClientProvider>
-  ),
-});
+  );
+}
+
+const rootRoute = createRootRoute({ component: RootProviders });
 
 const shellRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -453,6 +521,19 @@ function QrRoute() {
   );
 }
 
+/**
+ * The customer's portal accounts, for the roles that may see them.
+ *
+ * The role comes from the session the shell's guard has already restored —
+ * the cached answer, not a second call — so the two roles the server would
+ * refuse are never sent a request whose only answer is a 403.
+ */
+async function prefetchPortalAccounts(customerId: string) {
+  const role = sessionOverride ? sessionOverride.role : (await ensureSession())?.role;
+  if (!canManagePortal(role ?? null)) return;
+  await queryClient.ensureQueryData(portalAccountsQuery(customerId));
+}
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
@@ -517,9 +598,86 @@ const devRoutes = import.meta.env.DEV
     ]
   : [];
 
+/**
+ * The customer portal (M6): its own tree beside the staff one.
+ *
+ * The signed-out pages are reachable by anybody. The rest sit under a layout
+ * whose guard asks the portal's own question — is there a portal session —
+ * and sends a visitor without one to the portal's login, never the staff one.
+ * A member of the firm signed in to the app is, to this guard, a visitor
+ * without a portal session: they see the portal login.
+ */
+const portalRoute = createRoute({ getParentRoute: () => rootRoute, path: "/portal" });
+
+function portalPublic(path: string, component: Screen) {
+  return createRoute({
+    getParentRoute: () => portalRoute,
+    path,
+    // Already signed in: the login and the reset pages have nothing to offer.
+    beforeLoad: async () => {
+      if (portalSessionOverride === "anonymous") return;
+      if (portalSessionOverride || (await ensurePortalSession())) throw redirect({ to: "/portal" });
+    },
+    component,
+  });
+}
+
+const portalShell = createRoute({
+  getParentRoute: () => portalRoute,
+  id: "portal-shell",
+  beforeLoad: async () => {
+    if (portalSessionOverride && portalSessionOverride !== "anonymous") return;
+    if (portalSessionOverride !== "anonymous" && (await ensurePortalSession())) return;
+    throw redirect({ to: "/portal/login" });
+  },
+  component: PortalLayout,
+});
+
+function portalChild(path: string, component: Screen, loader?: Loader) {
+  return createRoute({
+    getParentRoute: () => portalShell,
+    path,
+    component,
+    // Swallowed like every staff loader: the screen owns its error state.
+    loader: loader ? (context) => loader(context as unknown as LoaderContext).catch(() => undefined) : undefined,
+  });
+}
+
+const portalTree = portalRoute.addChildren([
+  portalPublic("/login", PortalLoginScreen),
+  // Accepting an invitation is reachable signed in or not: the link in the
+  // e-mail is for whoever holds it, and it signs them in as that account.
+  createRoute({ getParentRoute: () => portalRoute, path: "/accept/$token", component: PortalAcceptScreen }),
+  portalPublic("/password-reset", PortalPasswordResetScreen),
+  portalPublic("/password-reset/$token", PortalPasswordResetConfirmScreen),
+  portalShell.addChildren([
+    // Each screen's data warmed before it draws, the same keys the screens read.
+    portalChild("/", PortalHomeScreen, async () => {
+      await Promise.all([
+        queryClient.ensureQueryData(portalElevatorsQuery()),
+        queryClient.ensureQueryData(portalFaultsQuery()),
+      ]);
+    }),
+    portalChild("/elevators/$id", PortalElevatorScreen, async ({ params }) => {
+      await Promise.all([
+        queryClient.ensureQueryData(portalElevatorQuery(params.id)),
+        queryClient.ensureQueryData(portalVisitsQuery({ elevator: params.id, page_size: 12 })),
+        queryClient.ensureQueryData(portalInspectionsQuery({ elevator: params.id, page_size: 10 })),
+      ]);
+    }),
+    portalChild("/faults", PortalFaultsScreen, async () => {
+      await Promise.all([
+        queryClient.ensureQueryData(portalElevatorsQuery()),
+        queryClient.ensureQueryData(portalFaultsQuery()),
+      ]);
+    }),
+  ]),
+]);
+
 export const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
+  portalTree,
   qrRoute,
   ...devRoutes,
   publicRoute("/register", RegisterScreen),
@@ -617,6 +775,7 @@ export const routeTree = rootRoute.addChildren([
         queryClient.ensureQueryData(customerQuery(id)),
         queryClient.ensureQueryData(buildingListQuery({ customer: id, page_size: 100 })),
         queryClient.ensureQueryData(contractListQuery({ customer: id, page_size: 100 })),
+        prefetchPortalAccounts(id),
       ]);
     }),
     shellChild("/complexes/new", ComplexFormScreen),
@@ -837,6 +996,7 @@ export { RouterProvider };
  * so rendering only one of them leaves the others untested.
  */
 export function createRouterForPath(path: string, role?: Role) {
+  portalSessionOverride = undefined;
   sessionOverride = role
     ? {
         role,
@@ -847,6 +1007,23 @@ export function createRouterForPath(path: string, role?: Role) {
         userId: "u2",
       }
     : undefined;
+  return createRouter({
+    routeTree,
+    history: createMemoryHistory({ initialEntries: [path] }),
+  });
+}
+
+/**
+ * A router pinned to a portal path, signed in to the portal as the account the
+ * caller hands over, or signed out (`null`) — for the render check, which has
+ * no server to restore a portal session from. The account comes from the
+ * caller's fixtures rather than living here, so no demo data ships in the
+ * application. The staff session is left unset either way: a portal page must
+ * render without one.
+ */
+export function createRouterForPortalPath(path: string, me: PortalMe | null) {
+  sessionOverride = undefined;
+  portalSessionOverride = me ? { me } : "anonymous";
   return createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [path] }),
