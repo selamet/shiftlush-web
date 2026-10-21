@@ -24,14 +24,15 @@ const CONSTANT = join(root, "src", "lib", "password.ts");
 /**
  * Schemas whose password field deliberately declares no floor.
  *
- * Sign-in takes whatever the account already has. Applying the current policy
+ * Sign-in takes whatever the account already has — the staff sign-in and the
+ * customer portal's alike. Applying the current policy
  * there would lock out anyone whose password predates it, and would state the
  * rule in a second place besides.
  *
  * Listed by name so that a new schema carrying a password is checked by
  * default. Silence should mean "checked", never "forgotten".
  */
-const NO_POLICY = ["LoginRequest"];
+const NO_POLICY = ["LoginRequest", "PortalLoginRequest"];
 
 /**
  * Property names that carry the password policy.

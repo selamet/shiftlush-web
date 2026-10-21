@@ -19,6 +19,8 @@ import { DetailSkeleton, ListError } from "@/components/list/ListStates";
 import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useSession } from "@/lib/session";
+import { canManagePortal } from "@/lib/portal";
+import { PortalAccessCard } from "@/components/customers/PortalAccessCard";
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -352,6 +354,14 @@ export function CustomerDetailScreen() {
           >
             <ContactList customer={customer} canWrite={canWrite} />
           </Card>
+
+          {/* The office's say over the customer portal (M6). Owner, admin and
+              operations — the same three the server lets invite and switch off. */}
+          {canManagePortal(role) && (
+            <Card title={t("portalAccess.title")}>
+              <PortalAccessCard customer={customer} />
+            </Card>
+          )}
 
           <Card title={t("customerDetail.contracts")}>
             {ownContracts.length === 0 ? (

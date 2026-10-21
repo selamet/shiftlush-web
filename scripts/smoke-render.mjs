@@ -323,6 +323,11 @@ const EXPECT_ABSENT = {
  */
 const VISITS_RESTRICTED = "Bakım kayıtları rolünüzde görünmüyor";
 const EXPECT_BY_ROLE = {
+  // The office's say over the customer portal: the contact with an account,
+  // and the way to switch it off. Owner, admin and operations only.
+  "/customers/c1": {
+    add: { owner: ["Portal erişimi", "Etkin", "Erişimi kapat"], operations: ["Portal erişimi", "Etkin", "Erişimi kapat"] },
+  },
   "/elevators/e1": {
     // The maintenance dates as the server sends them on the elevator.
     all: ["Bakım kaydı gir", "Bakım geçmişi", "14.10.2026", "13.11.2026", "Bu ayın planı", "Hakan Çelik", "Arıza bildir", "Muayene geçmişi", "PK-2026-18442", "Kuyu dibi aydınlatması yetersiz"],
@@ -458,6 +463,7 @@ const EXPECT_BY_ROLE = {
  * offer them a way in — the absence is the property being asserted.
  */
 const EXPECT_ABSENT_BY_ROLE = {
+  "/customers/c1": { add: { technician: ["Portal erişimi"], accountant: ["Portal erişimi"] } },
   "/elevators/e1": {
     replace: { accountant: ["Bakım kaydı gir", "Bakım geçmişi", "Bu ayın planı", "Arıza bildir", "Muayene geçmişi"] },
     // Read-only for a technician: no record, no fault, no "fixed".
@@ -500,7 +506,9 @@ try {
   // Everything comes from the app's own module graph: importing the router
   // package separately creates a second instance and React context stops
   // matching, which looks like a render bug but is a module-identity bug.
-  const { createRouterForPath, RouterProvider } = await server.ssrLoadModule("/src/router.tsx");
+  const { createRouterForPath, createRouterForPortalPath, RouterProvider } = await server.ssrLoadModule(
+    "/src/router.tsx",
+  );
 
   for (const path of PATHS) {
     const errors = [];
@@ -618,6 +626,66 @@ try {
     failures += 1;
   } else {
     console.log("  OK    a resident at the sticker gets the public report, and asks nothing else");
+  }
+
+  // The customer portal (M6): its own tree and its own session. Signed out,
+  // every public page renders; signed in (through the override, as a demo
+  // building manager), the three screens render. Neither ever asks the staff
+  // session anything — no /auth/refresh, no staff endpoint — which is the
+  // wall between the two principals, checked on the wire.
+  const portalMe = JSON.parse(readFileSync("fixtures/demo-portal-me.json", "utf8"));
+  const PORTAL = [
+    ["/portal/login", null, ["Portala giriş", "Şifremi unuttum"]],
+    ["/portal/accept/some-token", null, ["Hesabınızı açın", "Şifreyi kaydet ve giriş yap"]],
+    ["/portal/password-reset", null, ["Şifre sıfırlama"]],
+    ["/portal/password-reset/some-token", null, ["Yeni şifre belirleyin"]],
+    [
+      "/portal",
+      portalMe,
+      [
+        "Dadaş Konakları Site Yönetimi",
+        "Bizi arayın: 0442 000 00 00",
+        "Sol asansör",
+        "1 arıza üzerinde çalışılıyor",
+        "Asansör şu anda çalışmıyor",
+      ],
+    ],
+    [
+      "/portal/elevators/e1",
+      portalMe,
+      ["Bakım ziyaretleri", "Halatlar ve kablolar", "PK-2026-18442", "Muayene raporu (PDF)", "1. fotoğraf"],
+    ],
+    ["/portal/faults", portalMe, ["Arıza bildir", "Kabinde mahsur kalan var", "K7M2QX", "Kılavuz raylar yağlandı."]],
+  ];
+  for (const [path, me, needles] of PORTAL) {
+    requested.length = 0;
+    const router = createRouterForPortalPath(path, me);
+    await router.load();
+    const html = renderToString(React.createElement(RouterProvider, { router }));
+    const staffAsked = requested.filter((asked) => asked.startsWith("/api/v1/") && !asked.startsWith("/api/v1/portal/"));
+    const missing = needles.filter((needle) => !html.includes(needle));
+    if (html.includes("data-error-boundary") || missing.length > 0) {
+      console.error(`  FAIL  ${path} (portal${me ? ", signed in" : ""}) — no "${missing[0] ?? "render"}"`);
+      failures += 1;
+    } else if (staffAsked.length > 0) {
+      console.error(`  FAIL  ${path} (portal) asked the staff API: ${staffAsked[0]}`);
+      failures += 1;
+    } else {
+      console.log(`  OK    ${path} (portal${me ? ", signed in" : ", signed out"})`);
+    }
+  }
+
+  // A visitor with no portal session at the portal's home: sent to its login,
+  // and the portal's data is never asked for.
+  requested.length = 0;
+  const portalGuest = createRouterForPortalPath("/portal", null);
+  await portalGuest.load();
+  const leaked = requested.filter((asked) => asked.startsWith("/api/v1/portal/") && asked !== "/api/v1/portal/auth/refresh");
+  if (leaked.length > 0) {
+    console.error(`  FAIL  a visitor with no portal session requested ${leaked[0]}`);
+    failures += 1;
+  } else {
+    console.log("  OK    a visitor with no portal session asks the portal for nothing");
   }
   // The styleguide renders above, on a dev server, which is the only place it
   // is a route at all — `router.tsx` builds it inside an `import.meta.env.DEV`

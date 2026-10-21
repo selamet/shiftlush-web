@@ -1419,3 +1419,41 @@ export function updateNonConformity(id: string, body: NonConformityEdit) {
 export function openFaultForNonConformity(id: string) {
   return api.post<NonConformity>(`/nonconformities/${id}/open-fault/`);
 }
+
+// --------------------------------------------------------------------------
+// Customer portal access, from the office (M6)
+//
+// The office's side of the portal: inviting a customer's contact, seeing who
+// has an account, switching one off. These are staff endpoints, under the
+// staff client and the staff token; the portal's own calls are elsewhere.
+// --------------------------------------------------------------------------
+
+export type PortalAccount = Schemas["PortalAccount"];
+
+export const portalAccessKeys = {
+  all: ["portal-access"] as const,
+  accounts: (customerId: string) => ["portal-access", "accounts", customerId] as const,
+} as const;
+
+export function portalAccountsQuery(customerId: string) {
+  return queryOptions({
+    queryKey: portalAccessKeys.accounts(customerId),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<PortalAccount>>(`/customers/${customerId}/portal-accounts/`, {
+        query: { page_size: 100 },
+        signal,
+      }),
+  });
+}
+
+/**
+ * Inviting a contact. The invitation goes to the contact's own e-mail; sending
+ * again to an invited or switched-off contact issues a fresh link.
+ */
+export function invitePortalContact(customerId: string, contactId: string) {
+  return api.post<PortalAccount>(`/customers/${customerId}/portal-invitations/`, { contact: contactId });
+}
+
+export function deactivatePortalAccount(accountId: string) {
+  return api.post<PortalAccount>(`/portal-accounts/${accountId}/deactivate/`);
+}

@@ -92,7 +92,8 @@ export function lastSeenRequestId(): string {
   return lastRequestId;
 }
 
-function noteRequestId(id: string | null | undefined): void {
+/** Exported for the portal client, so its failures carry a reference too. */
+export function noteRequestId(id: string | null | undefined): void {
   if (id) lastRequestId = id;
 }
 
@@ -149,7 +150,21 @@ async function refreshAccessToken(): Promise<boolean> {
   return refreshInFlight;
 }
 
-async function toApiError(response: Response): Promise<ApiError> {
+/**
+ * Whether a path belongs to the customer portal (M6).
+ *
+ * The portal is a different principal with its own tokens, and the two must
+ * never cross: a staff token sent to a portal endpoint, or a portal token to a
+ * staff one, is either refused or — worse — accepted by the wrong half. So
+ * each client refuses the other's paths outright, before anything is sent.
+ * See `portal-client.ts` for the portal half.
+ */
+export function isPortalPath(path: string): boolean {
+  return path === "/portal" || path.startsWith("/portal/");
+}
+
+/** Shared with the portal client, so a portal failure reads like any other. */
+export async function toApiError(response: Response): Promise<ApiError> {
   let code: ErrorCode | ClientErrorCode = "UNKNOWN_ERROR";
   let requestId = "";
   let details: FieldError[] = [];
@@ -182,7 +197,8 @@ export interface RequestOptions {
   idempotencyKey?: string;
 }
 
-function buildUrl(path: string, query?: RequestOptions["query"]): string {
+/** Shared with the portal client: one base URL, one way of spelling a query. */
+export function buildUrl(path: string, query?: RequestOptions["query"]): string {
   const url = new URL(`${BASE_URL}/api/v1${path}`);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== undefined && value !== null && value !== "") {
@@ -248,6 +264,12 @@ async function attempt(path: string, options: RequestOptions): Promise<Response>
  * the refresh and the error envelope in it — the part that must not exist twice.
  */
 async function sendWithAuth(path: string, options: RequestOptions): Promise<Response> {
+  if (isPortalPath(path)) {
+    // Checked here rather than in `send`, whose caller turns any throw into
+    // NETWORK_ERROR. A programming error, not a failure to report to a person: the staff
+    // token has no business at the portal, and nothing here may send it.
+    throw new Error(`The staff client does not call portal paths: ${path}`);
+  }
   let response = await attempt(path, options);
 
   if (response.status === 401 && !options.anonymous) {

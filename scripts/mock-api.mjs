@@ -412,6 +412,102 @@ function resolve(path, search, method, body) {
     }
   }
 
+  // The customer portal (M6), as one building manager sees it: two lifts,
+  // one with a fault being worked on; a visit with a photo and one item that
+  // needs attention; an inspection with its report. The refresh answers 404,
+  // like the staff one does for a visitor with no session — the render check
+  // signs in to the portal through an override, never through this.
+  if (path.startsWith("/api/v1/portal/")) {
+    if (path === "/api/v1/portal/auth/refresh") return null;
+    if (path === "/api/v1/portal/me") return fixture("demo-portal-me");
+    const lifts = [
+      {
+        id: "e1", name: "Sol asansör", building: "b1", building_name: "A Blok", status: "active",
+        last_maintenance_date: "2026-10-14", next_maintenance_date: "2026-11-13",
+        inspection_label: "yellow", next_inspection_date: "2027-03-14",
+      },
+      {
+        id: "e2", name: "Sağ asansör", building: "b1", building_name: "A Blok", status: "out_of_service",
+        last_maintenance_date: "2026-09-15", next_maintenance_date: "2026-10-15",
+        inspection_label: "green", next_inspection_date: "2027-03-14",
+      },
+    ];
+    const lift = /^\/api\/v1\/portal\/elevators\/([^/]+)\/$/.exec(path);
+    if (lift) return lifts.find((one) => one.id === lift[1]) ?? null;
+    if (path === "/api/v1/portal/elevators/") return page(lifts);
+    if (path === "/api/v1/portal/visits/") {
+      return page([
+        {
+          id: "v1", elevator: "e1", elevator_name: "Sol asansör", visit_date: "2026-10-14", status: "completed",
+          technician_first_name: "Hakan", parts_replaced: "Kabin aydınlatma armatürü (1 adet)",
+          items: [
+            { item: "brake_system", result: "ok" },
+            { item: "hoisting_ropes", result: "attention_needed" },
+          ],
+          photos: [{ id: "att-photo", original_filename: "kabin.jpg", mime_type: "image/jpeg", category: "photo" }],
+        },
+      ]);
+    }
+    if (path === "/api/v1/portal/inspections/") {
+      return page([
+        {
+          id: "i1", elevator: "e1", elevator_name: "Sol asansör", kind: "periodic", inspected_on: "2026-03-14",
+          inspection_body: "TÜV Austria Türk", report_number: "PK-2026-18442", label: "yellow",
+          next_inspection_due: "2027-03-14", report: "att-report",
+          nonconformities: [
+            { id: "nc1", description: "Kuyu dibi aydınlatması yetersiz", severity: "yellow", status: "open", fixed_on: null },
+          ],
+        },
+      ]);
+    }
+    const portalFaults = [
+      {
+        id: "pf1", reference: "K7M2QX", elevator: "e1", elevator_name: "Sol asansör", building_name: "A Blok",
+        channel: "customer_portal", status: "assigned", priority: "high", description: "Kapı tam kapanmıyor.",
+        reported_at: "2026-10-20T07:50:00Z", assigned_at: "2026-10-20T08:00:00Z", on_site_at: null,
+        resolved_at: null, closed_at: null, cancelled_at: null, technician_first_name: "Hakan",
+        resolution_notes: "", reported_by_me: true,
+      },
+      {
+        id: "pf2", reference: "Z9Q1AA", elevator: "e2", elevator_name: "Sağ asansör", building_name: "A Blok",
+        channel: "staff", status: "closed", priority: "normal", description: "Gürültü.",
+        reported_at: "2026-10-10T09:00:00Z", assigned_at: null, on_site_at: null, resolved_at: "2026-10-10T10:30:00Z",
+        closed_at: "2026-10-11T08:00:00Z", cancelled_at: null, technician_first_name: "Hakan",
+        resolution_notes: "Kılavuz raylar yağlandı.", reported_by_me: false,
+      },
+    ];
+    if (method === "POST" && path === "/api/v1/portal/faults/") {
+      return { ...portalFaults[0], ...body, id: "pf-new", reference: "N3W0NE", status: "open" };
+    }
+    if (path === "/api/v1/portal/faults/") return page(portalFaults);
+    const file = /^\/api\/v1\/portal\/files\/([^/]+)\/download-url\/$/.exec(path);
+    if (file) return { download_url: `https://files.example/${file[1]}`, expires_in: 300 };
+    return null;
+  }
+
+  // The office's side of the portal: the first contact has an active account,
+  // the rest none — so the card shows both a deactivate and an invite.
+  const portalAccounts = /^\/api\/v1\/customers\/([^/]+)\/portal-accounts\/$/.exec(path);
+  if (portalAccounts) {
+    const contacts = fixture("demo-customers").find((one) => one.id === portalAccounts[1])?.contacts ?? [];
+    return page(
+      contacts.slice(0, 1).map((contact) => ({
+        id: "pa1", email: contact.email, customer: portalAccounts[1], contact: contact.id,
+        contact_name: contact.full_name, status: "active", invited_at: "2026-10-01T09:00:00Z",
+        accepted_at: "2026-10-02T09:00:00Z", deactivated_at: null, last_login_at: "2026-10-20T18:00:00Z",
+      })),
+    );
+  }
+  const portalInvite = /^\/api\/v1\/customers\/([^/]+)\/portal-invitations\/$/.exec(path);
+  if (method === "POST" && portalInvite) {
+    return {
+      id: "pa-new", email: "", customer: portalInvite[1], contact: body?.contact, contact_name: "",
+      status: "invited", invited_at: "2026-10-21T09:00:00Z", accepted_at: null, deactivated_at: null, last_login_at: null,
+    };
+  }
+  const portalOff = /^\/api\/v1\/portal-accounts\/([^/]+)\/deactivate\/$/.exec(path);
+  if (method === "POST" && portalOff) return { id: portalOff[1], status: "inactive" };
+
   if (path === "/api/v1/audit-logs/") return page(fixture("demo-audit-logs-elevator"));
 
   // Maintenance visits. The create answers with the read shape — the view
