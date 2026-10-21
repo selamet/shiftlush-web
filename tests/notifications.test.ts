@@ -179,6 +179,43 @@ describe("describeNotification", () => {
     ).toContain("Hakan Çelik tarafından çözüldü olarak işaretlendi");
   });
 
+  it("words the inspection kinds as their e-mails do", () => {
+    const base = { elevator_name: "Sol asansör", building_name: "A Blok" };
+    expect(
+      describeNotification(
+        notification("inspection_due", { ...base, next_inspection_date: "2027-03-14", inspection_body: "TÜV Austria Türk" }),
+        t,
+      ).body,
+    ).toBe(
+      "A Blok binasındaki Sol asansör asansörünün periyodik muayenesi 14.03.2027 tarihinde yapılmalı. " +
+        "Son muayeneyi yapan kuruluş: TÜV Austria Türk. Muayene randevusunu şimdiden planlayabilirsiniz.",
+    );
+    const near = describeNotification(
+      notification("correction_deadline_near", {
+        ...base,
+        label: "yellow",
+        correction_deadline: "2026-11-05",
+        days_left: 15,
+        open_nonconformities: 2,
+      }),
+      t,
+    );
+    expect(near.title).toBe("Düzeltme süresi yaklaşıyor: Sol asansör (A Blok), 15 gün kaldı");
+    expect(near.body).toContain("sarı etiketle bildirilen kusurlarının 05.11.2026 tarihine kadar");
+    expect(
+      describeNotification(
+        notification("correction_deadline_passed", { ...base, correction_deadline: "2026-10-20", open_nonconformities: 1 }),
+        t,
+      ).title,
+    ).toBe("MÜHÜR RİSKİ: Sol asansör (A Blok) düzeltme süresi doldu");
+    expect(
+      describeNotification(
+        notification("inspection_red_label", { ...base, inspected_on: "2026-10-20", correction_deadline: "2026-12-19" }),
+        t,
+      ).body,
+    ).toContain("20.10.2026 tarihli periyodik muayenede kırmızı etiket aldı");
+  });
+
   it("falls back to a plain notice for a kind this client does not know", () => {
     const words = describeNotification(notification("invoice_overdue", { amount: "100" }), t);
     expect(words).toEqual({

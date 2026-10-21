@@ -219,10 +219,13 @@ function positiveInt(value: unknown): number | undefined {
  * e-mailed `?unread=true` arrives as the boolean `true`, not the string — and
  * read as "not a string" it was silently dropped, showing every row under a
  * link that promised a filter. A link the app builds itself quotes the value
- * and was never affected. Booleans are read back as the text the API takes.
+ * and was never affected. Booleans and numbers are read back as the text the
+ * API takes.
  */
 function text(value: unknown): string {
   if (typeof value === "boolean") return String(value);
+  // The same for numbers: `?days=30` and `?district=2045` arrive as numbers.
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
   return typeof value === "string" ? value.trim() : "";
 }
 

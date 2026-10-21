@@ -6,6 +6,7 @@ import {
   CalendarCheck,
   CalendarRange,
   ClipboardCheck,
+  ShieldCheck,
   Siren,
   Wrench,
   FileText,
@@ -100,6 +101,13 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: "fault.title",
         icon: Siren,
         roles: ["owner", "admin", "operations", "technician"],
+      },
+      {
+        // What the inspectorate expects next, and what gets a lift sealed.
+        to: "/inspections",
+        labelKey: "inspection.title",
+        icon: ShieldCheck,
+        roles: ["owner", "admin", "operations"],
       },
       {
         // The office's month. Beside the visits it plans for.

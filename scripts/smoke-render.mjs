@@ -127,6 +127,9 @@ const PATHS = [
   "/faults/f4",
   "/my-faults",
   "/elevators/e1/faults/new",
+  "/inspections",
+  "/inspections?days=%2230%22",
+  "/elevators/e1/inspections/new",
   "/settings",
   // Its own route rather than a tab behind a click, which is what makes it
   // renderable here at all: the password form and the session list are the two
@@ -275,7 +278,7 @@ const EXPECT = {
     // The e-mail choices, one per kind, as the server stored them — and the
     // one the server will not let anybody turn off, said as such.
     "E-posta ile de gönder",
-    "Mahsur kalan bildirimleri her zaman e-postayla da gönderilir.",
+    "Bu bildirim her zaman e-postayla da gönderilir; kapatılamaz.",
     "Bakım gecikti",
   ],
 };
@@ -322,8 +325,26 @@ const VISITS_RESTRICTED = "Bakım kayıtları rolünüzde görünmüyor";
 const EXPECT_BY_ROLE = {
   "/elevators/e1": {
     // The maintenance dates as the server sends them on the elevator.
-    all: ["Bakım kaydı gir", "Bakım geçmişi", "14.10.2026", "13.11.2026", "Bu ayın planı", "Hakan Çelik", "Arıza bildir"],
+    all: ["Bakım kaydı gir", "Bakım geçmişi", "14.10.2026", "13.11.2026", "Bu ayın planı", "Hakan Çelik", "Arıza bildir", "Muayene geçmişi", "PK-2026-18442", "Kuyu dibi aydınlatması yetersiz"],
+    add: { owner: ["Muayene kaydı gir", "Arıza aç"], operations: ["Muayene kaydı gir", "Arıza aç"] },
     replace: { accountant: [] },
+  },
+  // What is due: the passed correction deadline named as a sealing risk, and
+  // the inspection coming up. Technicians read it too.
+  "/inspections": {
+    all: ["Mühürlenme riski", "Sol asansör", "Sağ asansör", "Yaklaşan muayeneler", "1 açık uygunsuzluk"],
+    replace: { accountant: ["Muayeneler rolünüzde görünmüyor"] },
+  },
+  "/inspections?days=%2230%22": {
+    all: ["30 gün", "Mühürlenme riski"],
+    replace: { accountant: ["Muayeneler rolünüzde görünmüyor"] },
+  },
+  "/elevators/e1/inspections/new": {
+    all: ["Muayene türü", "Etiketi seçin", "Uygunsuzluk ekle", "Sonraki periyodik muayene"],
+    replace: {
+      technician: ["Muayene kaydını firma sahibi, yöneticiler ve operasyon ekibi girer."],
+      accountant: ["Muayene kaydını firma sahibi, yöneticiler ve operasyon ekibi girer."],
+    },
   },
   // The live board: the emergency first and named as one, the resident's
   // report marked, nobody sent yet said in words. Technicians read it too.
@@ -438,7 +459,9 @@ const EXPECT_BY_ROLE = {
  */
 const EXPECT_ABSENT_BY_ROLE = {
   "/elevators/e1": {
-    replace: { accountant: ["Bakım kaydı gir", "Bakım geçmişi", "Bu ayın planı", "Arıza bildir"] },
+    replace: { accountant: ["Bakım kaydı gir", "Bakım geçmişi", "Bu ayın planı", "Arıza bildir", "Muayene geçmişi"] },
+    // Read-only for a technician: no record, no fault, no "fixed".
+    add: { technician: ["Muayene kaydı gir", "Arıza aç"] },
   },
   // The board is live work; closed history is behind the status filter.
   "/faults": { all: ["Z9Q1AA"] },

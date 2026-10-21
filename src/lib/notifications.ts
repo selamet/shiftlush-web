@@ -32,6 +32,10 @@ const REQUIRED: Record<string, readonly string[]> = {
   fault_emergency: ["reference", "elevator_name", "building_name"],
   fault_assigned: ["reference", "elevator_name", "building_name"],
   fault_resolved: ["reference", "elevator_name", "building_name"],
+  inspection_due: ["elevator_name", "building_name", "next_inspection_date"],
+  correction_deadline_near: ["elevator_name", "building_name", "correction_deadline"],
+  correction_deadline_passed: ["elevator_name", "building_name", "correction_deadline"],
+  inspection_red_label: ["elevator_name", "building_name", "inspected_on", "correction_deadline"],
 };
 
 export interface NotificationText {
@@ -128,6 +132,11 @@ export function describeNotification(notification: AppNotification, t: TFunction
     case "fault_assigned":
     case "fault_resolved":
       return { ...describeFault(kind, data, t), known: true };
+    case "inspection_due":
+    case "correction_deadline_near":
+    case "correction_deadline_passed":
+    case "inspection_red_label":
+      return { ...describeInspection(kind, data, t), known: true };
     case "visit_assigned": {
       // The month as the e-mail spells it — month name and year — from Intl rather
       // than a list of month names in this file.
@@ -146,6 +155,56 @@ export function describeNotification(notification: AppNotification, t: TFunction
     default:
       return { title: t("notification.unknown.title"), body: t("notification.unknown.body"), known: false };
   }
+}
+
+/**
+ * The four inspection kinds, worded as their e-mails are. The two that are
+ * always e-mailed say so in the e-mail; in the app there is no inbox to be
+ * independent of, so that sentence is left out here.
+ */
+function describeInspection(
+  kind: "inspection_due" | "correction_deadline_near" | "correction_deadline_passed" | "inspection_red_label",
+  data: AppNotification["data"],
+  t: TFunction,
+): Omit<NotificationText, "known"> {
+  const base = {
+    elevator: text(data, "elevator_name"),
+    building: text(data, "building_name"),
+    deadline: toDisplay(text(data, "correction_deadline")),
+    days: text(data, "days_left"),
+    open: text(data, "open_nonconformities") || "0",
+  };
+  const title = t(`notification.subject.${kind}`, base);
+  if (kind === "inspection_due") {
+    const inspector = text(data, "inspection_body");
+    return {
+      title,
+      body: t(inspector ? "notification.body.inspection_due_withBody" : "notification.body.inspection_due", {
+        ...base,
+        date: toDisplay(text(data, "next_inspection_date")),
+        inspector,
+      }),
+    };
+  }
+  if (kind === "correction_deadline_near") {
+    return {
+      title,
+      body: t(
+        text(data, "label") === "red"
+          ? "notification.body.correction_deadline_near_red"
+          : "notification.body.correction_deadline_near_yellow",
+        base,
+      ),
+    };
+  }
+  if (kind === "correction_deadline_passed") return { title, body: t("notification.body.correction_deadline_passed", base) };
+  return {
+    title,
+    body: t("notification.body.inspection_red_label", {
+      ...base,
+      inspected: toDisplay(text(data, "inspected_on")),
+    }),
+  };
 }
 
 /**

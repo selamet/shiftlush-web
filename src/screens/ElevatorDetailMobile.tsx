@@ -10,6 +10,8 @@ import { toDisplay } from "@/lib/date";
 import { canRecordVisits } from "@/lib/visit";
 import { canReadPlan } from "@/lib/plan";
 import { canUseFaults } from "@/lib/faults";
+import { canReadInspections, canRecordInspections } from "@/lib/inspections";
+import { InspectionHistory, RecordInspectionLink } from "@/components/inspections/InspectionHistory";
 import { ElevatorPlanCard } from "@/components/plan/ElevatorPlanCard";
 import { buttonVariants } from "@/components/ui/button";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
@@ -157,6 +159,16 @@ export function ElevatorDetailMobile({
             {attachmentCount}
           </span>
         </section>
+
+        {canReadInspections(role) && (
+          <section className="rounded-lg border border-border-subtle bg-card p-4">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <h2 className="text-colhead uppercase text-subtle">{t("inspection.history")}</h2>
+              {canRecordInspections(role) && <RecordInspectionLink elevatorId={elevator.id} />}
+            </div>
+            <InspectionHistory elevatorId={elevator.id} canWrite={canRecordInspections(role)} compact />
+          </section>
+        )}
 
         {canReadPlan(role) && (
           <section className="rounded-lg border border-border-subtle bg-card p-4">

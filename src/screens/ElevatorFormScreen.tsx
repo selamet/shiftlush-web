@@ -149,9 +149,8 @@ export function ElevatorFormScreen() {
           const hasCarDoor = Boolean(
             (event.currentTarget.elements.namedItem("has_car_door") as HTMLInputElement)?.checked,
           );
-          // Cast: the contract in hand still lists the inspection fields as
-          // writable (one as required); the server about to ship refuses them.
-          // `elevatorWriteBody` leaves them out either way.
+          // The inspection fields are the inspection records' and the server
+          // refuses them here; `elevatorWriteBody` leaves them out.
           submit(elevatorWriteBody(formValues(event.currentTarget), hasCarDoor) as ElevatorWrite);
         }}
       >
@@ -402,6 +401,17 @@ function InspectionSummary({ record }: { record: Elevator | undefined }) {
         <p className="text-body text-muted-foreground">{t("elevator.inspectionNone")}</p>
       )}
       <p className="text-help text-muted-foreground">{t("elevator.inspectionReadOnly")}</p>
+      {/* Where these values are changed now: by recording the inspection
+          they came from. A new elevator has nothing to inspect yet. */}
+      {record && (
+        <Link
+          to="/elevators/$id/inspections/new"
+          params={{ id: record.id }}
+          className="self-start text-body text-primary hover:underline"
+        >
+          {t("inspection.record")}
+        </Link>
+      )}
     </div>
   );
 }

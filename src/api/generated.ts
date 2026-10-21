@@ -1171,6 +1171,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/inspections/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Inspections, recorded by the office and read by technicians.
+         *
+         *     No DELETE: an inspection is a third party's statement about the lift, and a
+         *     wrong one is corrected (PATCH), not removed.
+         */
+        get: operations["inspections_list"];
+        put?: never;
+        /**
+         * @description Inspections, recorded by the office and read by technicians.
+         *
+         *     No DELETE: an inspection is a third party's statement about the lift, and a
+         *     wrong one is corrected (PATCH), not removed.
+         */
+        post: operations["inspections_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inspections/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Inspections, recorded by the office and read by technicians.
+         *
+         *     No DELETE: an inspection is a third party's statement about the lift, and a
+         *     wrong one is corrected (PATCH), not removed.
+         */
+        get: operations["inspections_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description Inspections, recorded by the office and read by technicians.
+         *
+         *     No DELETE: an inspection is a third party's statement about the lift, and a
+         *     wrong one is corrected (PATCH), not removed.
+         */
+        patch: operations["inspections_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/inspections/{id}/nonconformities/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Record one more defect the inspector found. */
+        post: operations["inspections_nonconformities_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inspections/due/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description What is due across the firm: inspections, and correction deadlines.
+         *
+         *     Inspections come from each lift's next inspection date (which the latest
+         *     inspection sets, or Phase 1 data where none is recorded). Corrections are
+         *     the yellow and red deadlines of each lift's current inspection while a
+         *     defect is still open. Overdue items stay on the list until dealt with —
+         *     they are the ones that end in a seal. Ordered by date.
+         */
+        get: operations["inspections_due_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invitations/": {
         parameters: {
             query?: never;
@@ -1418,6 +1516,46 @@ export interface paths {
         get: operations["neighborhoods_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/nonconformities/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A defect an inspection found: fixed, waived, or sent to a technician. */
+        get: operations["nonconformities_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description A defect an inspection found: fixed, waived, or sent to a technician. */
+        patch: operations["nonconformities_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/nonconformities/{id}/open-fault/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Open an M4 fault on the lift to fix this defect, and link it.
+         *
+         *     201 with the fault's id in `fault` when one was opened; 200 when the
+         *     defect already had one, which is returned instead of a second.
+         */
+        post: operations["nonconformities_open_fault_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1881,9 +2019,10 @@ export interface components {
          *     * `user` - User
          *     * `maintenance_visit` - Maintenance visit
          *     * `fault` - Fault
+         *     * `inspection` - Inspection
          * @enum {string}
          */
-        AttachmentObjectType: "elevator" | "building" | "contract" | "customer" | "company" | "user" | "maintenance_visit" | "fault";
+        AttachmentObjectType: "elevator" | "building" | "contract" | "customer" | "company" | "user" | "maintenance_visit" | "fault" | "inspection";
         AuditLog: {
             /** Format: uuid */
             readonly company_id: string;
@@ -2392,6 +2531,24 @@ export interface components {
          * @enum {string}
          */
         DriveTypeEnum: "geared_electric" | "gearless_electric" | "hydraulic";
+        /** @description One thing due: a periodic inspection, or a correction deadline. */
+        DueItem: {
+            type: components["schemas"]["InspectionDueType"];
+            /** Format: date */
+            date: string;
+            days_left: number;
+            /** Format: uuid */
+            elevator: string;
+            elevator_name: string;
+            building_name: string;
+            customer_name: string;
+            /** @description The lift's current label. */
+            label: string;
+            /** Format: uuid */
+            inspection: string | null;
+            open_nonconformities: number;
+            sealed_if_missed: boolean;
+        };
         /**
          * @description The six values that decide what happens next on site.
          *
@@ -2568,14 +2725,6 @@ export interface components {
             ce_certificate_number?: string;
             /** Format: date */
             warranty_end_date?: string | null;
-            /** Format: date */
-            last_inspection_date?: string | null;
-            /** @default none */
-            inspection_label: components["schemas"]["InspectionLabelEnum"];
-            /** Format: date */
-            next_inspection_date?: string | null;
-            inspection_body?: string;
-            inspection_report_number?: string;
             status?: components["schemas"]["ElevatorWriteStatusEnum"];
             /** Format: int64 */
             maintenance_interval_days?: number;
@@ -2708,6 +2857,38 @@ export interface components {
              */
             readonly confidence: number;
         };
+        /** @description What the inspector's report says. The deadline is the server's. */
+        InspectionCreateRequest: {
+            /** Format: uuid */
+            elevator: string;
+            /** @default periodic */
+            kind: components["schemas"]["InspectionKind"];
+            /** Format: uuid */
+            follows?: string | null;
+            /** Format: date */
+            inspected_on: string;
+            inspection_body?: string;
+            report_number?: string;
+            label: components["schemas"]["InspectionResultLabel"];
+            /**
+             * Format: date
+             * @description Defaults to a year after `inspected_on`; for a follow-up, to the date the inspection it follows set.
+             */
+            next_inspection_due?: string | null;
+            nonconformities?: components["schemas"]["NonConformityEntryRequest"][];
+        };
+        /**
+         * @description * `inspection` - Periodic inspection
+         *     * `correction` - Correction deadline
+         * @enum {string}
+         */
+        InspectionDueType: "inspection" | "correction";
+        /**
+         * @description * `periodic` - Periodic
+         *     * `follow_up` - Follow-up
+         * @enum {string}
+         */
+        InspectionKind: "periodic" | "follow_up";
         /**
          * @description * `green` - Green
          *     * `blue` - Blue
@@ -2717,6 +2898,50 @@ export interface components {
          * @enum {string}
          */
         InspectionLabelEnum: "green" | "blue" | "yellow" | "red" | "none";
+        InspectionRead: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly elevator: string;
+            readonly elevator_name: string;
+            readonly building_name: string;
+            /** Format: uuid */
+            readonly customer: string;
+            readonly customer_name: string;
+            readonly kind: components["schemas"]["InspectionKind"];
+            /** Format: uuid */
+            readonly follows: string | null;
+            /** Format: date */
+            readonly inspected_on: string;
+            readonly inspection_body: string;
+            readonly report_number: string;
+            readonly label: components["schemas"]["InspectionResultLabel"];
+            /** Format: uuid */
+            readonly report: string | null;
+            /** Format: date */
+            readonly next_inspection_due: string;
+            /** Format: date */
+            readonly correction_deadline: string | null;
+            /** @description Days until `correction_deadline` by the Istanbul calendar; negative once it has passed, null when the label needs no correction. */
+            readonly days_left: number | null;
+            /** @description Whether the regulation lets the lift run under this label. */
+            readonly lift_usable: boolean;
+            /** @description Whether missing `correction_deadline` gets the lift sealed. */
+            readonly sealed_if_missed: boolean;
+            readonly nonconformities: components["schemas"]["NonConformity"][];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /**
+         * @description * `green` - Green
+         *     * `blue` - Blue
+         *     * `yellow` - Yellow
+         *     * `red` - Red
+         * @enum {string}
+         */
+        InspectionResultLabel: "green" | "blue" | "yellow" | "red";
         Invitation: {
             /** Format: uuid */
             readonly id: string;
@@ -2917,6 +3142,35 @@ export interface components {
          * @enum {string}
          */
         NeighborhoodType: "neighborhood" | "village" | "town";
+        NonConformity: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly inspection: string;
+            readonly description: string;
+            readonly severity: components["schemas"]["InspectionResultLabel"];
+            readonly status: components["schemas"]["NonConformityStatus"];
+            /** Format: date */
+            readonly fixed_on: string | null;
+            /** Format: uuid */
+            readonly fault: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /** @description One defect, as the inspection form sends it. */
+        NonConformityEntryRequest: {
+            description: string;
+            severity: components["schemas"]["InspectionResultLabel"];
+        };
+        /**
+         * @description * `open` - Open
+         *     * `fixed` - Fixed
+         *     * `waived` - Waived
+         * @enum {string}
+         */
+        NonConformityStatus: "open" | "fixed" | "waived";
         Notification: {
             /** Format: uuid */
             readonly id: string;
@@ -2943,9 +3197,13 @@ export interface components {
          *     * `fault_emergency` - Emergency fault reported
          *     * `fault_assigned` - Fault assigned
          *     * `fault_resolved` - Fault resolved
+         *     * `inspection_due` - Periodic inspection due
+         *     * `correction_deadline_near` - Correction deadline near
+         *     * `correction_deadline_passed` - Correction deadline passed
+         *     * `inspection_red_label` - Red inspection label
          * @enum {string}
          */
-        NotificationKind: "contract_renewal_due" | "contract_expired" | "contract_auto_renewed" | "contract_auto_renewal_blocked" | "maintenance_overdue" | "visit_assigned" | "fault_reported" | "fault_emergency" | "fault_assigned" | "fault_resolved";
+        NotificationKind: "contract_renewal_due" | "contract_expired" | "contract_auto_renewed" | "contract_auto_renewal_blocked" | "maintenance_overdue" | "visit_assigned" | "fault_reported" | "fault_emergency" | "fault_assigned" | "fault_resolved" | "inspection_due" | "correction_deadline_near" | "correction_deadline_passed" | "inspection_red_label";
         NotificationPreference: {
             kind: components["schemas"]["NotificationKind"];
             email: boolean;
@@ -3064,6 +3322,19 @@ export interface components {
         };
         PaginatedFaultReadList: {
             results: components["schemas"]["FaultRead"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedInspectionReadList: {
+            results: components["schemas"]["InspectionRead"][];
             pagination: {
                 /** @example 1 */
                 page: number;
@@ -3330,37 +3601,36 @@ export interface components {
             ce_certificate_number?: string;
             /** Format: date */
             warranty_end_date?: string | null;
-            /** Format: date */
-            last_inspection_date?: string | null;
-            /** @default none */
-            inspection_label: components["schemas"]["InspectionLabelEnum"];
-            /** Format: date */
-            next_inspection_date?: string | null;
-            inspection_body?: string;
-            inspection_report_number?: string;
             status?: components["schemas"]["ElevatorWriteStatusEnum"];
             /** Format: int64 */
             maintenance_interval_days?: number;
             notes?: string;
         };
-        /**
-         * @description A fault entered by somebody at the firm.
-         *
-         *     The state, the channel and every timestamp are the server's. A trapped
-         *     passenger makes it an emergency whatever `priority` says, so a phone form
-         *     in a hurry cannot under-state one.
-         */
-        PatchedFaultCreateRequest: {
+        /** @description The office's corrections. Stating `billable` marks it overridden. */
+        PatchedFaultEditRequest: {
+            priority?: components["schemas"]["FaultPriority"];
+            description?: string;
+            billable?: boolean;
+        };
+        /** @description What the inspector's report says. The deadline is the server's. */
+        PatchedInspectionCreateRequest: {
             /** Format: uuid */
             elevator?: string;
-            description?: string;
-            /** @default normal */
-            priority: components["schemas"]["FaultPriority"];
+            /** @default periodic */
+            kind: components["schemas"]["InspectionKind"];
             /** Format: uuid */
-            technician?: string | null;
-            stopped_elevator?: boolean;
-            /** @default false */
-            someone_trapped: boolean;
+            follows?: string | null;
+            /** Format: date */
+            inspected_on?: string;
+            inspection_body?: string;
+            report_number?: string;
+            label?: components["schemas"]["InspectionResultLabel"];
+            /**
+             * Format: date
+             * @description Defaults to a year after `inspected_on`; for a follow-up, to the date the inspection it follows set.
+             */
+            next_inspection_due?: string | null;
+            nonconformities?: components["schemas"]["NonConformityEntryRequest"][];
         };
         /**
          * @description Rejects a field the client sent that this serializer does not declare.
@@ -3800,8 +4070,9 @@ export interface operations {
                  *     * `user` - User
                  *     * `maintenance_visit` - Maintenance visit
                  *     * `fault` - Fault
+                 *     * `inspection` - Inspection
                  */
-                object_type?: "building" | "company" | "contract" | "customer" | "elevator" | "fault" | "maintenance_visit" | "user";
+                object_type?: "building" | "company" | "contract" | "customer" | "elevator" | "fault" | "inspection" | "maintenance_visit" | "user";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -5476,9 +5747,9 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["PatchedFaultCreateRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedFaultCreateRequest"];
-                "multipart/form-data": components["schemas"]["PatchedFaultCreateRequest"];
+                "application/json": components["schemas"]["PatchedFaultEditRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedFaultEditRequest"];
+                "multipart/form-data": components["schemas"]["PatchedFaultEditRequest"];
             };
         };
         responses: {
@@ -5638,6 +5909,173 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReverseGeocode"];
+                };
+            };
+        };
+    };
+    inspections_list: {
+        parameters: {
+            query?: {
+                correction_before?: string;
+                due_before?: string;
+                elevator?: string;
+                has_open_nonconformities?: boolean;
+                /**
+                 * @description * `periodic` - Periodic
+                 *     * `follow_up` - Follow-up
+                 */
+                kind?: "follow_up" | "periodic";
+                /**
+                 * @description * `green` - Green
+                 *     * `blue` - Blue
+                 *     * `yellow` - Yellow
+                 *     * `red` - Red
+                 */
+                label?: "blue" | "green" | "red" | "yellow";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedInspectionReadList"];
+                };
+            };
+        };
+    };
+    inspections_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InspectionCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["InspectionCreateRequest"];
+                "multipart/form-data": components["schemas"]["InspectionCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InspectionRead"];
+                };
+            };
+        };
+    };
+    inspections_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this inspection. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InspectionRead"];
+                };
+            };
+        };
+    };
+    inspections_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this inspection. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedInspectionCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedInspectionCreateRequest"];
+                "multipart/form-data": components["schemas"]["PatchedInspectionCreateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InspectionRead"];
+                };
+            };
+        };
+    };
+    inspections_nonconformities_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this inspection. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NonConformityEntryRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["NonConformityEntryRequest"];
+                "multipart/form-data": components["schemas"]["NonConformityEntryRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NonConformity"];
+                };
+            };
+        };
+    };
+    inspections_due_list: {
+        parameters: {
+            query?: {
+                /** @description How far ahead to look, in days (default 60, at most 365). Anything already overdue is always included. */
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DueItem"][];
                 };
             };
         };
@@ -5998,6 +6436,80 @@ export interface operations {
             };
         };
     };
+    nonconformities_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this non conformity. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NonConformity"];
+                };
+            };
+        };
+    };
+    nonconformities_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this non conformity. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NonConformity"];
+                };
+            };
+        };
+    };
+    nonconformities_open_fault_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this non conformity. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NonConformity"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NonConformity"];
+                };
+            };
+        };
+    };
     notifications_list: {
         parameters: {
             query?: {
@@ -6012,8 +6524,12 @@ export interface operations {
                  *     * `fault_emergency` - Emergency fault reported
                  *     * `fault_assigned` - Fault assigned
                  *     * `fault_resolved` - Fault resolved
+                 *     * `inspection_due` - Periodic inspection due
+                 *     * `correction_deadline_near` - Correction deadline near
+                 *     * `correction_deadline_passed` - Correction deadline passed
+                 *     * `inspection_red_label` - Red inspection label
                  */
-                kind?: "contract_auto_renewal_blocked" | "contract_auto_renewed" | "contract_expired" | "contract_renewal_due" | "fault_assigned" | "fault_emergency" | "fault_reported" | "fault_resolved" | "maintenance_overdue" | "visit_assigned";
+                kind?: "contract_auto_renewal_blocked" | "contract_auto_renewed" | "contract_expired" | "contract_renewal_due" | "correction_deadline_near" | "correction_deadline_passed" | "fault_assigned" | "fault_emergency" | "fault_reported" | "fault_resolved" | "inspection_due" | "inspection_red_label" | "maintenance_overdue" | "visit_assigned";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
