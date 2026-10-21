@@ -1362,30 +1362,11 @@ export type InspectionCreate = Schemas["InspectionCreateRequest"];
 export type NonConformity = Schemas["NonConformity"];
 export type InspectionDueItem = Schemas["DueItem"];
 
-/**
- * What may be corrected on a recorded inspection, and how its report PDF is
- * linked.
- *
- * Written out rather than taken from the contract, which describes the PATCH
- * body with the create serializer. The view validates it with
- * `InspectionEditSerializer` — strict, and the only one that takes `report`.
- */
-export interface InspectionEdit {
-  inspected_on?: string;
-  inspection_body?: string;
-  report_number?: string;
-  label?: Inspection["label"];
-  next_inspection_due?: string | null;
-  /** One of this inspection's own attachments, of category `inspection_report`. */
-  report?: string | null;
-}
+/** What may be corrected on a recorded inspection, including linking its report PDF. */
+export type InspectionEdit = Schemas["PatchedInspectionEditRequest"];
 
-/** The same story for a defect: the contract declares no body, the view takes these. */
-export interface NonConformityEdit {
-  status?: NonConformity["status"];
-  fixed_on?: string | null;
-  description?: string;
-}
+/** A defect's status, fix date and description. */
+export type NonConformityEdit = Schemas["PatchedNonConformityEditRequest"];
 
 export const inspectionKeys = {
   all: ["inspections"] as const,

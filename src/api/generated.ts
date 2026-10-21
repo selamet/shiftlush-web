@@ -3612,25 +3612,25 @@ export interface components {
             description?: string;
             billable?: boolean;
         };
-        /** @description What the inspector's report says. The deadline is the server's. */
-        PatchedInspectionCreateRequest: {
-            /** Format: uuid */
-            elevator?: string;
-            /** @default periodic */
-            kind: components["schemas"]["InspectionKind"];
-            /** Format: uuid */
-            follows?: string | null;
+        /**
+         * @description Corrections to a recorded inspection, and its report PDF.
+         *
+         *     The lift and the kind are what the record is; changing them would be a
+         *     different inspection, so they are not here.
+         */
+        PatchedInspectionEditRequest: {
             /** Format: date */
             inspected_on?: string;
             inspection_body?: string;
             report_number?: string;
             label?: components["schemas"]["InspectionResultLabel"];
+            /** Format: date */
+            next_inspection_due?: string;
             /**
-             * Format: date
-             * @description Defaults to a year after `inspected_on`; for a follow-up, to the date the inspection it follows set.
+             * Format: uuid
+             * @description One of this inspection's own attachments, of category `inspection_report`.
              */
-            next_inspection_due?: string | null;
-            nonconformities?: components["schemas"]["NonConformityEntryRequest"][];
+            report?: string | null;
         };
         /**
          * @description Rejects a field the client sent that this serializer does not declare.
@@ -3653,6 +3653,17 @@ export interface components {
             work_notes?: string;
             parts_replaced?: string;
             items?: components["schemas"]["SetChecklistItemRequest"][];
+        };
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported, as in every other app.
+         */
+        PatchedNonConformityEditRequest: {
+            status?: components["schemas"]["NonConformityStatus"];
+            /** Format: date */
+            fixed_on?: string | null;
+            description?: string;
         };
         /**
          * @description Rejects a field the client sent that this serializer does not declare.
@@ -6014,9 +6025,9 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["PatchedInspectionCreateRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedInspectionCreateRequest"];
-                "multipart/form-data": components["schemas"]["PatchedInspectionCreateRequest"];
+                "application/json": components["schemas"]["PatchedInspectionEditRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedInspectionEditRequest"];
+                "multipart/form-data": components["schemas"]["PatchedInspectionEditRequest"];
             };
         };
         responses: {
@@ -6468,7 +6479,13 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedNonConformityEditRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedNonConformityEditRequest"];
+                "multipart/form-data": components["schemas"]["PatchedNonConformityEditRequest"];
+            };
+        };
         responses: {
             200: {
                 headers: {
