@@ -34,6 +34,8 @@ import {
   companyQuery,
   currentUserQuery,
   sessionListQuery,
+  inspectionDueQuery,
+  inspectionListQuery,
   faultAttachmentsQuery,
   faultListQuery,
   faultQuery,
@@ -48,6 +50,7 @@ import {
 import { elevatorHistoryParams } from "@/lib/visit";
 import { elevatorPlanParams, homePath, myPlanParams, periodOf } from "@/lib/plan";
 import { todayIso } from "@/lib/date";
+import { elevatorInspectionParams } from "@/lib/inspections";
 import { ACTIVE_STATUSES, MY_ACTIVE_STATUSES, boardParams, myFaultParams } from "@/lib/faults";
 import { SessionProvider, ensureSession, type SessionOverride } from "@/lib/session";
 import type { ListSearch } from "@/lib/list-search";
@@ -60,6 +63,8 @@ import {
   customerListSearch,
   elevatorListSearch,
   userListSearch,
+  inspectionDueDays,
+  inspectionDueSearch,
   faultListSearch,
   planListParams,
   planListSearch,
@@ -238,6 +243,14 @@ const FaultCreateScreen = lazyRouteComponent(
 const MyFaultsScreen = lazyRouteComponent(
   () => import("@/screens/MyFaultsScreen"),
   "MyFaultsScreen",
+);
+const InspectionDueScreen = lazyRouteComponent(
+  () => import("@/screens/InspectionDueScreen"),
+  "InspectionDueScreen",
+);
+const InspectionFormScreen = lazyRouteComponent(
+  () => import("@/screens/InspectionFormScreen"),
+  "InspectionFormScreen",
 );
 const RegisterScreen = lazyRouteComponent(
   () => import("@/screens/RegisterScreen"),
@@ -548,6 +561,8 @@ export const routeTree = rootRoute.addChildren([
         queryClient.ensureQueryData(visitListQuery(elevatorHistoryParams(id))),
         // This month's plan row, for the same four roles the history serves.
         queryClient.ensureQueryData(plannedVisitListQuery(elevatorPlanParams(id))),
+        // The inspection history, for the same four roles.
+        queryClient.ensureQueryData(inspectionListQuery(elevatorInspectionParams(id))),
       ]);
     }),
     // The visit form needs the elevator for everything it draws first — its
@@ -559,6 +574,16 @@ export const routeTree = rootRoute.addChildren([
     shellChild("/elevators/$id/faults/new", FaultCreateScreen, ({ params }) =>
       queryClient.ensureQueryData(elevatorQuery(params.id)),
     ),
+    // The form needs the lift for its heading, and the lift's periodic
+    // inspections for the follow-up picker; both at once.
+    shellChild("/elevators/$id/inspections/new", InspectionFormScreen, async ({ params }) => {
+      await Promise.all([
+        queryClient.ensureQueryData(elevatorQuery(params.id)),
+        queryClient.ensureQueryData(
+          inspectionListQuery({ elevator: params.id, kind: "periodic", ordering: "-inspected_on", page_size: 20 }),
+        ),
+      ]);
+    }),
     shellChild("/elevators/new", ElevatorFormScreen),
     shellChild("/elevators/$id/edit", ElevatorFormScreen, ({ params }) =>
       queryClient.ensureQueryData(elevatorQuery(params.id)),
@@ -684,6 +709,12 @@ export const routeTree = rootRoute.addChildren([
       }
     }),
     shellChild("/audit-logs", AuditLogListScreen, undefined, auditLogListSearch),
+    shellChild(
+      "/inspections",
+      InspectionDueScreen,
+      ({ deps }) => queryClient.ensureQueryData(inspectionDueQuery(inspectionDueDays(deps.search))),
+      inspectionDueSearch,
+    ),
     // The board: one request per active status when no status is chosen, the
     // same keys the screen reads (see FaultBoardScreen), or one paged list.
     shellChild(

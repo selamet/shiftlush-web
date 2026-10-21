@@ -46,6 +46,8 @@ import { toDisplay } from "@/lib/date";
 import { canReadVisits, canRecordVisits } from "@/lib/visit";
 import { canReadPlan } from "@/lib/plan";
 import { canUseFaults } from "@/lib/faults";
+import { canReadInspections, canRecordInspections } from "@/lib/inspections";
+import { InspectionHistory, RecordInspectionLink } from "@/components/inspections/InspectionHistory";
 import { ElevatorPlanCard } from "@/components/plan/ElevatorPlanCard";
 import {
   RecordVisitAction,
@@ -233,6 +235,8 @@ export function ElevatorDetailScreen() {
   const visits = useElevatorVisits(elevatorId, showsVisits);
   const readsPlan = canReadPlan(role);
   const reportsFaults = canUseFaults(role);
+  const readsInspections = canReadInspections(role);
+  const recordsInspections = canRecordInspections(role);
 
   const queryClient = useQueryClient();
   const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
@@ -528,6 +532,18 @@ export function ElevatorDetailScreen() {
                   value={insp.inspection_report_number}
                 />
               </Group>
+
+              {/* The record behind those four rows: every inspection, what it
+                  found, and the deadline running now. */}
+              {readsInspections && (
+                <section className="rounded-lg border border-border-subtle bg-card p-5">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-cardtitle">{t("inspection.history")}</h2>
+                    {recordsInspections && <RecordInspectionLink elevatorId={elevator.id} />}
+                  </div>
+                  <InspectionHistory elevatorId={elevator.id} canWrite={recordsInspections} />
+                </section>
+              )}
 
               {showsVisits && (
                 <Group title={t("visit.maintenance")}>

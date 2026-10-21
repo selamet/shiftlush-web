@@ -1261,23 +1261,8 @@ export type Fault = Schemas["FaultRead"];
 export type FaultCreate = Schemas["FaultCreateRequest"];
 export type PublicFaultReport = Schemas["PublicFaultReportRequest"];
 
-/**
- * What the office may correct on a fault.
- *
- * Written out rather than taken from the contract: the contract describes the
- * PATCH body with the create serializer (`PatchedFaultCreateRequest`, which
- * even requires `priority` and `someone_trapped`), while the view validates it
- * with `FaultEditSerializer` — priority, description and billable, nothing
- * else, and a strict one that refuses any other key. The view is what answers;
- * the schema annotation sits on `update` rather than `partial_update`, which is
- * the thing to correct in shiftlush-api.
- */
-export interface FaultEdit {
-  priority?: Fault["priority"];
-  description?: string;
-  /** Stating it marks the fault as overridden by hand. */
-  billable?: boolean;
-}
+/** What the office may correct on a fault: priority, description, billable. */
+export type FaultEdit = Schemas["PatchedFaultEditRequest"];
 
 export const faultKeys = {
   all: ["faults"] as const,
@@ -1361,4 +1346,95 @@ export function reportPublicFault(qrToken: string, body: PublicFaultReport) {
     body,
     { anonymous: true },
   );
+}
+
+// --------------------------------------------------------------------------
+// Periodic inspections
+//
+// An inspection is a third party's statement about a lift: the label it got,
+// who said so, and what was wrong. The office records it; the server derives
+// the correction deadline from the label and writes the lift's five inspection
+// fields from the latest one. Nothing here sets a deadline.
+// --------------------------------------------------------------------------
+
+export type Inspection = Schemas["InspectionRead"];
+export type InspectionCreate = Schemas["InspectionCreateRequest"];
+export type NonConformity = Schemas["NonConformity"];
+export type InspectionDueItem = Schemas["DueItem"];
+
+/**
+ * What may be corrected on a recorded inspection, and how its report PDF is
+ * linked.
+ *
+ * Written out rather than taken from the contract, which describes the PATCH
+ * body with the create serializer. The view validates it with
+ * `InspectionEditSerializer` — strict, and the only one that takes `report`.
+ */
+export interface InspectionEdit {
+  inspected_on?: string;
+  inspection_body?: string;
+  report_number?: string;
+  label?: Inspection["label"];
+  next_inspection_due?: string | null;
+  /** One of this inspection's own attachments, of category `inspection_report`. */
+  report?: string | null;
+}
+
+/** The same story for a defect: the contract declares no body, the view takes these. */
+export interface NonConformityEdit {
+  status?: NonConformity["status"];
+  fixed_on?: string | null;
+  description?: string;
+}
+
+export const inspectionKeys = {
+  all: ["inspections"] as const,
+  list: (params: ListParams) => ["inspections", "list", params] as const,
+  detail: (id: string) => ["inspections", "detail", id] as const,
+  due: (days: number) => ["inspections", "due", days] as const,
+} as const;
+
+export function inspectionListQuery(params: ListParams = {}) {
+  return queryOptions({
+    queryKey: inspectionKeys.list(params),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<Inspection>>("/inspections/", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+/**
+ * What is due across the firm within `days`: periodic inspections and open
+ * correction deadlines, ordered by date. Anything already overdue is always in
+ * it, whatever the window — those are the ones that end in a seal.
+ */
+export function inspectionDueQuery(days: number) {
+  return queryOptions({
+    queryKey: inspectionKeys.due(days),
+    queryFn: ({ signal }) =>
+      api.get<InspectionDueItem[]>("/inspections/due/", { query: { days }, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+/** No Idempotency-Key: the endpoint does not take one. */
+export function createInspection(body: InspectionCreate) {
+  return api.post<Inspection>("/inspections/", body);
+}
+
+export function updateInspection(id: string, body: InspectionEdit) {
+  return api.patch<Inspection>(`/inspections/${id}/`, body);
+}
+
+export function updateNonConformity(id: string, body: NonConformityEdit) {
+  return api.patch<NonConformity>(`/nonconformities/${id}/`, body);
+}
+
+/**
+ * A fault for a defect, so the repair is tracked like any other. Answers with
+ * the defect, its `fault` now set; asking again returns the same fault rather
+ * than a second one.
+ */
+export function openFaultForNonConformity(id: string) {
+  return api.post<NonConformity>(`/nonconformities/${id}/open-fault/`);
 }

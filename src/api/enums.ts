@@ -22,6 +22,10 @@ export type PlannedVisitStatus = Schemas["PlannedVisitStatus"];
    moved only by the transition endpoints, and listed here for the filter. */
 export type FaultPriority = Schemas["FaultPriority"];
 export type FaultStatus = Schemas["FaultStatus"];
+/* The four labels an inspection can give — the lift's own field adds `none`
+   for "never inspected", which no inspection records. */
+export type InspectionResultLabel = Schemas["InspectionResultLabel"];
+export type InspectionKind = Schemas["InspectionKind"];
 /* `VatStatusEnum` is deliberately not listed here. Every type above names a set
    of options a form offers, which is what `allOf` below exists to bind. VAT
    status is nobody's choice — the server derives it from `vat_rate` and sends

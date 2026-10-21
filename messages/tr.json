@@ -148,7 +148,7 @@
     },
     "add": "Asansör ekle",
     "selectBuilding": "Bina seçin",
-    "inspectionReadOnly": "Muayene bilgileri muayene kayıtlarından gelir; yeni muayene kaydı yakında buradan girilecek.",
+    "inspectionReadOnly": "Muayene bilgileri en son muayene kaydından gelir; değiştirmek için muayene kaydı girin.",
     "inspectionNone": "Bu asansör için henüz muayene kaydı yok."
   },
   "visit": {
@@ -1263,7 +1263,11 @@
       "fault_reported": "Arıza bildirildi: {{elevator}} ({{building}})",
       "fault_emergency": "ACİL: {{elevator}} ({{building}}) asansöründe mahsur kalan var",
       "fault_assigned": "Arıza size atandı: {{elevator}} ({{building}})",
-      "fault_resolved": "Arıza çözüldü: {{elevator}} ({{building}})"
+      "fault_resolved": "Arıza çözüldü: {{elevator}} ({{building}})",
+      "inspection_due": "Periyodik muayene yaklaşıyor: {{elevator}} ({{building}})",
+      "correction_deadline_near": "Düzeltme süresi yaklaşıyor: {{elevator}} ({{building}}), {{days}} gün kaldı",
+      "correction_deadline_passed": "MÜHÜR RİSKİ: {{elevator}} ({{building}}) düzeltme süresi doldu",
+      "inspection_red_label": "Kırmızı etiket: {{elevator}} ({{building}}) kullanılmamalı"
     },
     "body": {
       "contract_renewal_due": "{{contract}} sözleşmenin süresi {{date}} tarihinde doluyor.",
@@ -1279,7 +1283,13 @@
       "fault_emergency": "{{building}} binasındaki {{elevator}} asansöründe mahsur kalan olduğu bildirildi. Bildirim numarası {{reference}}.",
       "fault_assigned": "{{building}} binasındaki {{elevator}} asansörünün {{reference}} numaralı arızası size atandı.",
       "fault_resolved": "{{building}} binasındaki {{elevator}} asansörünün {{reference}} numaralı arızası çözüldü olarak işaretlendi. Kapatmadan önce yapılan işi kontrol edebilirsiniz.",
-      "fault_resolved_by": "{{building}} binasındaki {{elevator}} asansörünün {{reference}} numaralı arızası {{technician}} tarafından çözüldü olarak işaretlendi. Kapatmadan önce yapılan işi kontrol edebilirsiniz."
+      "fault_resolved_by": "{{building}} binasındaki {{elevator}} asansörünün {{reference}} numaralı arızası {{technician}} tarafından çözüldü olarak işaretlendi. Kapatmadan önce yapılan işi kontrol edebilirsiniz.",
+      "inspection_due": "{{building}} binasındaki {{elevator}} asansörünün periyodik muayenesi {{date}} tarihinde yapılmalı. Muayene randevusunu şimdiden planlayabilirsiniz.",
+      "inspection_due_withBody": "{{building}} binasındaki {{elevator}} asansörünün periyodik muayenesi {{date}} tarihinde yapılmalı. Son muayeneyi yapan kuruluş: {{inspector}}. Muayene randevusunu şimdiden planlayabilirsiniz.",
+      "correction_deadline_near_red": "{{building}} binasındaki {{elevator}} asansörünün kırmızı etiketle bildirilen kusurlarının {{deadline}} tarihine kadar giderilmesi gerekiyor; {{days}} gün kaldı ve {{open}} uygunsuzluk hâlâ açık. Süre kaçırılırsa asansör belediye tarafından mühürlenir.",
+      "correction_deadline_near_yellow": "{{building}} binasındaki {{elevator}} asansörünün sarı etiketle bildirilen kusurlarının {{deadline}} tarihine kadar giderilmesi gerekiyor; {{days}} gün kaldı ve {{open}} uygunsuzluk hâlâ açık. Süre kaçırılırsa asansör belediye tarafından mühürlenir.",
+      "correction_deadline_passed": "{{building}} binasındaki {{elevator}} asansörünün kusurlarını giderme süresi {{deadline}} tarihinde doldu ve {{open}} uygunsuzluk hâlâ açık. Asansör belediye tarafından mühürlenebilir.",
+      "inspection_red_label": "{{building}} binasındaki {{elevator}} asansörü {{inspected}} tarihli periyodik muayenede kırmızı etiket aldı: asansör güvensiz ve kullanılmamalı. Asansör hizmet dışı olarak işaretlendi. Kusurların {{deadline}} tarihine kadar giderilmesi gerekiyor, aksi halde asansör mühürlenir."
     },
     "unknown": {
       "title": "Yeni bildirim",
@@ -1295,14 +1305,18 @@
       "fault_reported": "Arıza bildirildi",
       "fault_emergency": "Acil arıza (mahsur kalan var)",
       "fault_assigned": "Arıza size atandı",
-      "fault_resolved": "Arıza çözüldü"
+      "fault_resolved": "Arıza çözüldü",
+      "inspection_due": "Periyodik muayene yaklaşıyor",
+      "correction_deadline_near": "Düzeltme süresi yaklaşıyor",
+      "correction_deadline_passed": "Düzeltme süresi doldu (mühür riski)",
+      "inspection_red_label": "Kırmızı etiket"
     },
     "preferences": {
       "title": "Bildirimler",
       "hint": "Bildirimler uygulamada her zaman görünür. İşaretlediğiniz türler ayrıca e-posta ile de gönderilir.",
       "email": "E-posta ile de gönder",
       "saved": "Bildirim tercihleriniz kaydedildi",
-      "locked": "Mahsur kalan bildirimleri her zaman e-postayla da gönderilir."
+      "locked": "Bu bildirim her zaman e-postayla da gönderilir; kapatılamaz."
     },
     "fragment": {
       "viaQr": "QR etiketinden ",
@@ -1494,6 +1508,83 @@
       "emergency": "Mahsur kalan olduğu için bildiriminiz acil olarak iletilecek.",
       "high": "Asansör çalışmadığı için bildiriminiz öncelikli olarak iletilecek.",
       "normal": "Bildiriminiz bakım firmasına iletilecek."
+    }
+  },
+  "inspection": {
+    "title": "Muayeneler",
+    "intro": "Yaklaşan periyodik muayeneler ve açık düzeltme süreleri.",
+    "restricted": "Muayeneler rolünüzde görünmüyor",
+    "recordRestricted": "Muayene kaydını firma sahibi, yöneticiler ve operasyon ekibi girer.",
+    "window": "Önümüzdeki",
+    "windowDays": "{{count}} gün",
+    "corrections": "Düzeltme süreleri",
+    "correctionsEmpty": "Açık düzeltme süresi yok",
+    "upcoming": "Yaklaşan muayeneler",
+    "upcomingEmpty": "Önümüzdeki {{count}} gün içinde muayene yok",
+    "daysLeft": "{{count}} gün kaldı",
+    "daysPassed": "{{count}} gün geçti",
+    "today": "Bugün",
+    "openCount": "{{count}} açık uygunsuzluk",
+    "sealingRisk": "Mühürlenme riski",
+    "sealedIfMissed": "Kaçırılırsa mühürlenir",
+    "inspectionOverdue": "Muayene gecikti",
+    "notUsable": "Kırmızı etiket: asansör kullanılmamalı",
+    "history": "Muayene geçmişi",
+    "historyEmpty": "Bu asansör için henüz muayene kaydı yok",
+    "moreOnDesktop": "{{count}} eski muayene daha var; tamamı geniş ekranda görünür",
+    "correctionBy": "Kusurlar {{date}} tarihine kadar giderilmeli",
+    "reportPdf": "Rapor (PDF)",
+    "reportNo": "Rapor no {{number}}",
+    "fixedOn": "{{date}} tarihinde giderildi",
+    "fixedOnLabel": "Giderildiği tarih",
+    "linkedFault": "Arıza kaydı",
+    "markFixed": "Giderildi",
+    "openFault": "Arıza aç",
+    "record": "Muayene kaydı gir",
+    "save": "Muayeneyi kaydet",
+    "saved": "Muayene kaydedildi",
+    "backToElevator": "Asansöre dön",
+    "reportUploading": "Rapor yükleniyor…",
+    "reportFailed": "Muayene kaydedildi, ancak rapor PDF'i yüklenemedi",
+    "reportHint": "İsteğe bağlı. Muayene kaydedildikten sonra yüklenir.",
+    "reportRefused": "Yalnızca 10 MB'ye kadar PDF dosyası yüklenebilir",
+    "followsHint": "Takip muayenesinin süreleri ilk periyodik muayeneden sayılır; süre uzamaz.",
+    "selectFollows": "Periyodik muayeneyi seçin",
+    "nextDueHint": "Boş bırakılırsa {{date}} olur.",
+    "nextDueHintFollowUp": "Boş bırakılırsa takip edilen muayenenin belirlediği tarih geçerli olur.",
+    "labelRequired": "Etiketi seçin; varsayılan bir etiket yok.",
+    "nonconformities": "Uygunsuzluklar",
+    "noDefects": "Uygunsuzluk eklenmedi.",
+    "addDefect": "Uygunsuzluk ekle",
+    "defectLabel": "{{index}}. uygunsuzluk",
+    "removeDefect": "{{index}}. uygunsuzluğu kaldır",
+    "defectPlaceholder": "Rapordaki ifadeyle yazın",
+    "severity": "Önem derecesi",
+    "fields": {
+      "kind": "Muayene türü",
+      "follows": "Takip edilen muayene",
+      "inspectedOn": "Muayene tarihi",
+      "nextDue": "Sonraki periyodik muayene",
+      "body": "Muayeneyi yapan kuruluş",
+      "reportNumber": "Rapor numarası",
+      "label": "Etiket",
+      "report": "Muayene raporu (PDF)"
+    },
+    "kind": {
+      "periodic": "Periyodik",
+      "follow_up": "Takip muayenesi"
+    },
+    "nonconformityStatus": {
+      "open": "Açık",
+      "fixed": "Giderildi",
+      "waived": "Muaf tutuldu"
+    },
+    "preview": {
+      "none": "Yeşil etiket: düzeltilecek kusur yok.",
+      "nextInspection": "Kusurlar bir sonraki periyodik muayeneye ({{date}}) kadar giderilmeli.",
+      "days": "Kusurlar {{date}} tarihine kadar giderilmeli ({{from}} tarihinden itibaren {{days}} gün).",
+      "sealed": "Süre kaçırılırsa asansör belediye tarafından mühürlenir.",
+      "serverDecides": "Kesin tarihi kayıt sırasında sistem belirler."
     }
   }
 }

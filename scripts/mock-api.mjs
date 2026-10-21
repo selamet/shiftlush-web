@@ -365,6 +365,53 @@ function resolve(path, search, method, body) {
     }
   }
 
+  // Inspections. One lift's history — a yellow label with one defect still
+  // open and one fixed through a fault — and a due list with a correction
+  // deadline already passed (the sealing risk) and an inspection coming up.
+  if (path.startsWith("/api/v1/inspections/") || path.startsWith("/api/v1/nonconformities/")) {
+    const inspections = fixture("demo-inspections");
+    if (path === "/api/v1/inspections/due/") {
+      return [
+        {
+          type: "correction", date: "2026-07-12", days_left: -3, elevator: "e1", elevator_name: "Sol asansör",
+          building_name: "A Blok", customer_name: "Dadaş Konakları Site Yönetimi", label: "yellow",
+          inspection: "i1", open_nonconformities: 1, sealed_if_missed: true,
+        },
+        {
+          type: "inspection", date: "2026-11-10", days_left: 20, elevator: "e2", elevator_name: "Sağ asansör",
+          building_name: "A Blok", customer_name: "Dadaş Konakları Site Yönetimi", label: "blue",
+          inspection: null, open_nonconformities: 0, sealed_if_missed: false,
+        },
+      ];
+    }
+    const openFault = /^\/api\/v1\/nonconformities\/([^/]+)\/open-fault\/$/.exec(path);
+    if (method === "POST" && openFault) {
+      const item = inspections.flatMap((one) => one.nonconformities).find((one) => one.id === openFault[1]);
+      return item ? { ...item, fault: item.fault ?? "f1" } : null;
+    }
+    const defect = /^\/api\/v1\/nonconformities\/([^/]+)\/$/.exec(path);
+    if (defect) {
+      const item = inspections.flatMap((one) => one.nonconformities).find((one) => one.id === defect[1]);
+      return item ? { ...item, ...(method === "PATCH" ? body : {}) } : null;
+    }
+    if (method === "POST" && path === "/api/v1/inspections/") {
+      return { ...inspections[0], ...body, id: "i-new", nonconformities: [], report: null };
+    }
+    const one = /^\/api\/v1\/inspections\/([^/]+)\/$/.exec(path);
+    if (one) {
+      const row = inspections.find((candidate) => candidate.id === one[1]);
+      return row ? { ...row, ...(method === "PATCH" ? body : {}) } : null;
+    }
+    if (path === "/api/v1/inspections/") {
+      let rows = inspections;
+      for (const param of ["elevator", "kind", "label"]) {
+        const value = search.get(param);
+        if (value) rows = rows.filter((row) => row[param] === value);
+      }
+      return page(rows);
+    }
+  }
+
   if (path === "/api/v1/audit-logs/") return page(fixture("demo-audit-logs-elevator"));
 
   // Maintenance visits. The create answers with the read shape — the view

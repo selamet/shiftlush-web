@@ -83,6 +83,8 @@ const RUNTIME_NAMESPACES = [
   "notification.kind",
   "plan.status",
   "fault.priority",
+  "inspection.kind",
+  "inspection.nonconformityStatus",
   "fault.status",
   "fault.channel",
   "fault.step",

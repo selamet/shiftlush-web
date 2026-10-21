@@ -335,3 +335,27 @@ export const faultFilters: ListFilter[] = [
 ];
 
 export const faultListSearch = listSearchSchema(faultFilters);
+
+/**
+ * The inspection due list's window, in days. Absent means the server's default
+ * (60), so the default is never written into the address.
+ */
+export const inspectionDueFilters: ListFilter[] = [
+  {
+    param: "days",
+    labelKey: "inspection.window",
+    options: [
+      { value: "30", labelKey: "inspection.windowDays" },
+      { value: "60", labelKey: "inspection.windowDays" },
+      { value: "90", labelKey: "inspection.windowDays" },
+    ],
+  },
+];
+
+export const inspectionDueSearch = listSearchSchema(inspectionDueFilters);
+
+/** The window a raw search names, or the default. Shared by the route's prefetch and the screen. */
+export function inspectionDueDays(raw: Record<string, unknown>): number {
+  const days = Number(inspectionDueSearch.params(raw).days);
+  return Number.isInteger(days) && days > 0 ? days : 60;
+}
