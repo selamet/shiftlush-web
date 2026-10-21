@@ -175,8 +175,20 @@ function ReportForm({
         {t("portal.faults.elevatorStopped")}
       </label>
 
-      <Field label={t("portal.faults.description")} htmlFor="portal-fault-description" required>
-        <Textarea name="description" rows={4} required maxLength={1000} placeholder={t("portal.faults.descriptionPlaceholder")} />
+      {/* Not required once somebody is trapped: the tick is the whole report. */}
+      <Field
+        label={t("portal.faults.description")}
+        htmlFor="portal-fault-description"
+        required={!trapped}
+        hint={trapped ? t("fault.descriptionOptionalTrapped") : undefined}
+      >
+        <Textarea
+          name="description"
+          rows={4}
+          required={!trapped}
+          maxLength={1000}
+          placeholder={t("portal.faults.descriptionPlaceholder")}
+        />
       </Field>
 
       <Button type="submit" size="lg" disabled={report.isPending}>
@@ -204,7 +216,9 @@ function FaultList({ title, empty, rows }: { title: string; empty: string; rows:
                 </span>
                 <FaultStatusChip value={fault.status} />
               </div>
-              <p className="break-words text-body">{fault.description}</p>
+              <p className="break-words text-body">
+                {fault.description || <span className="text-muted-foreground">{t("fault.noDescription")}</span>}
+              </p>
               <p className="text-help text-muted-foreground">
                 {t("portal.faults.reportedAt", { at: formatDateTime(fault.reported_at) })}
                 {fault.technician_first_name && ` · ${t("portal.faults.technician", { name: fault.technician_first_name })}`}

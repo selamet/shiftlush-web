@@ -3083,6 +3083,14 @@ export interface components {
          * @enum {string}
          */
         ElevatorCategory: "passenger" | "freight" | "passenger_freight" | "dumbwaiter" | "accessibility_platform" | "vehicle";
+        /**
+         * @description The lift's open correction deadline, for every elevator read.
+         *
+         *     A red or yellow label carries a legal deadline that ends in a seal, and the
+         *     next periodic inspection a year away is false reassurance beside it (audit
+         *     P1-06). Read from the annotations of `inspections.services.with_open_correction`
+         *     on a list; worked out for the one lift otherwise.
+         */
         ElevatorDetail: {
             /** Format: uuid */
             readonly id: string;
@@ -3132,6 +3140,15 @@ export interface components {
             readonly inspection_label: components["schemas"]["InspectionLabelEnum"];
             /** Format: date */
             readonly next_inspection_date: string | null;
+            /**
+             * Format: date
+             * @description The current inspection's correction deadline while a defect is still open; null when nothing is open.
+             */
+            readonly correction_deadline: string | null;
+            /** @description Days until `correction_deadline` by the Istanbul calendar; negative once passed; null when nothing is open. */
+            readonly correction_days_left: number | null;
+            /** @description Open defects of the current inspection (and of the periodic one a follow-up follows). */
+            readonly open_nonconformities: number;
             readonly inspection_body: string;
             readonly inspection_report_number: string;
             readonly status: components["schemas"]["ElevatorStatus"];
@@ -3169,6 +3186,15 @@ export interface components {
             readonly inspection_label: components["schemas"]["InspectionLabelEnum"];
             /** Format: date */
             readonly next_inspection_date: string | null;
+            /**
+             * Format: date
+             * @description The current inspection's correction deadline while a defect is still open; null when nothing is open.
+             */
+            readonly correction_deadline: string | null;
+            /** @description Days until `correction_deadline` by the Istanbul calendar; negative once passed; null when nothing is open. */
+            readonly correction_days_left: number | null;
+            /** @description Open defects of the current inspection (and of the periodic one a follow-up follows). */
+            readonly open_nonconformities: number;
             readonly brand: string;
             readonly model: string;
         };
@@ -4384,6 +4410,8 @@ export interface components {
         PlanSummary: {
             period: string;
             total: number;
+            done: number;
+            remaining: number;
             by_status: components["schemas"]["PlanStatusCounts"];
             unassigned: number;
             overdue: number;
@@ -4432,6 +4460,8 @@ export interface components {
             readonly latest_visit_status: (components["schemas"]["MaintenanceVisitStatus"] | components["schemas"]["NullEnum"]) | null;
             /** @description Still planned and past its due date, by the Istanbul calendar. */
             readonly is_overdue: boolean;
+            /** @description Days since `due_date` while the row is still planned and past it; null otherwise. The due date can fall before the row's own month: that is how long the lift has been overdue. */
+            readonly days_overdue: number | null;
             readonly manually_edited: boolean;
             /** Format: date-time */
             readonly created_at: string;
@@ -4483,6 +4513,14 @@ export interface components {
          * @enum {string}
          */
         PortalAccountStatus: "invited" | "active" | "inactive";
+        /**
+         * @description The lift's open correction deadline, for every elevator read.
+         *
+         *     A red or yellow label carries a legal deadline that ends in a seal, and the
+         *     next periodic inspection a year away is false reassurance beside it (audit
+         *     P1-06). Read from the annotations of `inspections.services.with_open_correction`
+         *     on a list; worked out for the one lift otherwise.
+         */
         PortalElevator: {
             /** Format: uuid */
             readonly id: string;
@@ -4498,6 +4536,15 @@ export interface components {
             readonly inspection_label: components["schemas"]["InspectionLabelEnum"];
             /** Format: date */
             readonly next_inspection_date: string | null;
+            /**
+             * Format: date
+             * @description The current inspection's correction deadline while a defect is still open; null when nothing is open.
+             */
+            readonly correction_deadline: string | null;
+            /** @description Days until `correction_deadline` by the Istanbul calendar; negative once passed; null when nothing is open. */
+            readonly correction_days_left: number | null;
+            /** @description Open defects of the current inspection (and of the periodic one a follow-up follows). */
+            readonly open_nonconformities: number;
         };
         PortalFault: {
             /** Format: uuid */
@@ -4531,6 +4578,10 @@ export interface components {
         PortalFaultReportRequest: {
             /** Format: uuid */
             elevator: string;
+            /**
+             * @description What happened. Required unless `someone_trapped` is true.
+             * @default
+             */
             description: string;
             /** @default false */
             someone_trapped: boolean;
@@ -4660,6 +4711,10 @@ export interface components {
         };
         /** @description What a resident standing at the lift can tell us, and nothing else. */
         PublicFaultReportRequest: {
+            /**
+             * @description What happened. Required unless `someone_trapped` is true.
+             * @default
+             */
             description: string;
             /** @default false */
             someone_trapped: boolean;
@@ -4764,14 +4819,27 @@ export interface components {
             id: string;
             name: string;
         };
+        /**
+         * @description One technician's month. `total` is `done + remaining`; cancelled rows are
+         *     counted apart and in neither.
+         */
         TechnicianPlanSummary: {
-            planned: number;
-            done: number;
-            cancelled: number;
             /** Format: uuid */
             technician: string;
             technician_name: string;
+            /** @description Rows given to this technician, done or not. */
+            total: number;
+            done: number;
+            /** @description Rows still planned. */
+            remaining: number;
+            /** @description Remaining rows past their due date. */
             overdue: number;
+            cancelled: number;
+            /**
+             * @deprecated
+             * @description Deprecated: the same number as `remaining`, under a name that read as the total. Use `remaining`.
+             */
+            planned: number;
         };
         TerminateRequest: {
             /** Format: date */
@@ -8535,7 +8603,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": components["schemas"]["PublicFaultReportRequest"];
                 "application/x-www-form-urlencoded": components["schemas"]["PublicFaultReportRequest"];

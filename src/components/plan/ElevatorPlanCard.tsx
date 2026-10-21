@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { plannedVisitListQuery } from "@/api/queries";
 import { errorMessage } from "@/api/errors";
 import { toDisplay } from "@/lib/date";
-import { enumLabel } from "@/lib/i18n";
-import { elevatorPlanParams, triedNotDone } from "@/lib/plan";
-import { PlanFlagChips, PlanStatusChip } from "@/components/ui/status-chip";
+import { elevatorPlanParams } from "@/lib/plan";
+import { PlanStatusChip } from "@/components/ui/status-chip";
+import { PlanRowFlags } from "@/components/plan/PlanRowFlags";
 
 /**
  * This month's plan for one lift: when it is due, who has it, where it stands.
@@ -56,14 +56,7 @@ export function ElevatorPlanCard({ elevatorId, enabled }: { elevatorId: string; 
           </div>
         ))}
       </dl>
-      <PlanFlagChips
-        overdue={row.is_overdue}
-        tried={triedNotDone(row)}
-        overdueLabel={t("plan.flags.overdue")}
-        triedLabel={t("plan.flags.tried", {
-          status: enumLabel("visit.status", row.latest_visit_status),
-        })}
-      />
+      <PlanRowFlags row={row} />
     </div>
   );
 }

@@ -209,7 +209,10 @@ export function FaultDetailScreen() {
       </section>
 
       <Section title={t("fault.fields.description")}>
-        <p className="whitespace-pre-wrap break-words text-body">{fault.description}</p>
+        {/* Empty only for a "somebody is trapped" report sent without words. */}
+        <p className="whitespace-pre-wrap break-words text-body">
+          {fault.description || <span className="text-muted-foreground">{t("fault.noDescription")}</span>}
+        </p>
         {/* The resident who reported it, so the office can call them back. A
             tel: link, because the office is often on a phone already. */}
         {(fault.reporter_name || fault.reporter_phone) && (

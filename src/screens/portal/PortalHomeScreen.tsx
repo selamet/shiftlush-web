@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { ListError, TableSkeleton } from "@/components/list/ListStates";
 import { InspectionLabel } from "@/components/ui/inspection-label";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
+import { CorrectionDeadline } from "@/components/inspections/CorrectionDeadline";
 
 /**
  * The customer's lifts, each with the one thing worth knowing first.
@@ -82,6 +83,7 @@ export function PortalHomeScreen() {
                         <span className="tnum text-foreground">{toDisplay(lift.next_inspection_date) || "—"}</span>
                         <InspectionLabel value={lift.inspection_label} />
                       </span>
+                      <CorrectionDeadline lift={lift} className="text-foreground sm:col-span-2" />
                     </span>
                   </span>
                   <ChevronRight className="size-5 shrink-0 text-subtle" aria-hidden="true" />

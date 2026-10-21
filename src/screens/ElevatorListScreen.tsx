@@ -39,6 +39,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ElevatorStatusChip } from "@/components/ui/status-chip";
 import { InspectionLabel } from "@/components/ui/inspection-label";
+import { CorrectionDeadline } from "@/components/inspections/CorrectionDeadline";
 import {
   ListPage,
   Stacked,
@@ -1073,8 +1074,11 @@ export function ElevatorListScreen() {
     {
       key: "elevator.fields.nextInspectionDate",
       cell: (row) => (
-        <span className="tnum whitespace-nowrap text-muted-foreground">
-          {formatDate(row.next_inspection_date) || "—"}
+        <span className="flex flex-col items-start gap-0.5">
+          <span className="tnum whitespace-nowrap text-muted-foreground">
+            {formatDate(row.next_inspection_date) || "—"}
+          </span>
+          <CorrectionDeadline lift={row} className="whitespace-nowrap" />
         </span>
       ),
     },
