@@ -5,7 +5,7 @@ import type { Role } from "@/components/layout/nav-config";
 import { QrCode, WifiOff, TriangleAlert, Paperclip, MapPin, Siren } from "lucide-react";
 import { enumLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { formatDate, formatNumber } from "@/lib/format";
+import { formatDate, formatNumber, formatDecimal } from "@/lib/format";
 import { toDisplay } from "@/lib/date";
 import { canRecordVisits } from "@/lib/visit";
 import { canReadPlan } from "@/lib/plan";
@@ -82,7 +82,7 @@ export function ElevatorDetailMobile({
       }),
     ],
     [t("elevator.fields.stopCount"), tech.stop_count],
-    [t("elevator.fields.speedMps"), tech.speed_mps ? `${tech.speed_mps} m/s` : "—"],
+    [t("elevator.fields.speedMps"), tech.speed_mps ? `${formatDecimal(tech.speed_mps)} m/s` : "—"],
     [t("elevator.fields.lastInspectionDate"), formatDate(insp.last_inspection_date)],
     [t("elevator.fields.nextInspectionDate"), formatDate(insp.next_inspection_date)],
     // Next to the inspection dates rather than in a section of their own: on

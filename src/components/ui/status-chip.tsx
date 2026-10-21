@@ -26,7 +26,12 @@ type ChipWeight =
   | "silent"
   /** Reversible deviation. */
   | "outline"
-  /** Heaviest: legal or financial consequence, not undoable. */
+  /**
+   * Heaviest: a state that cannot be undone — terminated, sealed, a visit that
+   * never got through the door, a deletion. Never "urgent" or "look here":
+   * urgency is carried by placement (the 3 px row stripe), so that the one
+   * weight meaning "this is final" keeps meaning it.
+   */
   | "ink"
   /** On file but not operating. */
   | "recessed"
@@ -164,9 +169,10 @@ export function PlanStatusChip({ value }: { value: string }) {
 
 /**
  * The two things about a plan row that need somebody's attention, each with
- * its own word and icon so neither depends on colour: overdue takes the
- * heaviest weight — a lift past its legal maintenance date — and "tried, not
- * done" the reversible one, since the next attempt may well finish it.
+ * its own word and icon so neither depends on colour. Both are outlined: a late
+ * lift is urgent, not final, and the filled weight is kept for what cannot be
+ * undone. Where it matters most — the technician's list — the row's stripe
+ * carries the urgency, so the chip only has to name it.
  */
 export function PlanFlagChips({
   overdue,
@@ -183,7 +189,7 @@ export function PlanFlagChips({
   return (
     <span className="inline-flex flex-wrap gap-1">
       {overdue && (
-        <StatusChip weight="ink" icon={AlarmClock}>
+        <StatusChip weight="outline" icon={AlarmClock}>
           {overdueLabel}
         </StatusChip>
       )}
@@ -198,12 +204,15 @@ export function PlanFlagChips({
 
 /**
  * A fault's priority. An emergency is somebody trapped in a lift, and it has
- * to be unmistakable on a board of twenty rows read across a room: the
- * heaviest weight, a siren, and the word itself — none of which depends on
- * telling one colour from another. A normal report is the quiet default.
+ * to be unmistakable on a board of twenty rows read across a room: a siren,
+ * the word itself, and the row's 3 px stripe — none of which depends on telling
+ * one colour from another, and none of which borrows the filled weight, which
+ * is kept for what cannot be undone. A normal report is the quiet default.
  */
 const FAULT_PRIORITY: Record<string, { weight: ChipWeight; icon?: typeof Pause }> = {
-  emergency: { weight: "ink", icon: Siren },
+  // Outline with its siren and its word: an emergency is the most urgent
+  // thing on the board, but urgent is not final. The row carries the stripe.
+  emergency: { weight: "outline", icon: Siren },
   high: { weight: "outline", icon: TriangleAlert },
   normal: { weight: "silent" },
 };
@@ -251,15 +260,16 @@ export function ChecklistResultChip({ value }: { value: string }) {
 }
 
 /**
- * Roles carry no colour. Only `owner` is filled — there is exactly one per
- * company and it is the only role that can deactivate users. The other four
- * are equal weight: tinting them would imply a permission hierarchy that does
- * not exist, since their capabilities overlap rather than nest.
+ * Roles carry no colour and no weight between them: all five are outlined.
+ * The owner used to be filled, but the filled weight means "cannot be undone"
+ * and a role is not a state of anything; tinting one would also imply a
+ * permission hierarchy that does not exist, since the roles overlap rather
+ * than nest.
  */
 export function RoleChip({ value }: { value: string }) {
   if (isUnknownEnum("user.role", value)) return <UnknownEnumChip value={value} />;
   return (
-    <StatusChip weight={value === "owner" ? "ink" : "outline"}>
+    <StatusChip weight="outline">
       {enumLabel("user.role", value)}
     </StatusChip>
   );

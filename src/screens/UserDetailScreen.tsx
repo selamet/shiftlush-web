@@ -13,7 +13,6 @@ import {
   type UserRole,
   type UserWrite,
 } from "@/api/queries";
-import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
 import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
@@ -25,7 +24,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Field, Input } from "@/components/ui/field";
 import { RoleChip, StatusChip } from "@/components/ui/status-chip";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { AssignedCustomers } from "@/components/users/AssignedCustomers";
 
 const ROLES: UserRole[] = ["owner", "admin", "operations", "technician", "accountant"];
@@ -67,11 +66,7 @@ export function UserDetailScreen() {
   if (user.isPending) return <DetailSkeleton />;
   if (user.isError || !user.data) {
     return (
-      <ListError
-        message={errorMessage(user.error, t)}
-        reference={supportReference(user.error)}
-        onRetry={() => void user.refetch()}
-      />
+      <DetailError error={user.error} onRetry={() => void user.refetch()} back={{ to: "/users", labelKey: "user.title" }} />
     );
   }
 

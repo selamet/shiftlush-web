@@ -651,7 +651,8 @@
     "verifyFailedHint": "Giriş yaptıktan sonra uygulama içinden yeni bir doğrulama e-postası isteyebilirsiniz.",
     "unverifiedBanner": "E-posta adresiniz doğrulanmadı — doğrulayana kadar ekip arkadaşı davet edemezsiniz.",
     "resendVerification": "Tekrar gönder",
-    "verificationSent": "Doğrulama e-postası gönderildi."
+    "verificationSent": "Doğrulama e-postası gönderildi.",
+    "unverifiedBannerShort": "E-posta adresiniz doğrulanmadı"
   },
   "empty": {
     "noRecords": "Henüz kayıt yok",
@@ -839,7 +840,8 @@
     "perPage": "Sayfada",
     "swipeHint": "Kaydır",
     "showResults": "{{count}} kaydı göster",
-    "sharableFilters": "Filtreler adres çubuğunda taşınır — bu bağlantıyı ekip arkadaşınıza gönderebilirsiniz",
+    "copyLink": "Bu görünümün bağlantısını kopyala",
+    "linkCopied": "Bağlantı kopyalandı",
     "filters": "Filtreler",
     "hideFilters": "Filtreleri gizle",
     "loadFailed": "Liste yüklenemedi",
@@ -957,7 +959,9 @@
     "capacityValue": "{{kg}} kg · {{persons}} kişi",
     "brandModel": "Marka / Model",
     "moreAttachments": "+{{count}}",
-    "recordOnlyNotice": "Asansör künyesi buradan düzenlenemez; bakım kaydı girebilirsiniz."
+    "recordOnlyNotice": "Asansör künyesi buradan düzenlenemez; bakım kaydı girebilirsiniz.",
+    "missing": "Bu kayıt bulunamadı ya da görme yetkiniz yok.",
+    "loadFailed": "Kayıt yüklenemedi"
   },
   "addressPicker": {
     "title": "Adres",
@@ -1497,7 +1501,8 @@
     "channel": {
       "staff": "Personel",
       "public_qr": "QR etiketi"
-    }
+    },
+    "missing": "Bu arıza bulunamadı ya da size atanmamış."
   },
   "publicFault": {
     "title": "Asansör arızası bildir",

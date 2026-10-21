@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { buildingListQuery, complexKeys, complexQuery, deleteComplex } from "@/api/queries";
-import { errorMessage, supportReference } from "@/api/errors";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { errorMessage } from "@/api/errors";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { enumLabel } from "@/lib/i18n";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
@@ -75,11 +75,7 @@ export function ComplexDetailScreen() {
 
   if (query.isError || !query.data) {
     return (
-      <ListError
-        message={errorMessage(query.error, t)}
-        reference={supportReference(query.error)}
-        onRetry={() => void query.refetch()}
-      />
+      <DetailError error={query.error} onRetry={() => void query.refetch()} back={{ to: "/complexes", labelKey: "complex.title" }} />
     );
   }
 

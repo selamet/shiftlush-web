@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardList, ShieldAlert } from "lucide-react";
+import { AlarmClock, ClipboardList, ShieldAlert } from "lucide-react";
 import { inspectionDueQuery, type InspectionDueItem } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { toDisplay } from "@/lib/date";
@@ -149,13 +149,13 @@ function DueRow({ row }: { row: InspectionDueItem }) {
             </StatusChip>
           )}
           {risk ? (
-            <StatusChip weight="ink" icon={ShieldAlert}>
+            <StatusChip weight="outline" icon={ShieldAlert}>
               {t("inspection.sealingRisk")}
             </StatusChip>
           ) : row.type === "correction" && row.sealed_if_missed ? (
             <StatusChip weight="outline">{t("inspection.sealedIfMissed")}</StatusChip>
           ) : row.type === "inspection" && overdue ? (
-            <StatusChip weight="ink">{t("inspection.inspectionOverdue")}</StatusChip>
+            <StatusChip weight="outline" icon={AlarmClock}>{t("inspection.inspectionOverdue")}</StatusChip>
           ) : null}
         </span>
       </Link>

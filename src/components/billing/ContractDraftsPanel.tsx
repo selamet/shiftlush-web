@@ -44,7 +44,7 @@ export function ContractDraftsPanel({ contractId }: { contractId: string }) {
                 <span className="flex flex-wrap items-center gap-1 text-help text-muted-foreground">
                   <InvoiceStatusChip value={row.status} />
                   {row.needs_price && (
-                    <StatusChip weight="ink" icon={CircleDollarSign}>
+                    <StatusChip weight="outline" icon={CircleDollarSign}>
                       {t("billing.needsPrice")}
                     </StatusChip>
                   )}

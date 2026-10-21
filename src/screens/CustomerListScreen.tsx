@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { formatPhone } from "@/lib/format";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { customerListQuery, primaryContact, type Customer } from "@/api/queries";
@@ -44,7 +45,7 @@ export function CustomerListScreen() {
         // about who the primary contact is.
         const contact = primaryContact(row);
         return contact ? (
-          <Stacked primary={contact.full_name} secondary={contact.phone} />
+          <Stacked primary={contact.full_name} secondary={formatPhone(contact.phone)} />
         ) : (
           <span className="text-subtle">—</span>
         );

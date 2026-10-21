@@ -37,7 +37,7 @@ export function TechnicianTabs({ active, faultCount }: { active: TechnicianTab; 
         >
           {t(tab.labelKey)}
           {tab.key === "faults" && faultCount ? (
-            <span className="tnum rounded-full bg-foreground px-1.5 text-help font-semibold text-background">
+            <span className="tnum rounded-full bg-muted px-1.5 text-help font-semibold text-foreground">
               {faultCount}
             </span>
           ) : null}

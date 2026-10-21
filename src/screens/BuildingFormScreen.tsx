@@ -14,7 +14,6 @@ import {
   type BuildingWrite,
 } from "@/api/queries";
 import { allOf, type BuildingType } from "@/api/enums";
-import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
 import { parseCoordinates } from "@/lib/map-provider";
@@ -23,7 +22,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 
 const TYPES = allOf<BuildingType>()([
   "residential",
@@ -75,11 +74,7 @@ export function BuildingFormScreen() {
   if (editing && existing.isPending) return <DetailSkeleton />;
   if (editing && (existing.isError || !existing.data)) {
     return (
-      <ListError
-        message={errorMessage(existing.error, t)}
-        reference={supportReference(existing.error)}
-        onRetry={() => void existing.refetch()}
-      />
+      <DetailError error={existing.error} onRetry={() => void existing.refetch()} back={{ to: "/buildings", labelKey: "building.title" }} />
     );
   }
 

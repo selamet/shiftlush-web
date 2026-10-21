@@ -22,20 +22,15 @@ import {
   fetchLabelPdf,
   regenerateQr,
 } from "@/api/queries";
-import { errorMessage, supportReference } from "@/api/errors";
+import { errorMessage } from "@/api/errors";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { describeAuditEntry } from "@/lib/audit";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
 import { elevatorFileStem } from "@/lib/elevator";
 import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/i18n";
-import {
-  formatDate,
-  formatDateTime,
-  formatMoney,
-  formatNumber,
-} from "@/lib/format";
+import { formatDate, formatDateTime, formatMoney, formatNumber, formatDecimal } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
@@ -306,11 +301,7 @@ export function ElevatorDetailScreen() {
   if (query.isPending) return <DetailSkeleton />;
   if (query.isError || !query.data) {
     return (
-      <ListError
-        message={errorMessage(query.error, t)}
-        reference={supportReference(query.error)}
-        onRetry={() => void query.refetch()}
-      />
+      <DetailError error={query.error} onRetry={() => void query.refetch()} back={{ to: "/elevators", labelKey: "elevator.title" }} />
     );
   }
 
@@ -505,7 +496,7 @@ export function ElevatorDetailScreen() {
                 />
                 <FieldRow label={t("elevator.fields.stopCount")} value={tech.stop_count} />
                 <FieldRow label={t("elevator.fields.entranceCount")} value={tech.entrance_count} />
-                <FieldRow label={t("elevator.fields.speedMps")} value={tech.speed_mps} />
+                <FieldRow label={t("elevator.fields.speedMps")} value={formatDecimal(tech.speed_mps)} />
                 <FieldRow
                   label={t("elevator.fields.pitDepthMm")}
                   value={formatNumber(tech.pit_depth_mm)}

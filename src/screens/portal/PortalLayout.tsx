@@ -1,3 +1,4 @@
+import { formatPhone, telHref } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { Building2, LogOut, Phone } from "lucide-react";
@@ -33,11 +34,11 @@ export function PortalLayout() {
           </div>
           {me?.company_phone && (
             <a
-              href={`tel:${me.company_phone}`}
+              href={telHref(me.company_phone)}
               className="inline-flex min-h-control-lg items-center gap-2 rounded-md border border-border px-3 text-body font-medium hover:bg-muted focus-ring"
             >
               <Phone className="size-4" aria-hidden="true" />
-              {t("portal.callUs", { phone: me.company_phone })}
+              {t("portal.callUs", { phone: formatPhone(me.company_phone) })}
             </a>
           )}
         </div>

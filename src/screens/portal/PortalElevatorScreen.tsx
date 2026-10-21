@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, FileDown, Image as ImageIcon, Siren } from "lucide-react";
-import { errorMessage, supportReference } from "@/api/errors";
+import { errorMessage } from "@/api/errors";
 import {
   portalElevatorQuery,
   portalFileUrl,
@@ -16,7 +16,7 @@ import {
 import { toDisplay } from "@/lib/date";
 import { enumLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { InspectionLabel } from "@/components/ui/inspection-label";
 import { ChecklistResultChip, ElevatorStatusChip, VisitStatusChip } from "@/components/ui/status-chip";
@@ -44,11 +44,7 @@ export function PortalElevatorScreen() {
   if (lift.isPending) return <DetailSkeleton />;
   if (lift.isError) {
     return (
-      <ListError
-        message={errorMessage(lift.error, t)}
-        reference={supportReference(lift.error)}
-        onRetry={() => void lift.refetch()}
-      />
+      <DetailError error={lift.error} onRetry={() => void lift.refetch()} back={{ to: "/portal", labelKey: "portal.nav.lifts" }} />
     );
   }
 

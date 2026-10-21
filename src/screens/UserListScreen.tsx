@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TriangleAlert } from "lucide-react";
 import { userListQuery, type TeamUser } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
-import { formatDateTime, formatDate } from "@/lib/format";
+import { formatDateTime, formatDate, formatPhone } from "@/lib/format";
 import { useListSearch } from "@/lib/list-search";
 import { userFilters as filters } from "@/screens/list-searches";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
@@ -46,7 +46,7 @@ export function UserListScreen() {
     {
       key: "user.fields.phone",
       hideOnMobile: true,
-      cell: (row) => row.phone || <span className="text-subtle">—</span>,
+      cell: (row) => formatPhone(row.phone) || <span className="text-subtle">—</span>,
     },
     {
       key: "user.fields.certificateValidUntil",

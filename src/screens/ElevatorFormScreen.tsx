@@ -12,7 +12,6 @@ import {
   type Elevator,
   type ElevatorWrite,
 } from "@/api/queries";
-import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -21,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Field, Input } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import {
   ALL_FIELDS,
   TABS,
@@ -99,11 +98,7 @@ export function ElevatorFormScreen() {
   if (editing && existing.isPending) return <DetailSkeleton />;
   if (editing && (existing.isError || !existing.data)) {
     return (
-      <ListError
-        message={errorMessage(existing.error, t)}
-        reference={supportReference(existing.error)}
-        onRetry={() => void existing.refetch()}
-      />
+      <DetailError error={existing.error} onRetry={() => void existing.refetch()} back={{ to: "/elevators", labelKey: "elevator.title" }} />
     );
   }
 

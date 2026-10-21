@@ -13,7 +13,10 @@ import { Button } from "@/components/ui/button";
  * says what is blocked rather than implying the account is limited in general.
  *
  * Not dismissible. It describes a state that is still true after it is closed,
- * and the action that resolves it is inside the banner.
+ * and the action that resolves it is inside the banner. But it is one line at
+ * every width: on a phone the full sentence wrapped to four lines and pushed
+ * every page's title halfway down the first screen, on every page. The phone
+ * gets the short form; the full sentence is its accessible description.
  */
 export function VerificationBanner() {
   const { t } = useTranslation();
@@ -38,14 +41,23 @@ export function VerificationBanner() {
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-warning bg-warning-bg px-6 py-2 text-help text-warning"
+      className="flex items-center gap-x-3 border-b border-warning bg-warning-bg px-4 py-1.5 text-help text-warning sm:px-6"
     >
       <MailWarning className="size-3.5 shrink-0" aria-hidden="true" />
-      <span>{t("auth.unverifiedBanner")}</span>
+      <span className="hidden min-w-0 sm:inline">{t("auth.unverifiedBanner")}</span>
+      <span className="min-w-0 truncate sm:hidden" title={t("auth.unverifiedBanner")}>
+        {t("auth.unverifiedBannerShort")}
+      </span>
       {sent ? (
-        <span className="font-medium">{t("auth.verificationSent")}</span>
+        <span className="ml-auto shrink-0 font-medium sm:ml-0">{t("auth.verificationSent")}</span>
       ) : (
-        <Button size="xs" variant="secondary" onClick={() => void resend()} disabled={sending}>
+        <Button
+          size="xs"
+          variant="secondary"
+          className="ml-auto shrink-0 sm:ml-0"
+          onClick={() => void resend()}
+          disabled={sending}
+        >
           {sending ? t("common.sending") : t("auth.resendVerification")}
         </Button>
       )}

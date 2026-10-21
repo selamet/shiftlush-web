@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Link } from "@tanstack/react-router";
+import { AlertTriangle, ArrowLeft } from "lucide-react";
+import { errorMessage, isMissing, supportReference } from "@/api/errors";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 /**
  * A table waiting for its first page.
@@ -113,6 +115,60 @@ export function DetailSkeleton() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * A record page that could not show its record.
+ *
+ * Not `ListError`, which says "the list did not load" — the wrong sentence on
+ * a detail page, and the cause of a screen that read "list failed: record not
+ * found". Two cases, decided by `isMissing`: a record that is not there (or not
+ * this person's to see) gets a plain sentence and the way back, with no retry
+ * that could never succeed; anything else — the network, the server — gets the
+ * error, a retry, the support reference, and the way back too, so no detail
+ * page is ever a dead end.
+ */
+export function DetailError({
+  error,
+  onRetry,
+  back,
+  missingKey = "detail.missing",
+}: {
+  error: unknown;
+  onRetry?: () => void;
+  /** Where "back" goes: the list this record belongs to, named by its title key. */
+  back: { to: string; labelKey: string };
+  /** The sentence for a record that is not there, when the screen can say more. */
+  missingKey?: string;
+}) {
+  const { t } = useTranslation();
+  const missing = isMissing(error);
+  const reference = missing ? "" : supportReference(error);
+  return (
+    <div role="alert" className="flex flex-col items-center gap-3 px-6 py-16 text-center">
+      <AlertTriangle className="size-6 text-danger" aria-hidden="true" />
+      <div className="flex flex-col gap-1">
+        <p className="text-cardtitle">{missing ? t(missingKey) : t("detail.loadFailed")}</p>
+        {!missing && <p className="max-w-sm text-body text-muted-foreground">{errorMessage(error, t)}</p>}
+      </div>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {!missing && onRetry && (
+          <Button variant="secondary" size="sm" onClick={onRetry}>
+            {t("common.retry")}
+          </Button>
+        )}
+        <Link to={back.to} className={buttonVariants({ variant: missing ? "secondary" : "ghost", size: "sm" })}>
+          <ArrowLeft aria-hidden="true" />
+          {t(back.labelKey)}
+        </Link>
+      </div>
+      {reference && (
+        <p className="text-help text-subtle">
+          {t("errors.requestIdLabel")}: <span className="font-mono">{reference}</span>
+        </p>
+      )}
     </div>
   );
 }

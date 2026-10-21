@@ -27,8 +27,8 @@ import {
   type Fault,
 } from "@/api/queries";
 import type { FaultPriority } from "@/api/enums";
-import { errorMessage, supportReference } from "@/api/errors";
-import { formatDateTime } from "@/lib/format";
+import { errorMessage } from "@/api/errors";
+import { formatDateTime, formatPhone, telHref } from "@/lib/format";
 import { enumLabel } from "@/lib/i18n";
 import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
 import { useSession } from "@/lib/session";
@@ -44,7 +44,7 @@ import {
 } from "@/lib/faults";
 import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
 import { ResponseTimer } from "@/components/faults/ResponseTimer";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { PlanRestricted } from "@/components/plan/PlanRestricted";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -118,10 +118,12 @@ export function FaultDetailScreen() {
   if (query.isPending) return <DetailSkeleton />;
   if (query.isError || !query.data) {
     return (
-      <ListError
-        message={errorMessage(query.error, t)}
-        reference={supportReference(query.error)}
+      <DetailError
+        error={query.error}
         onRetry={() => void query.refetch()}
+        // A technician comes here from their own list; the office from the board.
+        back={role === "technician" ? { to: "/my-faults", labelKey: "fault.mine" } : { to: "/faults", labelKey: "fault.title" }}
+        missingKey="fault.missing"
       />
     );
   }
@@ -215,9 +217,9 @@ export function FaultDetailScreen() {
             <span>{t("fault.reporter")}:</span>
             {fault.reporter_name && <span className="text-foreground">{fault.reporter_name}</span>}
             {fault.reporter_phone && (
-              <a href={`tel:${fault.reporter_phone}`} className="inline-flex items-center gap-1 text-primary hover:underline">
+              <a href={telHref(fault.reporter_phone)} className="inline-flex items-center gap-1 text-primary hover:underline">
                 <Phone className="size-3.5" aria-hidden="true" />
-                {fault.reporter_phone}
+                {formatPhone(fault.reporter_phone)}
               </a>
             )}
           </p>

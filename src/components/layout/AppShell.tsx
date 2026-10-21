@@ -23,7 +23,7 @@ function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   return (
     <header
       data-app-chrome
-      className="flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle bg-card px-4"
+      className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle bg-card px-4"
     >
       <Button
         size="icon"
@@ -85,7 +85,7 @@ function TopbarSkeleton() {
   return (
     <header
       data-app-chrome
-      className="flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle bg-card px-4"
+      className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle bg-card px-4"
     >
       <div className="h-control-sm w-full max-w-md rounded-md bg-muted" />
       <div className="ml-auto flex items-center gap-2.5">
@@ -135,8 +135,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const restoring = status === "restoring" || role === null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <div data-app-chrome className="hidden lg:block">
+    // Document scroll, not a scrolling <main> inside a fixed-height box: on a
+    // phone that is what lets the browser's own toolbar collapse and give the
+    // technician the room back, what makes a tap on the status bar scroll to
+    // the top, and what lets the browser restore the scroll position. The
+    // sidebar and the top bar stay put by being sticky instead.
+    <div className="flex min-h-dvh bg-background">
+      <div data-app-chrome className="sticky top-0 hidden h-dvh shrink-0 self-start lg:block">
         {restoring ? <SidebarSkeleton /> : <Sidebar role={role} />}
       </div>
 
@@ -179,14 +184,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Below the topbar and above the content: it belongs to the account,
             not to the page, and it must not move when the page changes. */}
         {!restoring && <VerificationBanner />}
-        <main data-app-main className="min-h-0 flex-1 overflow-y-auto">
+        <main data-app-main className="flex-1">
           {children}
         </main>
         {restoring && (
           <div
             role="status"
             className={cn(
-              "flex h-8 shrink-0 items-center justify-center gap-2",
+              "sticky bottom-0 flex h-8 shrink-0 items-center justify-center gap-2",
               "border-t border-border-subtle bg-muted text-help text-muted-foreground",
             )}
           >

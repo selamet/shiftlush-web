@@ -1018,7 +1018,10 @@ export const routeTree = rootRoute.addChildren([
   ]),
 ]);
 
-export const router = createRouter({ routeTree });
+// The page scrolls the document now (see AppShell), so the router can do what
+// a browser does: put each page back where it was on back/forward, and start a
+// new page at the top.
+export const router = createRouter({ routeTree, scrollRestoration: true });
 
 export { RouterProvider };
 

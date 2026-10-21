@@ -70,3 +70,13 @@ export function fieldErrors(error: unknown, t: TFunction): Record<string, string
   }
   return messages;
 }
+
+/**
+ * Whether a failure means "there is nothing here for you" rather than "it did
+ * not load": not found, or not permitted. The server answers both the same way
+ * on purpose for records another firm owns, and a retry fixes neither — so a
+ * detail screen offers the way back instead of a retry button that cannot work.
+ */
+export function isMissing(error: unknown): boolean {
+  return error instanceof ApiError && (error.status === 404 || error.status === 403);
+}

@@ -3,7 +3,6 @@ import { Link, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, TriangleAlert } from "lucide-react";
 import { visitAttachmentsQuery, visitKeys, visitQuery, type MaintenanceVisit } from "@/api/queries";
-import { errorMessage, supportReference } from "@/api/errors";
 import { toDisplay } from "@/lib/date";
 import { formatDateTime } from "@/lib/format";
 import { enumLabel } from "@/lib/i18n";
@@ -13,7 +12,7 @@ import { CHECKLIST_ITEMS, attentionCount, canReadVisits } from "@/lib/visit";
 import type { Role } from "@/components/layout/nav-config";
 import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
 import { Alert } from "@/components/ui/alert";
-import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { ChecklistResultChip, VisitStatusChip } from "@/components/ui/status-chip";
 import { VisitsRestricted } from "@/components/visits/VisitsRestricted";
 
@@ -79,11 +78,7 @@ export function VisitDetailScreen() {
   if (query.isPending) return <DetailSkeleton />;
   if (query.isError || !query.data) {
     return (
-      <ListError
-        message={errorMessage(query.error, t)}
-        reference={supportReference(query.error)}
-        onRetry={() => void query.refetch()}
-      />
+      <DetailError error={query.error} onRetry={() => void query.refetch()} back={{ to: "/maintenance-visits", labelKey: "visit.title" }} />
     );
   }
 
