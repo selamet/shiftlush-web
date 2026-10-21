@@ -13,8 +13,8 @@ import {
 } from "@/lib/list-search";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ColumnMenu, useColumnPreferences } from "./ColumnMenu";
-import { ListMenu, ListMenuOption } from "./ListMenu";
 import { EmptyState } from "./EmptyState";
 import { ListError, TableSkeleton } from "./ListStates";
 
@@ -208,43 +208,27 @@ export function ListPage<T>({
               );
             }
 
-            const chosen = filter.options.find((option) => option.value === value);
+            // A searchable picker like every other choice in the product,
+            // cleared to "all" — the filter's absence — by its cross.
             return (
-              <ListMenu
-                key={filter.param}
-                label={t(filter.labelKey)}
-                active={Boolean(value)}
-                value={chosen ? optionLabel(chosen, t) : undefined}
-                panel={(close) => (
-                  <>
-                    <ListMenuOption
-                      role="menuitemradio"
-                      checked={!value}
-                      onSelect={() => {
-                        state.setFilter(filter.param, null);
-                        close();
-                      }}
-                    >
-                      {t("list.allOption")}
-                    </ListMenuOption>
-                    {filter.options.map((option) => (
-                      <ListMenuOption
-                        key={option.value}
-                        role="menuitemradio"
-                        checked={option.value === value}
-                        onSelect={() => {
-                          state.setFilter(filter.param, option.value);
-                          close();
-                        }}
-                      >
-                        {optionLabel(option, t)}
-                      </ListMenuOption>
-                    ))}
-                  </>
-                )}
-              >
-                {t(filter.labelKey)}
-              </ListMenu>
+              <label key={filter.param} className="flex items-center gap-1.5">
+                <span className="text-help whitespace-nowrap text-muted-foreground">
+                  {t(filter.labelKey)}
+                </span>
+                <SearchableSelect
+                  size="sm"
+                  className="w-44"
+                  clearable
+                  aria-label={t(filter.labelKey)}
+                  placeholder={t("list.allOption")}
+                  value={value ?? ""}
+                  onChange={(next) => state.setFilter(filter.param, next || null)}
+                  options={filter.options.map((option) => ({
+                    value: option.value,
+                    label: optionLabel(option, t),
+                  }))}
+                />
+              </label>
             );
           })}
         </div>
@@ -441,20 +425,19 @@ export function ListPage<T>({
                 })}
               </span>
               <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 text-help text-muted-foreground">
-                  {t("list.perPage")}
-                  <select
-                    value={state.pageSize}
-                    onChange={(event) => state.setPageSize(Number(event.target.value))}
-                    className="h-control-xs rounded-sm border border-input bg-card px-1.5 text-help focus-ring"
-                  >
-                    {PAGE_SIZES.map((size) => (
-                      <option key={size} value={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <span className="flex items-center gap-2 text-help text-muted-foreground">
+                  <span aria-hidden="true">{t("list.perPage")}</span>
+                  <SearchableSelect
+                    size="sm"
+                    className="w-24"
+                    aria-label={t("list.perPage")}
+                    value={String(state.pageSize)}
+                    onChange={(next) => {
+                      if (next) state.setPageSize(Number(next));
+                    }}
+                    options={PAGE_SIZES.map((size) => ({ value: String(size), label: String(size) }))}
+                  />
+                </span>
                 <div className="flex items-center gap-1">
                   <Button
                     size="iconXs"

@@ -16,6 +16,7 @@ import {
 import { errorMessage, supportReference } from "@/api/errors";
 import { formValues, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
+import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
 import { useSession } from "@/lib/session";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -197,20 +198,19 @@ export function UserDetailScreen() {
                   // click. The reason takes the place of the hint.
                   hint={roleLocked ? roleLockReason : undefined}
                   error={details.state.fields.role}
+                  bindChild={false}
                 >
-                  <select
+                  <SearchableSelect
                     id="ud-role"
                     name="role"
                     disabled={roleLocked}
                     defaultValue={record.role}
-                    className="h-control-md rounded-md border border-input bg-card px-3 text-body focus-ring disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground pointer-coarse:h-control-lg"
-                  >
-                    {ROLES.map((value) => (
-                      <option key={value} value={value}>
-                        {enumLabel("user.role", value)}
-                      </option>
-                    ))}
-                  </select>
+                    invalid={Boolean(details.state.fields.role)}
+                    aria-describedby={
+                      details.state.fields.role ? "ud-role-error" : roleLocked ? "ud-role-hint" : undefined
+                    }
+                    options={enumOptions(ROLES, (value) => enumLabel("user.role", value))}
+                  />
                 </Field>
 
                 <Field

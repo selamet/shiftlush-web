@@ -10,6 +10,7 @@ import {
 } from "@/api/queries";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
+import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
 import { useSession } from "@/lib/session";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -144,20 +145,17 @@ export function InviteUserScreen() {
           required
           hint={t("user.ownerNotInvitable")}
           error={state.fields.role}
+          bindChild={false}
         >
-          <select
+          <SearchableSelect
             id="iu-role"
             name="role"
             required
             defaultValue="operations"
-            className="h-control-md rounded-md border border-input bg-card px-3 text-body focus-ring pointer-coarse:h-control-lg"
-          >
-            {INVITABLE_ROLES.map((value) => (
-              <option key={value} value={value}>
-                {enumLabel("user.role", value)}
-              </option>
-            ))}
-          </select>
+            invalid={Boolean(state.fields.role)}
+            aria-describedby={state.fields.role ? "iu-role-error" : "iu-role-hint"}
+            options={enumOptions(INVITABLE_ROLES, (value) => enumLabel("user.role", value))}
+          />
         </Field>
 
         <div className="flex items-center gap-2">

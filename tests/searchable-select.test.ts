@@ -134,3 +134,80 @@ describe("a search box that reaches the server", () => {
     expect(asked).not.toHaveBeenCalled();
   });
 });
+
+describe("a picker that filters what it already holds", () => {
+  const CITIES = [
+    { value: "34", label: "İstanbul" },
+    { value: "25", label: "Erzurum" },
+    { value: "c", label: "Çayırova", hint: "Kocaeli" },
+  ];
+
+  function renderLocal(props: Record<string, unknown> = {}) {
+    act(() => {
+      root.render(
+        React.createElement(
+          "form",
+          null,
+          React.createElement(SearchableSelect, { options: CITIES, name: "city", ...props }),
+        ),
+      );
+    });
+    const input = container.querySelector<HTMLInputElement>('input[role="combobox"]');
+    if (!input) throw new Error("the field did not render a combobox");
+    return input;
+  }
+
+  function shown(): string[] {
+    return [...container.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? "");
+  }
+
+  it("finds Turkish names typed without Turkish letters", () => {
+    const input = renderLocal();
+    act(() => input.focus());
+    type(input, "istanbul");
+    expect(shown()).toEqual(["İstanbul"]);
+  });
+
+  it("searches the hint too, and ignores case and the dotless i", () => {
+    const input = renderLocal();
+    act(() => input.focus());
+    type(input, "KOCAELI");
+    expect(shown()).toEqual(["ÇayırovaKocaeli"]);
+  });
+
+  it("submits the chosen value through a hidden input, the way a native select did", () => {
+    const input = renderLocal({ defaultValue: "25" });
+    const form = container.querySelector("form") as HTMLFormElement;
+    expect(new FormData(form).get("city")).toBe("25");
+    expect(input.value).toBe("Erzurum");
+  });
+
+  it("submits nothing at all when disabled, like a native select", () => {
+    renderLocal({ defaultValue: "25", disabled: true });
+    const form = container.querySelector("form") as HTMLFormElement;
+    expect(new FormData(form).has("city")).toBe(false);
+  });
+
+  it("empties an optional choice with its cross", () => {
+    const changed = vi.fn();
+    renderLocal({ defaultValue: "25", clearable: true, onChange: changed });
+    const clear = container.querySelector<HTMLButtonElement>('button[type="button"]');
+    expect(clear).not.toBeNull();
+    act(() => clear?.click());
+    expect(changed).toHaveBeenCalledWith("");
+    const form = container.querySelector("form") as HTMLFormElement;
+    expect(new FormData(form).get("city")).toBe("");
+  });
+
+  it("is a combobox that owns a listbox, with the highlighted row announced", () => {
+    const input = renderLocal();
+    act(() => input.focus());
+    expect(input.getAttribute("aria-expanded")).toBe("true");
+    const list = container.querySelector('[role="listbox"]');
+    expect(list?.id).toBe(input.getAttribute("aria-controls"));
+    act(() => {
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    });
+    expect(input.getAttribute("aria-activedescendant")).toBe(`${list?.id}-1`);
+  });
+});

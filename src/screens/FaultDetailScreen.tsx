@@ -30,6 +30,7 @@ import type { FaultPriority } from "@/api/enums";
 import { errorMessage, supportReference } from "@/api/errors";
 import { formatDateTime } from "@/lib/format";
 import { enumLabel } from "@/lib/i18n";
+import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import {
@@ -51,9 +52,6 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Field, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { FaultPriorityChip, FaultStatusChip } from "@/components/ui/status-chip";
-
-const selectClass =
-  "h-control-md rounded-md border border-input bg-card px-2 text-body focus-ring pointer-coarse:h-control-lg";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -284,21 +282,19 @@ export function FaultDetailScreen() {
       {actions.includes("edit") && (
         <Section title={t("fault.officeCorrections")}>
           <div className="flex flex-wrap items-center gap-4">
-            <label className="flex items-center gap-2 text-body">
-              <span>{t("fault.fields.priority")}</span>
-              <select
+            <span className="flex items-center gap-2 text-body">
+              <label htmlFor="fault-priority">{t("fault.fields.priority")}</label>
+              <SearchableSelect
+                id="fault-priority"
+                className="w-44"
                 value={fault.priority}
                 disabled={edit.isPending}
-                onChange={(event) => edit.mutate({ priority: event.target.value as FaultPriority })}
-                className={selectClass}
-              >
-                {FAULT_PRIORITIES.map((value) => (
-                  <option key={value} value={value}>
-                    {enumLabel("fault.priority", value)}
-                  </option>
-                ))}
-              </select>
-            </label>
+                onChange={(next) => {
+                  if (next && next !== fault.priority) edit.mutate({ priority: next as FaultPriority });
+                }}
+                options={enumOptions(FAULT_PRIORITIES, (value) => enumLabel("fault.priority", value))}
+              />
+            </span>
             {/* The office's say over the invoice. Ticking it states the value
                 outright, which the server records as an override and keeps
                 even when resolving would have derived something else. */}
@@ -356,19 +352,14 @@ export function FaultDetailScreen() {
                 <label className="sr-only" htmlFor="fault-assign">
                   {t("fault.fields.technician")}
                 </label>
-                <select
+                <SearchableSelect
                   id="fault-assign"
+                  className="w-56"
                   value={technician}
-                  onChange={(event) => setTechnician(event.target.value)}
-                  className={selectClass}
-                >
-                  <option value="">{t("fault.selectTechnician")}</option>
-                  {(technicians.data ?? []).map((one) => (
-                    <option key={one.id} value={one.id}>
-                      {one.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setTechnician}
+                  placeholder={t("fault.selectTechnician")}
+                  options={(technicians.data ?? []).map((one) => ({ value: one.id, label: one.name }))}
+                />
                 <Button
                   size="lg"
                   variant={fault.status === "open" ? "primary" : "secondary"}
