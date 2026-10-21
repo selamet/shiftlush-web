@@ -130,6 +130,10 @@ const PATHS = [
   "/inspections",
   "/inspections?days=%2230%22",
   "/elevators/e1/inspections/new",
+  "/billing",
+  "/billing?needs_price=%22true%22",
+  "/billing/d1",
+  "/billing/d2",
   "/settings",
   // Its own route rather than a tab behind a click, which is what makes it
   // renderable here at all: the password form and the session list are the two
@@ -322,7 +326,47 @@ const EXPECT_ABSENT = {
  * in for it entirely — the accountant's page shares nothing with the others.
  */
 const VISITS_RESTRICTED = "Bakım kayıtları rolünüzde görünmüyor";
+const BILLING_RESTRICTED = "Faturalar rolünüzde görünmüyor";
 const EXPECT_BY_ROLE = {
+  // The money roles only: owner (and admin) and the accountant. Operations
+  // runs the fleet and the technician the lifts; both get the restricted state.
+  "/billing": {
+    replace: {
+      owner: ["Fiyat eksik", "Bu sayfadaki taslakların toplamı", "₺3.000,00", "YKS2026000123", "CSV olarak dışa aktar"],
+      accountant: ["Fiyat eksik", "Bu sayfadaki taslakların toplamı", "₺3.000,00", "YKS2026000123", "CSV olarak dışa aktar"],
+      operations: [BILLING_RESTRICTED],
+      technician: [BILLING_RESTRICTED],
+    },
+  },
+  "/billing?needs_price=%22true%22": {
+    replace: {
+      owner: ["Dadaş Konakları Site Yönetimi", "Yalnızca fiyatı eksik olanlar"],
+      accountant: ["Dadaş Konakları Site Yönetimi", "Yalnızca fiyatı eksik olanlar"],
+      operations: [BILLING_RESTRICTED],
+      technician: [BILLING_RESTRICTED],
+    },
+  },
+  // A draft: the unpriced line, the price box, the blocker said in words,
+  // the totals and the actions a draft has.
+  "/billing/d1": {
+    replace: {
+      owner: ["1 satırda fiyat eksik", "Kesildi olarak işaretle", "Satır ekle", "₺2.500,00", "KDV (%20)", "İptal et"],
+      accountant: ["1 satırda fiyat eksik", "Kesildi olarak işaretle", "Satır ekle", "₺2.500,00", "KDV (%20)", "İptal et"],
+      operations: [BILLING_RESTRICTED],
+      technician: [BILLING_RESTRICTED],
+    },
+  },
+  // Issued: read-only, with "paid" and "cancel" and nothing to edit.
+  "/billing/d2": {
+    replace: {
+      owner: ["YKS2026000123", "Ödendi", "Eylül bakım bedeli."],
+      accountant: ["YKS2026000123", "Ödendi", "Eylül bakım bedeli."],
+      operations: [BILLING_RESTRICTED],
+      technician: [BILLING_RESTRICTED],
+    },
+  },
+  // The contract's own drafts, for the roles that see money.
+  "/contracts/k1": { add: { owner: ["Fatura taslakları"], accountant: ["Fatura taslakları"] } },
   // The office's say over the customer portal: the contact with an account,
   // and the way to switch it off. Owner, admin and operations only.
   "/customers/c1": {
@@ -463,6 +507,9 @@ const EXPECT_BY_ROLE = {
  * offer them a way in — the absence is the property being asserted.
  */
 const EXPECT_ABSENT_BY_ROLE = {
+  // An issued draft cannot be edited: no price box, no new line.
+  "/billing/d2": { replace: { owner: ["Satır ekle"], accountant: ["Satır ekle"] } },
+  "/contracts/k1": { add: { operations: ["Fatura taslakları"] } },
   "/customers/c1": { add: { technician: ["Portal erişimi"], accountant: ["Portal erişimi"] } },
   "/elevators/e1": {
     replace: { accountant: ["Bakım kaydı gir", "Bakım geçmişi", "Bu ayın planı", "Arıza bildir", "Muayene geçmişi"] },

@@ -10,6 +10,7 @@ import {
   Siren,
   Wrench,
   FileText,
+  Receipt,
   QrCode,
   UserCog,
   ScrollText,
@@ -135,6 +136,14 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: "contract.title",
         icon: FileText,
         roles: ["owner", "admin", "operations", "accountant"],
+      },
+      {
+        // Beside the contracts the drafts are made from. Operations runs the
+        // fleet, not the money, and the server keeps it out; so does this.
+        to: "/billing",
+        labelKey: "billing.title",
+        icon: Receipt,
+        roles: ["owner", "admin", "accountant"],
       },
     ],
   },

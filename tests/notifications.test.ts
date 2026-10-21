@@ -216,6 +216,26 @@ describe("describeNotification", () => {
     ).toContain("20.10.2026 tarihli periyodik muayenede kırmızı etiket aldı");
   });
 
+  it("words the billing kinds as their e-mails do", () => {
+    expect(
+      describeNotification(notification("invoice_drafts_ready", { period: "2026-10", count: 16, needs_price: 3 }), t),
+    ).toMatchObject({
+      title: "Ekim 2026 için 16 fatura taslağı hazır",
+      body: expect.stringContaining("Ekim 2026 için 16 fatura taslağı hazır, 3 tanesinde fiyat eksik."),
+    });
+    expect(
+      describeNotification(
+        notification("billing_vat_missing", {
+          contract_number: "2026-0043",
+          customer_name: "Dadaş",
+          period_start: "2026-10-01",
+          period_end: "2026-10-31",
+        }),
+        t,
+      ).body,
+    ).toContain("Dadaş ile yapılan 2026-0043 numaralı sözleşmenin 01.10.2026 – 31.10.2026 dönemi için");
+  });
+
   it("falls back to a plain notice for a kind this client does not know", () => {
     const words = describeNotification(notification("invoice_overdue", { amount: "100" }), t);
     expect(words).toEqual({
@@ -242,6 +262,10 @@ describe("notificationTarget", () => {
       to: "/elevators/$id",
       params: { id: "e1" },
     });
+  });
+
+  it("leads a billing notice to the billing screen", () => {
+    expect(notificationTarget({ subject_type: "billing", subject_id: "co1" })).toEqual({ to: "/billing" });
   });
 
   it("leads a fault notice to the fault", () => {

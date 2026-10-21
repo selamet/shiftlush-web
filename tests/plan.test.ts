@@ -108,9 +108,10 @@ describe("rows that stand out", () => {
 });
 
 describe("homePath", () => {
-  it("sends a technician to today's list and everybody else to the lifts", () => {
+  it("sends a technician to today's list, an accountant to billing, and everybody else to the lifts", () => {
     expect(homePath("technician")).toBe("/today");
     expect(homePath("owner")).toBe("/elevators");
+    expect(homePath("accountant")).toBe("/billing");
     expect(homePath(null)).toBe("/elevators");
   });
 });

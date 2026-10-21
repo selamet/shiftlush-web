@@ -133,11 +133,14 @@ export function canManagePlan(role: Role | null): boolean {
 /**
  * Where a person lands after signing in, and where `/` sends them.
  *
- * A technician opens the app to find out what to do today, so that is the
- * first screen; everybody else starts from the register of lifts.
+ * A technician opens the app to find out what to do today, and an accountant
+ * to see what is waiting to be invoiced, so those are their first screens;
+ * everybody else starts from the register of lifts.
  */
-export function homePath(role: Role | null | undefined): "/today" | "/elevators" {
-  return role === "technician" ? "/today" : "/elevators";
+export function homePath(role: Role | null | undefined): "/today" | "/billing" | "/elevators" {
+  if (role === "technician") return "/today";
+  if (role === "accountant") return "/billing";
+  return "/elevators";
 }
 
 /**

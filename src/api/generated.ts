@@ -1418,6 +1418,165 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/invoice-drafts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["invoice_drafts_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoice-drafts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["invoice_drafts_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description The notes. Draft only. */
+        patch: operations["invoice_drafts_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/invoice-drafts/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Cancel a draft or an issued draft; its faults are released. */
+        post: operations["invoice_drafts_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoice-drafts/{id}/issue/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Record the e-invoice's number and date, and freeze the draft. */
+        post: operations["invoice_drafts_issue_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoice-drafts/{id}/lines/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Add a manual line. Draft only; the totals recompute. */
+        post: operations["invoice_drafts_lines_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoice-drafts/{id}/mark-paid/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Record the payment date. From `issued` only. */
+        post: operations["invoice_drafts_mark_paid_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoice-drafts/{id}/pdf/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One page; marked as a draft, not an invoice, until it is issued. */
+        get: operations["invoice_drafts_pdf_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoice-drafts/export.csv/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The filtered list as CSV: semicolons, UTF-8 with a BOM, decimal commas.
+         *
+         *     Every draft the filters select, not one page of them: an export is the
+         *     list the accountant is looking at, all of it.
+         */
+        get: operations["invoice_drafts_export.csv_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoice-lines/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One line of a draft: price it, correct it, or take it off. Draft only. */
+        get: operations["invoice_lines_retrieve"];
+        put?: never;
+        post?: never;
+        /** @description One line of a draft: price it, correct it, or take it off. Draft only. */
+        delete: operations["invoice_lines_destroy"];
+        options?: never;
+        head?: never;
+        /** @description One line of a draft: price it, correct it, or take it off. Draft only. */
+        patch: operations["invoice_lines_partial_update"];
+        trace?: never;
+    };
     "/api/v1/maintenance-visits/": {
         parameters: {
             query?: never;
@@ -3334,6 +3493,102 @@ export interface components {
             /** Format: date-time */
             expires_at: string;
         };
+        InvoiceCancelRequest: {
+            reason: string;
+        };
+        InvoiceDraftRead: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly contract: string;
+            readonly contract_number: string;
+            /** Format: uuid */
+            readonly customer: string;
+            readonly customer_name: string;
+            /** Format: date */
+            readonly period_start: string;
+            /** Format: date */
+            readonly period_end: string;
+            readonly status: components["schemas"]["InvoiceStatus"];
+            readonly currency: string;
+            /** Format: decimal */
+            readonly vat_rate: string;
+            /** Format: decimal */
+            readonly subtotal: string;
+            /** Format: decimal */
+            readonly vat_amount: string;
+            /** Format: decimal */
+            readonly total: string;
+            /** @description Whether any line still waits for a price; such a draft cannot be issued. */
+            readonly needs_price: boolean;
+            readonly invoice_number: string;
+            /** Format: date */
+            readonly invoice_date: string | null;
+            /** Format: date */
+            readonly paid_on: string | null;
+            /** Format: date-time */
+            readonly cancelled_at: string | null;
+            readonly cancel_reason: string;
+            readonly notes: string;
+            readonly lines: components["schemas"]["InvoiceLine"][];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        InvoiceIssueRequest: {
+            invoice_number: string;
+            /** Format: date */
+            invoice_date: string;
+        };
+        InvoiceLine: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly draft: string;
+            readonly kind: components["schemas"]["InvoiceLineKind"];
+            readonly description: string;
+            /** Format: uuid */
+            readonly elevator: string | null;
+            /** Format: uuid */
+            readonly fault: string | null;
+            /** Format: decimal */
+            readonly quantity: string;
+            /** Format: decimal */
+            readonly unit_price: string | null;
+            /** Format: decimal */
+            readonly amount: string;
+            readonly needs_price: boolean;
+            readonly position: number;
+        };
+        /**
+         * @description * `contract_fee` - Contract fee
+         *     * `elevator_fee` - Elevator fee
+         *     * `fault` - Fault
+         *     * `manual` - Manual
+         * @enum {string}
+         */
+        InvoiceLineKind: "contract_fee" | "elevator_fee" | "fault" | "manual";
+        /** @description A line the generator could not know about. */
+        InvoiceManualLineRequest: {
+            description: string;
+            /** Format: decimal */
+            quantity: string;
+            /** Format: decimal */
+            unit_price: string;
+        };
+        InvoiceMarkPaidRequest: {
+            /** Format: date */
+            paid_on: string;
+        };
+        /**
+         * @description * `draft` - Draft
+         *     * `issued` - Issued
+         *     * `paid` - Paid
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        InvoiceStatus: "draft" | "issued" | "paid" | "cancelled";
         /**
          * @description Which elevators to print, in the order they should appear.
          *
@@ -3539,9 +3794,11 @@ export interface components {
          *     * `correction_deadline_near` - Correction deadline near
          *     * `correction_deadline_passed` - Correction deadline passed
          *     * `inspection_red_label` - Red inspection label
+         *     * `billing_vat_missing` - Contract not drafted: VAT rate missing
+         *     * `invoice_drafts_ready` - Invoice drafts ready
          * @enum {string}
          */
-        NotificationKind: "contract_renewal_due" | "contract_expired" | "contract_auto_renewed" | "contract_auto_renewal_blocked" | "maintenance_overdue" | "visit_assigned" | "fault_reported" | "fault_emergency" | "fault_assigned" | "fault_resolved" | "inspection_due" | "correction_deadline_near" | "correction_deadline_passed" | "inspection_red_label";
+        NotificationKind: "contract_renewal_due" | "contract_expired" | "contract_auto_renewed" | "contract_auto_renewal_blocked" | "maintenance_overdue" | "visit_assigned" | "fault_reported" | "fault_emergency" | "fault_assigned" | "fault_resolved" | "inspection_due" | "correction_deadline_near" | "correction_deadline_passed" | "inspection_red_label" | "billing_vat_missing" | "invoice_drafts_ready";
         NotificationPreference: {
             kind: components["schemas"]["NotificationKind"];
             email: boolean;
@@ -3686,6 +3943,19 @@ export interface components {
         };
         PaginatedInvitationList: {
             results: components["schemas"]["Invitation"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedInvoiceDraftReadList: {
+            results: components["schemas"]["InvoiceDraftRead"][];
             pagination: {
                 /** @example 1 */
                 page: number;
@@ -4034,6 +4304,22 @@ export interface components {
              * @description One of this inspection's own attachments, of category `inspection_report`.
              */
             report?: string | null;
+        };
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported, as in every other app.
+         */
+        PatchedInvoiceDraftEditRequest: {
+            notes?: string;
+        };
+        /** @description Correct a line, or price one that is waiting for a price. */
+        PatchedInvoiceLineEditRequest: {
+            description?: string;
+            /** Format: decimal */
+            quantity?: string;
+            /** Format: decimal */
+            unit_price?: string;
         };
         /**
          * @description Rejects a field the client sent that this serializer does not declare.
@@ -4618,6 +4904,9 @@ export interface components {
          *     * `CONTACT_HAS_NO_EMAIL` - The contact has no e-mail address to send a portal invitation to
          *     * `PORTAL_ACCOUNT_ALREADY_ACTIVE` - This contact already has an active portal account
          *     * `PORTAL_EMAIL_IN_USE` - Another active portal account already uses this e-mail address
+         *     * `INVOICE_TRANSITION_NOT_ALLOWED` - The invoice draft is not in a state this action can be taken from
+         *     * `INVOICE_LINES_NEED_PRICE` - Every line needs a price before the draft can be issued
+         *     * `DUPLICATE_INVOICE_NUMBER` - Another issued invoice of this company already has this number
          *     * `FAULT_TRANSITION_NOT_ALLOWED` - The fault is not in a state this action can be taken from
          *     * `NOTIFICATION_EMAIL_LOCKED` - This notification is always e-mailed and cannot be turned off
          *     * `LAST_OWNER_CANNOT_BE_DEACTIVATED` - A company must keep at least one active owner
@@ -4641,7 +4930,7 @@ export interface components {
          *     * `ATTACHMENT_TARGET_MISMATCH` - Attachment does not belong to the record it is being linked to
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "FAULT_TRANSITION_NOT_ALLOWED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
+        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "INVOICE_TRANSITION_NOT_ALLOWED" | "INVOICE_LINES_NEED_PRICE" | "DUPLICATE_INVOICE_NUMBER" | "FAULT_TRANSITION_NOT_ALLOWED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
         /** @description The shape of every error response. There is no `message` field: the backend sends codes, and the words live in the client's translation file, so wording changes in one place and adding a language does not touch the API. */
         ErrorResponse: {
             error: {
@@ -6892,6 +7181,318 @@ export interface operations {
             };
         };
     };
+    invoice_drafts_list: {
+        parameters: {
+            query?: {
+                contract?: string;
+                customer?: string;
+                needs_price?: boolean;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A month, "YYYY-MM": drafts whose period overlaps it. */
+                period?: string;
+                /**
+                 * @description * `draft` - Draft
+                 *     * `issued` - Issued
+                 *     * `paid` - Paid
+                 *     * `cancelled` - Cancelled
+                 */
+                status?: "cancelled" | "draft" | "issued" | "paid";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedInvoiceDraftReadList"];
+                };
+            };
+        };
+    };
+    invoice_drafts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this invoice draft. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceDraftRead"];
+                };
+            };
+        };
+    };
+    invoice_drafts_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this invoice draft. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedInvoiceDraftEditRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedInvoiceDraftEditRequest"];
+                "multipart/form-data": components["schemas"]["PatchedInvoiceDraftEditRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceDraftRead"];
+                };
+            };
+        };
+    };
+    invoice_drafts_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this invoice draft. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvoiceCancelRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["InvoiceCancelRequest"];
+                "multipart/form-data": components["schemas"]["InvoiceCancelRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceDraftRead"];
+                };
+            };
+        };
+    };
+    invoice_drafts_issue_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this invoice draft. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvoiceIssueRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["InvoiceIssueRequest"];
+                "multipart/form-data": components["schemas"]["InvoiceIssueRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceDraftRead"];
+                };
+            };
+        };
+    };
+    invoice_drafts_lines_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this invoice draft. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvoiceManualLineRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["InvoiceManualLineRequest"];
+                "multipart/form-data": components["schemas"]["InvoiceManualLineRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceLine"];
+                };
+            };
+        };
+    };
+    invoice_drafts_mark_paid_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this invoice draft. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvoiceMarkPaidRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["InvoiceMarkPaidRequest"];
+                "multipart/form-data": components["schemas"]["InvoiceMarkPaidRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceDraftRead"];
+                };
+            };
+        };
+    };
+    invoice_drafts_pdf_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this invoice draft. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+        };
+    };
+    "invoice_drafts_export.csv_retrieve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+        };
+    };
+    invoice_lines_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this invoice line. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceLine"];
+                };
+            };
+        };
+    };
+    invoice_lines_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this invoice line. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    invoice_lines_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this invoice line. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedInvoiceLineEditRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedInvoiceLineEditRequest"];
+                "multipart/form-data": components["schemas"]["PatchedInvoiceLineEditRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceLine"];
+                };
+            };
+        };
+    };
     maintenance_visits_list: {
         parameters: {
             query?: {
@@ -7206,8 +7807,10 @@ export interface operations {
                  *     * `correction_deadline_near` - Correction deadline near
                  *     * `correction_deadline_passed` - Correction deadline passed
                  *     * `inspection_red_label` - Red inspection label
+                 *     * `billing_vat_missing` - Contract not drafted: VAT rate missing
+                 *     * `invoice_drafts_ready` - Invoice drafts ready
                  */
-                kind?: "contract_auto_renewal_blocked" | "contract_auto_renewed" | "contract_expired" | "contract_renewal_due" | "correction_deadline_near" | "correction_deadline_passed" | "fault_assigned" | "fault_emergency" | "fault_reported" | "fault_resolved" | "inspection_due" | "inspection_red_label" | "maintenance_overdue" | "visit_assigned";
+                kind?: "billing_vat_missing" | "contract_auto_renewal_blocked" | "contract_auto_renewed" | "contract_expired" | "contract_renewal_due" | "correction_deadline_near" | "correction_deadline_passed" | "fault_assigned" | "fault_emergency" | "fault_reported" | "fault_resolved" | "inspection_due" | "inspection_red_label" | "invoice_drafts_ready" | "maintenance_overdue" | "visit_assigned";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */

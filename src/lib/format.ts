@@ -42,10 +42,14 @@ export function formatNumber(value: number | null | undefined): string {
  */
 export function formatMoney(amount: string | null | undefined, currency = "TRY"): string {
   if (!amount) return "";
+  // Handed to Intl as the string itself. Intl formats a decimal string
+  // exactly; `Number(amount)` would round anything past fifteen significant
+  // digits before a single character was printed. The type definitions still
+  // describe only numbers, hence the cast.
   return new Intl.NumberFormat(DEFAULT_LOCALE, {
     style: "currency",
     currency,
-  }).format(Number(amount));
+  }).format(amount as unknown as number);
 }
 
 export function formatPercent(rate: string | null | undefined): string {
