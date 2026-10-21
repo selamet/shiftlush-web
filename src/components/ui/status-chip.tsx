@@ -230,6 +230,22 @@ export function FaultStatusChip({ value }: { value: string }) {
   return <EnumChip namespace="fault.status" value={value} map={FAULT_STATUS} />;
 }
 
+/**
+ * An invoice draft's state. A draft is the system's suggestion, not yet an
+ * invoice, so it carries the dashed "assigned by the system" frame; issued is
+ * the expected state and stays plain; paid earns a tick; cancelled recedes.
+ */
+const INVOICE_STATUS: Record<string, { weight: ChipWeight; icon?: typeof Pause }> = {
+  draft: { weight: "dashed" },
+  issued: { weight: "silent" },
+  paid: { weight: "outline", icon: Check },
+  cancelled: { weight: "recessed" },
+};
+
+export function InvoiceStatusChip({ value }: { value: string }) {
+  return <EnumChip namespace="billing.status" value={value} map={INVOICE_STATUS} />;
+}
+
 export function ChecklistResultChip({ value }: { value: string }) {
   return <EnumChip namespace="visit.checklistResult" value={value} map={CHECKLIST_RESULT} />;
 }

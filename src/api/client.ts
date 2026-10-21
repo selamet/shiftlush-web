@@ -323,6 +323,9 @@ export const api = {
     request<T>(path, { ...options, method: "DELETE" }),
   postFile: (path: string, body?: unknown, options?: Omit<RequestOptions, "method" | "body">) =>
     requestFile(path, { ...options, method: "POST", body }),
+  /** A file behind the bearer token — a CSV export, a PDF — fetched, not linked. */
+  getFile: (path: string, options?: Omit<RequestOptions, "method" | "body">) =>
+    requestFile(path, { ...options, method: "GET" }),
 };
 
 /** Exposed for tests only: resets module state between cases. */

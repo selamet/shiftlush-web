@@ -1457,3 +1457,85 @@ export function invitePortalContact(customerId: string, contactId: string) {
 export function deactivatePortalAccount(accountId: string) {
   return api.post<PortalAccount>(`/portal-accounts/${accountId}/deactivate/`);
 }
+
+// --------------------------------------------------------------------------
+// Invoice drafts (M7)
+//
+// The server drafts an invoice per contract per billing period; the accountant
+// checks it, prices what it could not price, issues it in the e-invoice system
+// and records the number here. Owner, admin and accountant only.
+// --------------------------------------------------------------------------
+
+export type InvoiceDraft = Schemas["InvoiceDraftRead"];
+export type InvoiceLine = Schemas["InvoiceLine"];
+
+export const invoiceKeys = {
+  all: ["invoice-drafts"] as const,
+  list: (params: ListParams) => ["invoice-drafts", "list", params] as const,
+  detail: (id: string) => ["invoice-drafts", "detail", id] as const,
+} as const;
+
+export function invoiceDraftListQuery(params: ListParams = {}) {
+  return queryOptions({
+    queryKey: invoiceKeys.list(params),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<InvoiceDraft>>("/invoice-drafts/", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function invoiceDraftQuery(id: string) {
+  return queryOptions({
+    queryKey: invoiceKeys.detail(id),
+    queryFn: ({ signal }) => api.get<InvoiceDraft>(`/invoice-drafts/${id}/`, { signal }),
+  });
+}
+
+export function updateInvoiceDraft(id: string, body: Schemas["PatchedInvoiceDraftEditRequest"]) {
+  return api.patch<InvoiceDraft>(`/invoice-drafts/${id}/`, body);
+}
+
+/** A manual line. Draft only; the totals recompute on the server. */
+export function addInvoiceLine(draftId: string, body: Schemas["InvoiceManualLineRequest"]) {
+  return api.post<InvoiceLine>(`/invoice-drafts/${draftId}/lines/`, body);
+}
+
+/** Pricing a line that waits for a price, or correcting one. Draft only. */
+export function updateInvoiceLine(id: string, body: Schemas["PatchedInvoiceLineEditRequest"]) {
+  return api.patch<InvoiceLine>(`/invoice-lines/${id}/`, body);
+}
+
+export function deleteInvoiceLine(id: string) {
+  return api.delete<void>(`/invoice-lines/${id}/`);
+}
+
+/**
+ * Recording that the invoice was issued in the e-invoice system. Refused with
+ * INVOICE_LINES_NEED_PRICE while a line has no price, and when the number is
+ * already used in the firm.
+ */
+export function issueInvoiceDraft(id: string, body: Schemas["InvoiceIssueRequest"]) {
+  return api.post<InvoiceDraft>(`/invoice-drafts/${id}/issue/`, body);
+}
+
+export function markInvoicePaid(id: string, paidOn: string) {
+  return api.post<InvoiceDraft>(`/invoice-drafts/${id}/mark-paid/`, { paid_on: paidOn });
+}
+
+export function cancelInvoiceDraft(id: string, reason: string) {
+  return api.post<InvoiceDraft>(`/invoice-drafts/${id}/cancel/`, { reason });
+}
+
+/**
+ * The CSV of the drafts the filter names, and a draft's PDF.
+ *
+ * Fetched with the bearer token rather than linked: the token lives in memory,
+ * and an anchor cannot carry it. The caller offers the blob to save.
+ */
+export function fetchInvoiceCsv(params: ListParams) {
+  return api.getFile("/invoice-drafts/export.csv/", { query: params });
+}
+
+export function fetchInvoicePdf(id: string) {
+  return api.getFile(`/invoice-drafts/${id}/pdf/`);
+}

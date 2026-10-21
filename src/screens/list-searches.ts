@@ -359,3 +359,34 @@ export function inspectionDueDays(raw: Record<string, unknown>): number {
   const days = Number(inspectionDueSearch.params(raw).days);
   return Number.isInteger(days) && days > 0 ? days : 60;
 }
+
+/**
+ * What `GET /invoice-drafts/` narrows by. `period` is a month the drafts
+ * overlap, and `customer` an id; both menus are handed their options on
+ * screen. `needs_price` takes `true` alone — "the ones waiting for me" — and
+ * `contract` arrives on a link from a contract's own page, shown as a chip.
+ */
+export const billingFilters: ListFilter[] = [
+  enumFilter({
+    param: "status",
+    labelKey: "billing.fields.status",
+    namespace: "billing.status",
+    values: ["draft", "issued", "paid", "cancelled"],
+  }),
+  {
+    param: "period",
+    labelKey: "billing.fields.period",
+    options: [],
+    accepts: (value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value),
+    formatValue: (value) => monthYearLabel(`${value}-01`),
+  },
+  idMenuFilter({ param: "customer", labelKey: "billing.fields.customer" }),
+  {
+    param: "needs_price",
+    labelKey: "billing.filters.needsPrice",
+    options: [{ value: "true", labelKey: "billing.filters.needsPriceOnly" }],
+  },
+  scopeFilter({ param: "contract", labelKey: "billing.fields.contract" }),
+];
+
+export const billingListSearch = listSearchSchema(billingFilters);

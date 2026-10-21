@@ -28,6 +28,8 @@ const REQUIRED: Record<string, readonly string[]> = {
   contract_auto_renewal_blocked: ["contract_number", "end_date", "successor_contract_number"],
   maintenance_overdue: ["elevator_name", "next_maintenance_date"],
   visit_assigned: ["period", "count"],
+  invoice_drafts_ready: ["period", "count"],
+  billing_vat_missing: ["contract_number", "period_start", "period_end"],
   fault_reported: ["reference", "elevator_name", "building_name"],
   fault_emergency: ["reference", "elevator_name", "building_name"],
   fault_assigned: ["reference", "elevator_name", "building_name"],
@@ -137,6 +139,32 @@ export function describeNotification(notification: AppNotification, t: TFunction
     case "correction_deadline_passed":
     case "inspection_red_label":
       return { ...describeInspection(kind, data, t), known: true };
+    case "invoice_drafts_ready": {
+      const month = monthYearLabel(`${text(data, "period")}-01`) || text(data, "period");
+      const count = Number(text(data, "count"));
+      const unpriced = Number(text(data, "needs_price") || "0");
+      if (!Number.isInteger(count)) {
+        return { title: t("notification.unknown.title"), body: t("notification.unknown.body"), known: false };
+      }
+      return {
+        title: t("notification.subject.invoice_drafts_ready", { month, count }),
+        body: t(
+          unpriced > 0 ? "notification.body.invoice_drafts_ready_unpriced" : "notification.body.invoice_drafts_ready",
+          { month, count, unpriced },
+        ),
+        known: true,
+      };
+    }
+    case "billing_vat_missing":
+      return {
+        title: t("notification.subject.billing_vat_missing", { number: text(data, "contract_number") }),
+        body: t("notification.body.billing_vat_missing", {
+          contract: contractRef(data, t),
+          start: toDisplay(text(data, "period_start")),
+          end: toDisplay(text(data, "period_end")),
+        }),
+        known: true,
+      };
     case "visit_assigned": {
       // The month as the e-mail spells it — month name and year — from Intl rather
       // than a list of month names in this file.
@@ -274,9 +302,11 @@ export function notificationTarget(
 ):
   | { to: "/contracts/$id" | "/elevators/$id"; params: { id: string } }
   | { to: "/faults/$id"; params: { id: string } }
-  | { to: "/today"; params?: undefined }
+  | { to: "/today" | "/billing"; params?: undefined }
   | null {
   if (notification.subject_type === "plan") return { to: "/today" };
+  // The firm's billing as a whole, not one draft: the drafts are listed there.
+  if (notification.subject_type === "billing") return { to: "/billing" };
   if (!notification.subject_id) return null;
   if (notification.subject_type === "fault") {
     return { to: "/faults/$id", params: { id: notification.subject_id } };

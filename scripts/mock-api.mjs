@@ -508,6 +508,45 @@ function resolve(path, search, method, body) {
   const portalOff = /^\/api\/v1\/portal-accounts\/([^/]+)\/deactivate\/$/.exec(path);
   if (method === "POST" && portalOff) return { id: portalOff[1], status: "inactive" };
 
+  // Invoice drafts: one waiting for a price on a fault line, one issued, one
+  // paid. The CSV and the PDF answer with bytes, as the server does.
+  if (path.startsWith("/api/v1/invoice-drafts/") || path.startsWith("/api/v1/invoice-lines/")) {
+    const drafts = fixture("demo-invoice-drafts");
+    if (path === "/api/v1/invoice-drafts/export.csv/") return { __raw: "kunde;toplam\n", type: "text/csv" };
+    const pdf = /^\/api\/v1\/invoice-drafts\/([^/]+)\/pdf\/$/.exec(path);
+    if (pdf) return { __raw: "%PDF-1.4\n", type: "application/pdf" };
+    const action = /^\/api\/v1\/invoice-drafts\/([^/]+)\/(issue|mark-paid|cancel|lines)\/$/.exec(path);
+    if (method === "POST" && action) {
+      const draft = drafts.find((one) => one.id === action[1]);
+      if (!draft) return null;
+      if (action[2] === "lines") return { id: "l-new", draft: draft.id, kind: "manual", elevator: null, fault: null, needs_price: false, position: 9, amount: body?.unit_price ?? "0.00", ...body };
+      const next = { issue: { status: "issued", ...body }, "mark-paid": { status: "paid", ...body }, cancel: { status: "cancelled", cancel_reason: body?.reason ?? "" } }[action[2]];
+      return { ...draft, ...next };
+    }
+    const lineRoute = /^\/api\/v1\/invoice-lines\/([^/]+)\/$/.exec(path);
+    if (lineRoute) {
+      if (method === "DELETE") return {};
+      const found = drafts.flatMap((one) => one.lines).find((one) => one.id === lineRoute[1]);
+      return found ? { ...found, ...body, needs_price: false } : null;
+    }
+    const one = /^\/api\/v1\/invoice-drafts\/([^/]+)\/$/.exec(path);
+    if (one) {
+      const draft = drafts.find((candidate) => candidate.id === one[1]);
+      return draft ? { ...draft, ...(method === "PATCH" ? body : {}) } : null;
+    }
+    if (path === "/api/v1/invoice-drafts/") {
+      let rows = drafts;
+      for (const param of ["status", "customer", "contract"]) {
+        const value = search.get(param);
+        if (value) rows = rows.filter((row) => row[param] === value);
+      }
+      if (search.get("needs_price") === "true") rows = rows.filter((row) => row.needs_price);
+      const period = search.get("period");
+      if (period) rows = rows.filter((row) => row.period_start.slice(0, 7) <= period && row.period_end.slice(0, 7) >= period);
+      return page(rows);
+    }
+  }
+
   if (path === "/api/v1/audit-logs/") return page(fixture("demo-audit-logs-elevator"));
 
   // Maintenance visits. The create answers with the read shape — the view
@@ -732,6 +771,10 @@ export function installMockApi() {
         JSON.stringify({ error: { code: "NOT_FOUND", request_id: "smoke" } }),
         { status: 404, headers: { "Content-Type": "application/json" } },
       );
+    }
+    // A file rather than a record: the CSV export and the PDF.
+    if (body && typeof body === "object" && "__raw" in body) {
+      return new Response(body.__raw, { status: 200, headers: { "Content-Type": body.type } });
     }
     return new Response(JSON.stringify(body), {
       status: 200,

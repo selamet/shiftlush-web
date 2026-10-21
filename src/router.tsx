@@ -35,6 +35,8 @@ import {
   companyQuery,
   currentUserQuery,
   sessionListQuery,
+  invoiceDraftListQuery,
+  invoiceDraftQuery,
   portalAccountsQuery,
   inspectionDueQuery,
   inspectionListQuery,
@@ -69,6 +71,7 @@ import {
   type PortalMe,
 } from "@/api/portal-queries";
 import { canManagePortal } from "@/lib/portal";
+import { canUseBilling } from "@/lib/billing";
 import type { ListSearch } from "@/lib/list-search";
 import type { Role } from "@/components/layout/nav-config";
 import {
@@ -79,6 +82,7 @@ import {
   customerListSearch,
   elevatorListSearch,
   userListSearch,
+  billingListSearch,
   inspectionDueDays,
   inspectionDueSearch,
   faultListSearch,
@@ -296,6 +300,14 @@ const PortalElevatorScreen = lazyRouteComponent(
 const PortalFaultsScreen = lazyRouteComponent(
   () => import("@/screens/portal/PortalFaultsScreen"),
   "PortalFaultsScreen",
+);
+const BillingListScreen = lazyRouteComponent(
+  () => import("@/screens/BillingListScreen"),
+  "BillingListScreen",
+);
+const BillingDetailScreen = lazyRouteComponent(
+  () => import("@/screens/BillingDetailScreen"),
+  "BillingDetailScreen",
 );
 const RegisterScreen = lazyRouteComponent(
   () => import("@/screens/RegisterScreen"),
@@ -528,6 +540,17 @@ function QrRoute() {
  * the cached answer, not a second call — so the two roles the server would
  * refuse are never sent a request whose only answer is a 403.
  */
+/**
+ * A contract's invoice drafts, for the roles that see money — asked only of
+ * them, for the reason `prefetchPortalAccounts` below gives. The parameters
+ * match the panel's, or the prefetch would warm a key nothing reads.
+ */
+async function prefetchContractDrafts(contractId: string) {
+  const role = sessionOverride ? sessionOverride.role : (await ensureSession())?.role;
+  if (!canUseBilling(role ?? null)) return;
+  await queryClient.ensureQueryData(invoiceDraftListQuery({ contract: contractId, page_size: 6 }));
+}
+
 async function prefetchPortalAccounts(customerId: string) {
   const role = sessionOverride ? sessionOverride.role : (await ensureSession())?.role;
   if (!canManagePortal(role ?? null)) return;
@@ -829,9 +852,12 @@ export const routeTree = rootRoute.addChildren([
     shellChild("/contracts/$id/edit", ContractFormScreen, ({ params }) =>
       queryClient.ensureQueryData(contractQuery(params.id)),
     ),
-    shellChild("/contracts/$id", ContractDetailScreen, ({ params }) =>
-      queryClient.ensureQueryData(contractQuery(params.id)),
-    ),
+    shellChild("/contracts/$id", ContractDetailScreen, async ({ params }) => {
+      await Promise.all([
+        queryClient.ensureQueryData(contractQuery(params.id)),
+        prefetchContractDrafts(params.id),
+      ]);
+    }),
     shellChild("/qr-labels", QrLabelScreen),
     shellChild("/scan", ScanScreen),
     shellChild(
@@ -868,6 +894,16 @@ export const routeTree = rootRoute.addChildren([
       }
     }),
     shellChild("/audit-logs", AuditLogListScreen, undefined, auditLogListSearch),
+    // The accountant's landing screen, so it is warmed before the first paint.
+    shellChild(
+      "/billing",
+      BillingListScreen,
+      ({ deps }) => queryClient.ensureQueryData(invoiceDraftListQuery(billingListSearch.params(deps.search))),
+      billingListSearch,
+    ),
+    shellChild("/billing/$id", BillingDetailScreen, ({ params }) =>
+      queryClient.ensureQueryData(invoiceDraftQuery(params.id)),
+    ),
     shellChild(
       "/inspections",
       InspectionDueScreen,

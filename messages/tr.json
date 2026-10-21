@@ -750,6 +750,7 @@
     "RECORD_IN_USE": "Bu kayıt kullanımda olduğu için silinemez",
     "DUPLICATE_REGISTRATION_NUMBER": "Bu asansör kimlik numarası zaten kayıtlı",
     "DUPLICATE_CONTRACT_NUMBER": "Bu sözleşme numarası zaten kayıtlı",
+    "DUPLICATE_INVOICE_NUMBER": "Bu fatura numarası başka bir faturada kullanılmış",
     "EMAIL_ALREADY_REGISTERED": "Bu e-posta adresi zaten kayıtlı",
     "INVITATION_ALREADY_PENDING": "Bu adrese gönderilmiş, henüz kabul edilmemiş bir davet var. Yeni davet yerine mevcut daveti tekrar gönderin.",
     "IDEMPOTENCY_KEY_REUSED": "Bu işlem farklı bilgilerle tekrarlandı",
@@ -761,6 +762,8 @@
     "PORTAL_ACCOUNT_ALREADY_ACTIVE": "Bu kişinin zaten etkin bir portal hesabı var",
     "PORTAL_EMAIL_IN_USE": "Bu e-posta adresi başka bir etkin portal hesabında kullanılıyor",
     "FAULT_TRANSITION_NOT_ALLOWED": "Arıza bu durumdayken bu işlem yapılamaz; sayfa güncellenmiş olabilir, yenileyip tekrar deneyin",
+    "INVOICE_TRANSITION_NOT_ALLOWED": "Fatura taslağı bu durumdayken bu işlem yapılamaz; sayfa güncellenmiş olabilir, yenileyip tekrar deneyin",
+    "INVOICE_LINES_NEED_PRICE": "Fiyatı girilmemiş satırlar var; kesildi olarak işaretlemeden önce tüm satırlara fiyat girin",
     "NOTIFICATION_EMAIL_LOCKED": "Bu bildirimin e-postası kapatılamaz",
     "LAST_OWNER_CANNOT_BE_DEACTIVATED": "Firmada en az bir aktif sahip kalmalı",
     "ONLY_TECHNICIANS_ARE_ASSIGNED": "Müşteri ataması yalnızca teknisyenler için yapılır",
@@ -1271,7 +1274,9 @@
       "inspection_due": "Periyodik muayene yaklaşıyor: {{elevator}} ({{building}})",
       "correction_deadline_near": "Düzeltme süresi yaklaşıyor: {{elevator}} ({{building}}), {{days}} gün kaldı",
       "correction_deadline_passed": "MÜHÜR RİSKİ: {{elevator}} ({{building}}) düzeltme süresi doldu",
-      "inspection_red_label": "Kırmızı etiket: {{elevator}} ({{building}}) kullanılmamalı"
+      "inspection_red_label": "Kırmızı etiket: {{elevator}} ({{building}}) kullanılmamalı",
+      "invoice_drafts_ready": "{{month}} için {{count}} fatura taslağı hazır",
+      "billing_vat_missing": "KDV oranı eksik: {{number}} numaralı sözleşmenin faturası hazırlanamadı"
     },
     "body": {
       "contract_renewal_due": "{{contract}} sözleşmenin süresi {{date}} tarihinde doluyor.",
@@ -1293,7 +1298,10 @@
       "correction_deadline_near_red": "{{building}} binasındaki {{elevator}} asansörünün kırmızı etiketle bildirilen kusurlarının {{deadline}} tarihine kadar giderilmesi gerekiyor; {{days}} gün kaldı ve {{open}} uygunsuzluk hâlâ açık. Süre kaçırılırsa asansör belediye tarafından mühürlenir.",
       "correction_deadline_near_yellow": "{{building}} binasındaki {{elevator}} asansörünün sarı etiketle bildirilen kusurlarının {{deadline}} tarihine kadar giderilmesi gerekiyor; {{days}} gün kaldı ve {{open}} uygunsuzluk hâlâ açık. Süre kaçırılırsa asansör belediye tarafından mühürlenir.",
       "correction_deadline_passed": "{{building}} binasındaki {{elevator}} asansörünün kusurlarını giderme süresi {{deadline}} tarihinde doldu ve {{open}} uygunsuzluk hâlâ açık. Asansör belediye tarafından mühürlenebilir.",
-      "inspection_red_label": "{{building}} binasındaki {{elevator}} asansörü {{inspected}} tarihli periyodik muayenede kırmızı etiket aldı: asansör güvensiz ve kullanılmamalı. Asansör hizmet dışı olarak işaretlendi. Kusurların {{deadline}} tarihine kadar giderilmesi gerekiyor, aksi halde asansör mühürlenir."
+      "inspection_red_label": "{{building}} binasındaki {{elevator}} asansörü {{inspected}} tarihli periyodik muayenede kırmızı etiket aldı: asansör güvensiz ve kullanılmamalı. Asansör hizmet dışı olarak işaretlendi. Kusurların {{deadline}} tarihine kadar giderilmesi gerekiyor, aksi halde asansör mühürlenir.",
+      "invoice_drafts_ready": "{{month}} için {{count}} fatura taslağı hazır. Taslakları kontrol edip e-Fatura / e-Arşiv sisteminizden düzenledikten sonra fatura numarasını ShiftLush’a girebilirsiniz.",
+      "invoice_drafts_ready_unpriced": "{{month}} için {{count}} fatura taslağı hazır, {{unpriced}} tanesinde fiyat eksik. Taslakları kontrol edip e-Fatura / e-Arşiv sisteminizden düzenledikten sonra fatura numarasını ShiftLush’a girebilirsiniz.",
+      "billing_vat_missing": "{{contract}} sözleşmenin {{start}} – {{end}} dönemi için fatura taslağı hazırlanmadı, çünkü sözleşmede KDV oranı tanımlı değil. KDV oranını sözleşmeye girdiğinizde taslak bir sonraki çalışmada hazırlanır."
     },
     "unknown": {
       "title": "Yeni bildirim",
@@ -1313,7 +1321,9 @@
       "inspection_due": "Periyodik muayene yaklaşıyor",
       "correction_deadline_near": "Düzeltme süresi yaklaşıyor",
       "correction_deadline_passed": "Düzeltme süresi doldu (mühür riski)",
-      "inspection_red_label": "Kırmızı etiket"
+      "inspection_red_label": "Kırmızı etiket",
+      "invoice_drafts_ready": "Fatura taslakları hazır",
+      "billing_vat_missing": "KDV oranı eksik, fatura hazırlanamadı"
     },
     "preferences": {
       "title": "Bildirimler",
@@ -1694,6 +1704,80 @@
       "invited": "Davet gönderildi",
       "active": "Etkin",
       "inactive": "Kapalı"
+    }
+  },
+  "billing": {
+    "title": "Faturalar",
+    "restricted": "Faturalar rolünüzde görünmüyor",
+    "empty": "Bu filtreye uyan fatura taslağı yok",
+    "needsPrice": "Fiyat eksik",
+    "pageTotals": "Bu sayfadaki taslakların toplamı (duruma göre)",
+    "count": "{{count}} taslak",
+    "exportCsv": "CSV olarak dışa aktar",
+    "preparing": "Hazırlanıyor…",
+    "save": "Kaydet",
+    "open": "Aç",
+    "pdf": "PDF",
+    "lines": "Satırlar",
+    "addLine": "Satır ekle",
+    "removeLine": "Satırı kaldır",
+    "priceInvalid": "Fiyatı 1.250,50 biçiminde yazın",
+    "priceHint": "Örneğin 1.250,50",
+    "lineInvalid": "Miktarı (sıfırdan büyük) ve fiyatı 1.250,50 biçiminde yazın",
+    "needsPriceBlocker": "{{count}} satırda fiyat eksik. Kesildi olarak işaretlemeden önce bu satırlara fiyat girin.",
+    "notesHint": "Faturada müşterinin göreceği açıklama.",
+    "saveNotes": "Notu kaydet",
+    "notesSaved": "Not kaydedildi",
+    "cancelReason": "İptal nedeni",
+    "issueTitle": "Kesildi olarak işaretle",
+    "issueBody": "Faturayı e-Fatura / e-Arşiv sisteminizde kestikten sonra numarasını ve tarihini girin. Bundan sonra taslak değiştirilemez.",
+    "paidTitle": "Ödendi olarak işaretle",
+    "cancelTitle": "Fatura taslağı iptal edilsin mi?",
+    "cancelBody": "İptal edilen taslak kayıtta kalır; nedeni de onunla birlikte saklanır.",
+    "cancelConsequenceDraft": "Bu taslaktan fatura kesilmeyecek.",
+    "cancelConsequenceIssued": "Kesilmiş faturanın iptalini e-Fatura sisteminizde ayrıca yapmanız gerekir; burada yalnızca kayıt iptal edilir.",
+    "cancelConsequenceKept": "İptal geri alınamaz.",
+    "contractPanel": "Fatura taslakları",
+    "noDraftsForContract": "Bu sözleşme için henüz fatura taslağı yok",
+    "viewAll": "Tümünü gör ({{count}})",
+    "actions": {
+      "issue": "Kesildi olarak işaretle",
+      "markPaid": "Ödendi",
+      "cancel": "İptal et"
+    },
+    "filters": {
+      "needsPrice": "Fiyat",
+      "needsPriceOnly": "Yalnızca fiyatı eksik olanlar"
+    },
+    "fields": {
+      "customer": "Müşteri",
+      "contract": "Sözleşme",
+      "period": "Dönem",
+      "status": "Durum",
+      "invoiceNumber": "Fatura no",
+      "invoiceDate": "Fatura tarihi",
+      "paidOn": "Ödeme tarihi",
+      "cancelledAt": "İptal tarihi",
+      "total": "Toplam",
+      "subtotal": "Ara toplam",
+      "vat": "KDV ({{rate}})",
+      "description": "Açıklama",
+      "quantity": "Miktar",
+      "unitPrice": "Birim fiyat",
+      "amount": "Tutar",
+      "notes": "Not"
+    },
+    "status": {
+      "draft": "Taslak",
+      "issued": "Kesildi",
+      "paid": "Ödendi",
+      "cancelled": "İptal edildi"
+    },
+    "lineKind": {
+      "contract_fee": "Sözleşme bedeli",
+      "elevator_fee": "Asansör bedeli",
+      "fault": "Arıza",
+      "manual": "Elle eklenen"
     }
   }
 }

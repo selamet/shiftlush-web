@@ -43,6 +43,8 @@ import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney, formatPercent } from "@/lib/format";
 import { elevatorLabel } from "@/lib/elevator";
 import { useSession } from "@/lib/session";
+import { canUseBilling } from "@/lib/billing";
+import { ContractDraftsPanel } from "@/components/billing/ContractDraftsPanel";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -954,6 +956,14 @@ export function ContractDetailScreen() {
         </div>
 
         <div className="flex flex-col gap-4">
+          {/* The invoices this contract produced (M7), for the roles that
+              invoice — the same three the billing screen is open to. */}
+          {canUseBilling(role) && (
+            <section className="rounded-lg border border-border-subtle bg-card p-4">
+              <h2 className="mb-2 text-colhead uppercase text-subtle">{t("billing.contractPanel")}</h2>
+              <ContractDraftsPanel contractId={contract.id} />
+            </section>
+          )}
           <section className="rounded-lg border border-border-subtle bg-card p-4">
             <div className="flex flex-col gap-1.5">
               <span className="text-cardtitle tnum">
