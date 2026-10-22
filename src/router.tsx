@@ -44,6 +44,7 @@ import {
   faultListQuery,
   faultQuery,
   plannedVisitListQuery,
+  routeQuery,
   planSummaryQuery,
   notificationListQuery,
   notificationPreferencesQuery,
@@ -974,9 +975,14 @@ export const routeTree = rootRoute.addChildren([
     shellChild("/plan/calendar", PlanCalendarScreen, undefined, calendarSearch),
     // A technician's landing screen, so it is warmed before the first paint.
     // The week is not: it may be two months, and is one tap away.
-    shellChild("/today", TodayScreen, () =>
-      queryClient.ensureQueryData(plannedVisitListQuery(myPlanParams(periodOf(todayIso())))),
-    ),
+    // Today is the route; this month's list is warmed beside it, as before,
+    // so "Bu hafta" — one tap away — opens without a wait.
+    shellChild("/today", TodayScreen, async () => {
+      await Promise.all([
+        queryClient.ensureQueryData(routeQuery({ technician: "me", date: todayIso() })),
+        queryClient.ensureQueryData(plannedVisitListQuery(myPlanParams(periodOf(todayIso())))),
+      ]);
+    }),
     shellChild("/week", WeekScreen),
     // No loader: what it lists lives on this device, not on the server.
     shellChild("/outbox", OutboxScreen),

@@ -1,18 +1,17 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
-import { useQueries } from "@tanstack/react-query";
-import { CalendarCheck, ChevronRight, MapPin } from "lucide-react";
-import { plannedVisitListQuery, type PlannedVisit } from "@/api/queries";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { CalendarCheck, ChevronRight, MapPin, Navigation } from "lucide-react";
+import { plannedVisitListQuery, routeQuery, type PlannedVisit, type RouteStop } from "@/api/queries";
 import { errorMessage, supportReference } from "@/api/errors";
 import { toDisplay, todayIso } from "@/lib/date";
+import { directionsUrl, routeKm } from "@/lib/route";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import {
   canManagePlan,
   isDueThisWeek,
-  isDueToday,
   myPlanParams,
-  periodOf,
   periodsForWeek,
 } from "@/lib/plan";
 import { ListError, TableSkeleton } from "@/components/list/ListStates";
@@ -67,14 +66,23 @@ export function TechnicianPlanScreen({ scope }: { scope: Scope }) {
   const { role } = useSession();
   const today = todayIso();
   const isTechnician = role === "technician";
-  const periods = scope === "today" ? [periodOf(today)] : periodsForWeek(today);
+  const periods = periodsForWeek(today);
 
-  const queries = useQueries({
+  // Today is the server's suggested route: its stops already in driving
+  // order, with positions, and the same "due today" rule as before — but over
+  // every month, so last month's undone visit is not left off. The week is
+  // still the month lists, in address order.
+  const route = useQuery({
+    ...routeQuery({ technician: "me", date: today }),
+    enabled: isTechnician && scope === "today",
+  });
+  const lists = useQueries({
     queries: periods.map((period) => ({
       ...plannedVisitListQuery(myPlanParams(period)),
-      enabled: isTechnician,
+      enabled: isTechnician && scope === "week",
     })),
   });
+  const queries = scope === "today" ? [route] : lists;
 
   if (!isTechnician) {
     // The office has the month view; anybody else has neither.
@@ -94,12 +102,17 @@ export function TechnicianPlanScreen({ scope }: { scope: Scope }) {
 
   const failed = queries.find((query) => query.isError);
   const pending = queries.some((query) => query.isPending);
-  const all = queries.flatMap((query) => query.data?.results ?? []);
-  const merged = periods.length > 1 ? [...all].sort(routeOrder) : all;
-  const rows = merged.filter((row) =>
-    scope === "today" ? isDueToday(row, today) : isDueThisWeek(row, today),
-  );
+  let rows: Array<PlannedVisit | RouteStop>;
+  if (scope === "today") {
+    rows = route.data?.stops ?? [];
+  } else {
+    const all = lists.flatMap((query) => query.data?.results ?? []);
+    const merged = periods.length > 1 ? [...all].sort(routeOrder) : all;
+    rows = merged.filter((row) => isDueThisWeek(row, today));
+  }
   const left = rows.filter((row) => row.status === "planned").length;
+  const unplaced = new Set(scope === "today" ? (route.data?.unplaced ?? []) : []);
+  const km = scope === "today" && route.data ? routeKm(route.data.total_km) : "";
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4 md:p-6">
@@ -109,6 +122,12 @@ export function TechnicianPlanScreen({ scope }: { scope: Scope }) {
           {scope === "today" ? toDisplay(today) : t("plan.weekHint")}
           {!pending && !failed && ` · ${t("plan.leftCount", { count: left })}`}
         </p>
+        {km && (
+          <p className="flex items-center gap-1.5 text-help text-muted-foreground">
+            <Navigation className="size-3.5 shrink-0" aria-hidden="true" />
+            {t("plan.route.suggested", { km })}
+          </p>
+        )}
       </div>
 
       <TechnicianTabs active={scope} />
@@ -131,7 +150,12 @@ export function TechnicianPlanScreen({ scope }: { scope: Scope }) {
       ) : (
         <ol className="flex flex-col gap-2">
           {rows.map((row, index) => (
-            <li key={row.id}>
+            <li key={row.id} className="flex flex-col gap-1">
+              {/* Stops the route could not place follow the rest, under a
+                  heading that says why they are where they are. */}
+              {unplaced.has(row.id) && (index === 0 || !unplaced.has(rows[index - 1].id)) && (
+                <h2 className="mt-2 text-label text-muted-foreground">{t("plan.route.unplaced")}</h2>
+              )}
               <Link
                 to="/elevators/$id"
                 params={{ id: row.elevator }}
@@ -168,6 +192,20 @@ export function TechnicianPlanScreen({ scope }: { scope: Scope }) {
                 </span>
                 <ChevronRight className="size-5 shrink-0 text-subtle" aria-hidden="true" />
               </Link>
+              {"latitude" in row && directionsUrl(row.latitude, row.longitude) && (
+                // Beside the row, not inside it: the row opens the lift, and
+                // a link inside a link is two targets under one thumb.
+                <a
+                  href={directionsUrl(row.latitude, row.longitude)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t("plan.route.directionsTo", { lift: row.elevator_name })}
+                  className="inline-flex items-center gap-1.5 self-end px-2 py-1 text-help text-primary hover:underline focus-ring"
+                >
+                  <Navigation className="size-3.5" aria-hidden="true" />
+                  {t("plan.route.directions")}
+                </a>
+              )}
             </li>
           ))}
         </ol>

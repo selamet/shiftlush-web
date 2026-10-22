@@ -1958,6 +1958,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/planned-visits/route/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description One technician's day, in the order that drives least.
+         *
+         *     The day's stops are their rows planned for that date and, for today
+         *     only, their rows with no day that are already due — what the "today" list
+         *     shows. Cancelled rows are not on the road. Ordered by straight-line
+         *     distance from the firm's starting point when it has one
+         *     (`apps.maintenance.routing`); stops with no position follow, in
+         *     address order. A technician sees the rows they can see, so another
+         *     technician's day reads as empty to them.
+         */
+        get: operations["planned_visits_route_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/planned-visits/summary/": {
         parameters: {
             query?: never;
@@ -2662,6 +2689,10 @@ export interface components {
             phone?: string;
             email?: string;
             website?: string;
+            /** Format: decimal */
+            latitude?: string | null;
+            /** Format: decimal */
+            longitude?: string | null;
             /** Format: uuid */
             logo?: string | null;
             readonly logo_url: string;
@@ -4182,6 +4213,10 @@ export interface components {
             phone?: string;
             email?: string;
             website?: string;
+            /** Format: decimal */
+            latitude?: string | null;
+            /** Format: decimal */
+            longitude?: string | null;
             /** Format: uuid */
             logo?: string | null;
         };
@@ -4777,6 +4812,80 @@ export interface components {
             readonly neighborhood: components["schemas"]["GeocodeMatch"] | null;
             /** @description Levels that could not be resolved and must be chosen by the user. Stated explicitly rather than left as three nulls: a client that reads null as 'not filled in yet' behaves differently from one that reads it as 'we looked and found nothing', and only one of those asks the user. */
             readonly unmatched: components["schemas"]["UnmatchedEnum"][];
+        };
+        Route: {
+            /** Format: date */
+            date: string;
+            /** Format: uuid */
+            technician: string;
+            /**
+             * Format: double
+             * @description Straight-line km over the stops with a position, from the firm's starting point when it has one.
+             */
+            total_km: number;
+            /** @description In the suggested order; unplaced last. */
+            stops: components["schemas"]["RouteStop"][];
+            /** @description Stops with no known position. */
+            unplaced: string[];
+        };
+        /**
+         * @description A plan row on the day's road: where it is, and how far from the stop before.
+         *
+         *     The position is the building's, or its estate's when the building has
+         *     none; null when neither is known, and the stop is then one of `unplaced`.
+         */
+        RouteStop: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly elevator: string;
+            readonly elevator_name: string;
+            /** Format: uuid */
+            readonly building: string;
+            readonly building_name: string;
+            readonly neighborhood_name: string | null;
+            readonly district: number | null;
+            readonly district_name: string | null;
+            /** Format: uuid */
+            readonly customer: string;
+            readonly customer_name: string;
+            readonly period: string;
+            /** Format: date */
+            readonly due_date: string;
+            /** Format: date */
+            readonly planned_date: string | null;
+            /** Format: uuid */
+            readonly technician: string | null;
+            readonly technician_name: string | null;
+            readonly status: components["schemas"]["PlannedVisitStatus"];
+            /** Format: uuid */
+            readonly visit: string | null;
+            /**
+             * @description Status of the visit linked to this row: the one that closed it when `done`, the latest attempt while `planned`. Null when nobody has been yet. `planned` with a status here means tried, not done.
+             *
+             *     * `completed` - Completed
+             *     * `incomplete` - Incomplete
+             *     * `access_denied` - Access denied
+             */
+            readonly latest_visit_status: (components["schemas"]["MaintenanceVisitStatus"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Still planned and past its due date, by the Istanbul calendar. */
+            readonly is_overdue: boolean;
+            /** @description Days since `due_date` while the row is still planned and past it; null otherwise. The due date can fall before the row's own month: that is how long the lift has been overdue. */
+            readonly days_overdue: number | null;
+            readonly manually_edited: boolean;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            /** Format: decimal */
+            readonly latitude: string | null;
+            /** Format: decimal */
+            readonly longitude: string | null;
+            /**
+             * Format: double
+             * @description Straight-line km from the previous stop (from the firm's starting point for the first); null when either end has no position.
+             */
+            readonly leg_km: number | null;
         };
         /**
          * @description One signed-in device, not one refresh token.
@@ -5507,6 +5616,8 @@ export interface operations {
             query?: {
                 complex?: string;
                 customer?: string;
+                /** @description true: buildings with both coordinates; false: those missing either. */
+                has_location?: boolean;
                 is_active?: boolean;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
@@ -8128,6 +8239,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BulkAssignResult"];
+                };
+            };
+        };
+    };
+    planned_visits_route_retrieve: {
+        parameters: {
+            query: {
+                date: string;
+                /** @description A user id, or "me" for the signed-in user. */
+                technician: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Route"];
                 };
             };
         };

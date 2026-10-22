@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
 import { AddressSelect } from "@/components/forms/AddressSelect";
+import { parseCoordinates } from "@/lib/map-provider";
 import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
 import { ChangePasswordForm } from "@/components/settings/ChangePasswordForm";
 import { SessionList } from "@/components/settings/SessionList";
@@ -57,6 +58,7 @@ const FIELD_LABELS: Record<string, string> = {
   street: "address.fields.street",
   building_number: "address.fields.buildingNumber",
   unit_number: "address.fields.unitNumber",
+  latitude: "settings.startPoint",
 };
 
 const FIELD_NAMES = Object.keys(FIELD_LABELS);
@@ -77,6 +79,7 @@ function baseline(record: Company): Record<string, string> {
     street: record.street ?? "",
     building_number: record.building_number ?? "",
     unit_number: record.unit_number ?? "",
+    latitude: record.latitude ?? "",
   };
 }
 
@@ -261,6 +264,10 @@ function CompanyForm({ record }: { record: Company }) {
       street: text("street"),
       building_number: text("building_number"),
       unit_number: text("unit_number"),
+      // The day's starting point for the suggested route. The picker writes
+      // its hidden inputs only while it holds a pin, so no pin is a cleared one.
+      latitude: text("latitude") || null,
+      longitude: text("longitude") || null,
     });
   }
 
@@ -450,6 +457,7 @@ function CompanyForm({ record }: { record: Company }) {
                   name="neighborhood"
                   required={false}
                   error={details.state.fields.neighborhood}
+                  location={{ initial: parseCoordinates(record.latitude, record.longitude) }}
                   initial={{
                     neighborhoodId: record.neighborhood ?? null,
                     districtName: null,
@@ -461,6 +469,7 @@ function CompanyForm({ record }: { record: Company }) {
                     {t("settings.neighborhoodKept")}
                   </p>
                 )}
+                <p className="text-help text-muted-foreground">{t("settings.startPointHint")}</p>
               </div>
             )}
 

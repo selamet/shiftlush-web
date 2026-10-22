@@ -263,6 +263,31 @@ function resolve(path, search, method, body) {
     if (method === "POST" && path === "/api/v1/planned-visits/bulk-assign/") {
       return { count: (body?.ids ?? []).length };
     }
+    // A technician's day as the server orders it: the "due that day" rule, no
+    // cancelled rows, every stop placed but the last, so the screens draw both
+    // the ordered stops and the "position unknown" group. Before the detail
+    // pattern below, which would read "route" as a row id.
+    if (path === "/api/v1/planned-visits/route/") {
+      const day = search.get("date");
+      const who = search.get("technician") === "me" ? "u3" : search.get("technician");
+      const due = rows.filter(
+        (row) =>
+          row.technician === who &&
+          row.status !== "cancelled" &&
+          (row.planned_date ? row.planned_date === day : row.status === "planned" && row.due_date <= day),
+      );
+      const stops = due.map((row, index) => {
+        const placed = index < due.length - 1;
+        return {
+          ...row,
+          latitude: placed ? (39.9 + index * 0.004).toFixed(6) : null,
+          longitude: placed ? (41.26 + index * 0.003).toFixed(6) : null,
+          leg_km: placed ? (index === 0 ? 1.2 : 0.5) : null,
+        };
+      });
+      const unplaced = stops.filter((stop) => stop.latitude === null).map((stop) => stop.id);
+      return { date: day, technician: who, total_km: stops.length > 1 ? 3.2 : 0, stops, unplaced };
+    }
     const one = /^\/api\/v1\/planned-visits\/([^/]+)\/$/.exec(path);
     if (one && !summaryOrList) {
       const row = rows.find((candidate) => candidate.id === one[1]);
