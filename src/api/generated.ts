@@ -2518,10 +2518,11 @@ export interface components {
          *     * `signed_contract` - Signed contract
          *     * `inspection_report` - Inspection report
          *     * `logo` - Logo
+         *     * `signature` - Signature
          *     * `other` - Other
          * @enum {string}
          */
-        AttachmentCategory: "photo" | "ce_certificate" | "declaration_of_conformity" | "permit" | "signed_contract" | "inspection_report" | "logo" | "other";
+        AttachmentCategory: "photo" | "ce_certificate" | "declaration_of_conformity" | "permit" | "signed_contract" | "inspection_report" | "logo" | "signature" | "other";
         /**
          * @description The second half of an upload.
          *
@@ -3732,6 +3733,14 @@ export interface components {
             readonly work_notes: string;
             readonly parts_replaced: string;
             readonly items: components["schemas"]["MaintenanceVisitItem"][];
+            readonly signature_status: components["schemas"]["SignatureStatusEnum"];
+            readonly signer_name: string;
+            readonly signer_role: components["schemas"]["SignerRoleEnum"];
+            /** Format: date-time */
+            readonly signed_at: string | null;
+            readonly amended_after_signature: boolean;
+            /** @description signed, pending (signed, image not arrived yet), not_present, declined, or none (recorded before signatures existed). */
+            readonly signature_state: components["schemas"]["SignatureStateEnum"];
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -3765,6 +3774,11 @@ export interface components {
             work_notes?: string;
             parts_replaced?: string;
             items?: components["schemas"]["SetChecklistItemRequest"][];
+            signature_status?: components["schemas"]["SignatureStatusEnum"] | components["schemas"]["BlankEnum"];
+            signer_name?: string;
+            signer_role?: components["schemas"]["SignerRoleEnum"] | components["schemas"]["BlankEnum"];
+            /** Format: date-time */
+            signed_at?: string | null;
         };
         /**
          * @description * `application/pdf` - application/pdf
@@ -4403,6 +4417,11 @@ export interface components {
             work_notes?: string;
             parts_replaced?: string;
             items?: components["schemas"]["SetChecklistItemRequest"][];
+            signature_status?: components["schemas"]["SignatureStatusEnum"] | components["schemas"]["BlankEnum"];
+            signer_name?: string;
+            signer_role?: components["schemas"]["SignerRoleEnum"] | components["schemas"]["BlankEnum"];
+            /** Format: date-time */
+            signed_at?: string | null;
         };
         /**
          * @description Rejects a field the client sent that this serializer does not declare.
@@ -4623,6 +4642,14 @@ export interface components {
             /** @default false */
             elevator_stopped: boolean;
         };
+        /** @description A file the contact may download, through `/portal/files/{id}/download-url/`. */
+        PortalFile: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly original_filename: string;
+            readonly mime_type: string;
+            readonly category: components["schemas"]["AttachmentCategory"];
+        };
         PortalInspection: {
             /** Format: uuid */
             readonly id: string;
@@ -4724,6 +4751,13 @@ export interface components {
             readonly photos: {
                 [key: string]: unknown;
             }[];
+            readonly signature_state: components["schemas"]["SignatureStateEnum"];
+            readonly signer_name: string;
+            readonly signer_role: components["schemas"]["SignerRoleEnum"];
+            /** Format: date-time */
+            readonly signed_at: string | null;
+            readonly amended_after_signature: boolean;
+            readonly signature: components["schemas"]["PortalFile"] | null;
         };
         PortalVisitItem: {
             readonly item: components["schemas"]["MaintenanceChecklistItem"];
@@ -4922,6 +4956,23 @@ export interface components {
             /** @default  */
             note: string;
         };
+        /** @enum {string} */
+        SignatureStateEnum: "signed" | "pending" | "not_present" | "declined" | "none";
+        /**
+         * @description * `signed` - Signed
+         *     * `not_present` - Nobody from the building was there
+         *     * `declined` - Declined to sign
+         * @enum {string}
+         */
+        SignatureStatusEnum: "signed" | "not_present" | "declined";
+        /**
+         * @description * `manager` - Manager
+         *     * `caretaker` - Caretaker
+         *     * `staff` - Building staff
+         *     * `other` - Other
+         * @enum {string}
+         */
+        SignerRoleEnum: "manager" | "caretaker" | "staff" | "other";
         /** @description One choice in the "who did the work" field — a name and nothing else. */
         TechnicianOption: {
             /** Format: uuid */
@@ -5084,6 +5135,9 @@ export interface components {
          *     * `PORTAL_ACCOUNT_ALREADY_ACTIVE` - This contact already has an active portal account
          *     * `PORTAL_EMAIL_IN_USE` - Another active portal account already uses this e-mail address
          *     * `INVOICE_TRANSITION_NOT_ALLOWED` - The invoice draft is not in a state this action can be taken from
+         *     * `SIGNATURE_EXISTS` - This visit already has its signature
+         *     * `SIGNATURE_NOT_EXPECTED` - The visit was not recorded as signed, so it takes no signature
+         *     * `SIGNATURE_CANNOT_BE_DELETED` - A visit's signature is kept for good and cannot be deleted
          *     * `INVOICE_LINES_NEED_PRICE` - Every line needs a price before the draft can be issued
          *     * `DUPLICATE_INVOICE_NUMBER` - Another issued invoice of this company already has this number
          *     * `FAULT_TRANSITION_NOT_ALLOWED` - The fault is not in a state this action can be taken from
@@ -5110,7 +5164,7 @@ export interface components {
          *     * `ATTACHMENT_TARGET_MISMATCH` - Attachment does not belong to the record it is being linked to
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "PLANNED_DATE_OUTSIDE_PERIOD" | "PLANNED_DATE_IN_PAST" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "INVOICE_TRANSITION_NOT_ALLOWED" | "INVOICE_LINES_NEED_PRICE" | "DUPLICATE_INVOICE_NUMBER" | "FAULT_TRANSITION_NOT_ALLOWED" | "PLAN_ROW_CLOSED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
+        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "PLANNED_DATE_OUTSIDE_PERIOD" | "PLANNED_DATE_IN_PAST" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "INVOICE_TRANSITION_NOT_ALLOWED" | "SIGNATURE_EXISTS" | "SIGNATURE_NOT_EXPECTED" | "SIGNATURE_CANNOT_BE_DELETED" | "INVOICE_LINES_NEED_PRICE" | "DUPLICATE_INVOICE_NUMBER" | "FAULT_TRANSITION_NOT_ALLOWED" | "PLAN_ROW_CLOSED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
         /** @description The shape of every error response. There is no `message` field: the backend sends codes, and the words live in the client's translation file, so wording changes in one place and adding a language does not touch the API. */
         ErrorResponse: {
             error: {
@@ -5142,9 +5196,10 @@ export interface operations {
                  *     * `signed_contract` - Signed contract
                  *     * `inspection_report` - Inspection report
                  *     * `logo` - Logo
+                 *     * `signature` - Signature
                  *     * `other` - Other
                  */
-                category?: "ce_certificate" | "declaration_of_conformity" | "inspection_report" | "logo" | "other" | "permit" | "photo" | "signed_contract";
+                category?: "ce_certificate" | "declaration_of_conformity" | "inspection_report" | "logo" | "other" | "permit" | "photo" | "signature" | "signed_contract";
                 object_id?: string;
                 /**
                  * @description * `elevator` - Elevator
@@ -7687,6 +7742,16 @@ export interface operations {
                 /** @description Number of results to return per page. */
                 page_size?: number;
                 /**
+                 * @description signed, pending, not_present, declined or none.
+                 *
+                 *     * `signed` - signed
+                 *     * `pending` - pending
+                 *     * `not_present` - not_present
+                 *     * `declined` - declined
+                 *     * `none` - none
+                 */
+                signature?: "declined" | "none" | "not_present" | "pending" | "signed";
+                /**
                  * @description * `completed` - Completed
                  *     * `incomplete` - Incomplete
                  *     * `access_denied` - Access denied
@@ -7840,6 +7905,16 @@ export interface operations {
                 elevator?: string;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
+                /**
+                 * @description signed, pending, not_present, declined or none.
+                 *
+                 *     * `signed` - signed
+                 *     * `pending` - pending
+                 *     * `not_present` - not_present
+                 *     * `declined` - declined
+                 *     * `none` - none
+                 */
+                signature?: "declined" | "none" | "not_present" | "pending" | "signed";
                 /**
                  * @description * `completed` - Completed
                  *     * `incomplete` - Incomplete

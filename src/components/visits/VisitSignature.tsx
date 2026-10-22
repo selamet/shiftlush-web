@@ -54,7 +54,8 @@ export function SignatureBlock({
   if (state === "none") return <p className="text-help text-muted-foreground">{t("visit.signature.none")}</p>;
 
   return (
-    <div className="flex flex-col gap-2">
+    // items-start: a chip in a stretching column would span the whole card.
+    <div className="flex flex-col items-start gap-2">
       <SignatureStateChip value={state} />
       {(state === "signed" || state === "pending") && (
         <>
