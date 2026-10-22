@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, FileDown, Image as ImageIcon, Siren } from "lucide-react";
+import { ChevronLeft, FileDown, Image as ImageIcon, PenLine, Siren } from "lucide-react";
 import { errorMessage } from "@/api/errors";
 import {
   portalElevatorQuery,
@@ -21,6 +21,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { InspectionLabel } from "@/components/ui/inspection-label";
 import { ChecklistResultChip, ElevatorStatusChip, VisitStatusChip } from "@/components/ui/status-chip";
 import { correctionSummary } from "@/components/inspections/CorrectionDeadline";
+import { SignatureStateChip } from "@/components/visits/VisitSignature";
 
 /**
  * One lift, as its building manager sees it: what was done on each visit and
@@ -202,8 +203,40 @@ function VisitCard({ visit }: { visit: PortalVisit }) {
           ))}
         </div>
       )}
+      <PortalSignature visit={visit} onOpen={(id) => void files.open(id)} />
       {files.failure && <p className="text-help text-destructive">{files.failure}</p>}
     </li>
+  );
+}
+
+/**
+ * Who in the building signed for the visit, or why nobody did — the same
+ * answer the firm's office reads. The image opens like the photos do.
+ */
+function PortalSignature({ visit, onOpen }: { visit: PortalVisit; onOpen: (id: string) => void }) {
+  const { t } = useTranslation();
+  const state = visit.signature_state;
+  if (state === "none") return null;
+  const image = visit.signature as unknown as PortalFile | null;
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-help">
+      <SignatureStateChip value={state} />
+      {(state === "signed" || state === "pending") && visit.signer_name && (
+        <span className="text-muted-foreground">
+          {visit.signer_name}
+          {visit.signer_role && ` · ${enumLabel("visit.signerRole", visit.signer_role)}`}
+        </span>
+      )}
+      {image && (
+        <Button size="sm" variant="secondary" onClick={() => onOpen(image.id)}>
+          <PenLine aria-hidden="true" />
+          {t("portal.lift.signature")}
+        </Button>
+      )}
+      {visit.amended_after_signature && (
+        <span className="font-medium text-warning">{t("visit.signature.amended")}</span>
+      )}
+    </div>
   );
 }
 

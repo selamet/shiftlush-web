@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { CHECKLIST_ITEMS, attentionCount, canReadVisits } from "@/lib/visit";
 import type { Role } from "@/components/layout/nav-config";
 import { AttachmentsPanel } from "@/components/attachments/AttachmentsPanel";
+import { SignatureBlock } from "@/components/visits/VisitSignature";
 import { Alert } from "@/components/ui/alert";
 import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { ChecklistResultChip, VisitStatusChip } from "@/components/ui/status-chip";
@@ -213,11 +214,19 @@ export function VisitDetailScreen() {
         <Prose text={visit.parts_replaced} />
       </Section>
 
+      <Section title={t("visit.signature.title")}>
+        <SignatureBlock
+          visit={visit}
+          image={photos.data?.results.find((file) => file.category === "signature")}
+        />
+      </Section>
+
       <Section title={t("visit.photos")}>
         <AttachmentsPanel
           objectType="maintenance_visit"
           objectId={visit.id}
-          attachments={photos.data?.results ?? []}
+          // The signature has its own block above, and no delete button.
+          attachments={(photos.data?.results ?? []).filter((file) => file.category !== "signature")}
           invalidateKey={visitKeys.attachments(visit.id)}
           canWrite={canAddPhotos(role, userId, visit)}
           // A visit holds photos and nothing else; a "which sort of document"

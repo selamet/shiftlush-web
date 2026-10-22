@@ -39,6 +39,11 @@ export interface OutboxPhoto {
   name: string;
   type: string;
   blob: Blob;
+  /**
+   * What the file is to the record: a photo (the default, and every entry
+   * written before signatures existed), or the building's signature.
+   */
+  category?: "photo" | "signature";
 }
 
 export interface OutboxEntry<TBody = unknown> {

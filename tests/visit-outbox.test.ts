@@ -206,3 +206,33 @@ describe("photoIdempotencyKey", () => {
     expect(photoIdempotencyKey("key-1", 3)).toBe(photoIdempotencyKey("key-1", 3));
   });
 });
+
+describe("the building's signature", () => {
+  const signature = () => ({
+    name: "imza.png",
+    type: "image/png",
+    blob: new Blob(["x"], { type: "image/png" }),
+    category: "signature" as const,
+  });
+
+  it("goes up under its own category, after the photos", async () => {
+    const one = entry({ photosDone: 0 }, [photo("a.jpg"), signature()]);
+    await sendVisit(one, recorder(one).save);
+    expect(upload.mock.calls.map(([options]) => options.category)).toEqual(["photo", "signature"]);
+  });
+
+  it("counts a signature the server already has as sent, not skipped", async () => {
+    const one = entry({ photosDone: 0, recordId: "visit-1" }, [signature()]);
+    upload.mockRejectedValueOnce(new ApiError({ code: "SIGNATURE_EXISTS", status: 409 }));
+    await sendVisit(one, recorder(one).save);
+    expect(one.progress.photosDone).toBe(1);
+    expect(one.progress.photosSkipped ?? []).toEqual([]);
+  });
+
+  it("still waits for the connection like any photo", async () => {
+    const one = entry({ photosDone: 0, recordId: "visit-1" }, [signature()]);
+    upload.mockRejectedValueOnce(offline());
+    await expect(sendVisit(one, recorder(one).save)).rejects.toBeInstanceOf(ApiError);
+    expect(one.progress.photosDone).toBe(0);
+  });
+});

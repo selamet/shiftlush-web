@@ -218,6 +218,13 @@ export const visitFilters: ListFilter[] = [
     values: ["completed", "incomplete", "access_denied"],
   }),
   idMenuFilter({ param: "technician", labelKey: "visit.fields.technician" }),
+  // The building's answer; "pending" finds signatures still on their way.
+  enumFilter({
+    param: "signature",
+    labelKey: "visit.signature.filter",
+    namespace: "visit.signatureState",
+    values: ["signed", "pending", "not_present", "declined", "none"],
+  }),
   dateFilter({ param: "visit_date_after", labelKey: "visit.fields.visitDateAfter" }),
   dateFilter({ param: "visit_date_before", labelKey: "visit.fields.visitDateBefore" }),
   scopeFilter({ param: "elevator", labelKey: "visit.elevatorScope" }),

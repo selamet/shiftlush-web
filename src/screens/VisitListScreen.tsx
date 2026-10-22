@@ -12,6 +12,7 @@ import { visitFilters as filters } from "@/screens/list-searches";
 import { ListPage, Stacked, type ListColumn } from "@/components/list/ListPage";
 import { VisitStatusChip } from "@/components/ui/status-chip";
 import { VisitsRestricted } from "@/components/visits/VisitsRestricted";
+import { SignatureStateChip } from "@/components/visits/VisitSignature";
 
 /**
  * Every maintenance visit the signed-in person may see, newest first.
@@ -85,7 +86,15 @@ export function VisitListScreen() {
       hideOnMobile: true,
       cell: (row) => row.technician_name || <span className="text-subtle">—</span>,
     },
-    { key: "visit.fields.status", cell: (row) => <VisitStatusChip value={row.status} /> },
+    {
+      key: "visit.fields.status",
+      cell: (row) => (
+        <span className="flex flex-wrap items-center gap-1">
+          <VisitStatusChip value={row.status} />
+          <SignatureStateChip value={row.signature_state} />
+        </span>
+      ),
+    },
     {
       key: "visit.fields.attention",
       numeric: true,
