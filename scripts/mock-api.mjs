@@ -470,6 +470,9 @@ function resolve(path, search, method, body) {
             { item: "hoisting_ropes", result: "attention_needed" },
           ],
           photos: [{ id: "att-photo", original_filename: "kabin.jpg", mime_type: "image/jpeg", category: "photo" }],
+          signature_state: "signed", signer_name: "Ayşe Kaya", signer_role: "manager",
+          signed_at: "2026-10-14T11:20:00+03:00", amended_after_signature: false,
+          signature: { id: "att-signature", original_filename: "imza.png", mime_type: "image/png", category: "signature" },
         },
       ]);
     }

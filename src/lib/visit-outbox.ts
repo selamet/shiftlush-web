@@ -29,6 +29,16 @@ export function photoIdempotencyKey(entryId: string, index: number): string {
 }
 
 /**
+ * A signature the server already holds. The outbox asks for a fresh upload URL
+ * on every attempt, so when the confirmation landed but its answer was lost,
+ * the retry uploads under a new key and the server refuses a second
+ * signature — which is the server saying the first one arrived.
+ */
+export function signatureAlreadyThere(error: unknown): boolean {
+  return error instanceof ApiError && error.code === "SIGNATURE_EXISTS";
+}
+
+/**
  * What a failed photo means for the entry.
  *
  * `skip` — the server read the request and said no (a 4xx: too large, a type
@@ -85,18 +95,21 @@ export const sendVisit: Sender = async (entry, saveProgress) => {
   const recordId = progress.recordId as string;
   for (let index = progress.photosDone; index < entry.photos.length; index += 1) {
     const photo = entry.photos[index];
+    const category = photo.category ?? "photo";
     try {
       await uploadAttachment({
         objectType: "maintenance_visit",
         objectId: recordId,
-        category: "photo",
+        category,
         file: asFile(photo),
         idempotencyKey: photoIdempotencyKey(entry.id, index),
       });
     } catch (error) {
-      // Thrown before `photosDone` moves, so the next attempt starts here.
-      if (photoFailure(error) === "retry") throw asRetryable(error);
-      progress = { ...progress, photosSkipped: [...(progress.photosSkipped ?? []), photo.name] };
+      if (!(category === "signature" && signatureAlreadyThere(error))) {
+        // Thrown before `photosDone` moves, so the next attempt starts here.
+        if (photoFailure(error) === "retry") throw asRetryable(error);
+        progress = { ...progress, photosSkipped: [...(progress.photosSkipped ?? []), photo.name] };
+      }
     }
     progress = { ...progress, photosDone: index + 1 };
     await saveProgress(progress);

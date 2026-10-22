@@ -53,6 +53,14 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Segmented } from "@/components/ui/segmented";
 import { ChecklistField, checklistInputId } from "@/components/visits/ChecklistField";
 import { VisitsRestricted } from "@/components/visits/VisitsRestricted";
+import { SignatureStep } from "@/components/visits/SignatureStep";
+import type { SignaturePadHandle } from "@/components/visits/SignaturePad";
+import {
+  EMPTY_SIGNATURE,
+  signatureBlocker,
+  signatureFields,
+  type SignatureAnswer,
+} from "@/lib/signature";
 
 /**
  * Photo types the form takes. The server's list minus PDF: this picker opens
@@ -61,7 +69,16 @@ import { VisitsRestricted } from "@/components/visits/VisitsRestricted";
 const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 /** Fields this form draws. A server error naming any other has to be said at the top. */
-const DRAWN_FIELDS = new Set(["technician", "status", "status_note", "work_notes", "parts_replaced"]);
+const DRAWN_FIELDS = new Set([
+  "technician",
+  "status",
+  "status_note",
+  "work_notes",
+  "parts_replaced",
+  "signature_status",
+  "signer_name",
+  "signer_role",
+]);
 
 interface Photo {
   id: string;
@@ -183,6 +200,11 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [photoNotice, setPhotoNotice] = useState<string[]>([]);
   const [queued, setQueued] = useState(false);
+  const [signature, setSignature] = useState<SignatureAnswer>(EMPTY_SIGNATURE);
+  const pad = useRef<SignaturePadHandle>(null);
+  // Read off the pad at the press of the button and carried to the outbox with
+  // the photos; a ref, because `deliver` runs after the state of that render.
+  const signatureImage = useRef<Blob | null>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   /**
    * The submission, held in memory, for a browser with no outbox to hold it.
@@ -232,11 +254,18 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
       kind: "maintenance-visit" as const,
       label: elevator.name,
       body,
-      photos: photos.map((photo) => ({
-        name: photo.file.name,
-        type: photo.file.type,
-        blob: photo.file as Blob,
-      })),
+      photos: [
+        ...photos.map((photo) => ({
+          name: photo.file.name,
+          type: photo.file.type,
+          blob: photo.file as Blob,
+        })),
+        // Last, after the photos: the visit and its evidence first, then what
+        // the building said about it.
+        ...(signatureImage.current
+          ? [{ name: "imza.png", type: "image/png", blob: signatureImage.current, category: "signature" as const }]
+          : []),
+      ],
     };
 
     let entry: OutboxEntry | null = null;
@@ -348,6 +377,7 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
   if (queued) return <QueuedState elevatorId={elevator.id} />;
 
   const blocker = submitBlocker(status, checklist);
+  const signatureMissing = signatureBlocker(status, signature);
   // The server's refusal wins; failing that, a list that never arrived is said
   // where the empty picker is rather than left to look like a firm with no
   // technicians.
@@ -365,12 +395,14 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
   return (
     <form
       className="flex flex-col gap-6"
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
-        if (blocker || state.pending) return;
+        if (blocker || signatureMissing || state.pending) return;
         const values = formValues(event.currentTarget);
-        submit(
-          buildVisitBody({
+        signatureImage.current =
+          signature.choice === "signed" ? ((await pad.current?.toBlob()) ?? null) : null;
+        submit({
+          ...buildVisitBody({
             elevatorId: elevator.id,
             contractId,
             role,
@@ -382,7 +414,8 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
             partsReplaced: values.parts_replaced,
             checklist,
           }),
-        );
+          ...signatureFields(signature, new Date().toISOString()),
+        });
       }}
     >
       {(state.message || orphaned.length > 0) && (
@@ -563,6 +596,14 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
         <p className="text-help text-muted-foreground">{t("visit.photosHint")}</p>
       </section>
 
+      <SignatureStep
+        status={status}
+        answer={signature}
+        onChange={setSignature}
+        pad={pad}
+        errors={state.fields}
+      />
+
       {/* Pinned to the bottom of a phone screen, where the thumb is, and with
           the reason it is not live yet right above it — a disabled button that
           does not say why is a form that looks broken. */}
@@ -576,11 +617,17 @@ function VisitForm({ elevator, contractId }: { elevator: Elevator; contractId: s
             </Button>
           </p>
         )}
+        {!blocker && signatureMissing && (
+          <p className="flex items-center gap-2 text-help text-muted-foreground">
+            <TriangleAlert className="size-3.5 shrink-0 text-warning" aria-hidden="true" />
+            {t(`visit.signature.missing.${signatureMissing}`)}
+          </p>
+        )}
         <Button
           type="submit"
           size="xl"
           className="w-full md:w-auto md:self-start"
-          disabled={Boolean(blocker) || state.pending}
+          disabled={Boolean(blocker) || Boolean(signatureMissing) || state.pending}
         >
           {state.pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />}
           {state.pending ? t("common.saving") : t("visit.save")}

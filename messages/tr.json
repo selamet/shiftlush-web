@@ -237,7 +237,45 @@
     "queuedHint": "Uygulamayı kapatabilir ya da başka asansöre geçebilirsiniz. Bekleyen kayıtları üst çubuktaki “Gönderilmeyi bekliyor” bağlantısından görebilirsiniz.",
     "openOutbox": "Bekleyen kayıtlar",
     "photosSkipped": "{{count}} fotoğraf sunucu tarafından kabul edilmedi",
-    "photosSkippedHint": "Bakım kaydı kaydedildi. Bu fotoğrafları aşağıdaki Fotoğraflar bölümünden yeniden ekleyebilirsiniz."
+    "photosSkippedHint": "Bakım kaydı kaydedildi. Bu fotoğrafları aşağıdaki Fotoğraflar bölümünden yeniden ekleyebilirsiniz.",
+    "signature": {
+      "title": "Bina yetkilisi onayı",
+      "hintRequired": "Tamamlanan bakımda bina yetkilisinin imzası ya da imza alınamama sebebi kaydedilir.",
+      "hintOptional": "İsteğe bağlı: bakım tamamlanmadıysa da bina yetkilisinden imza alabilirsiniz.",
+      "choice": {
+        "signed": "İmza al",
+        "not_present": "Binada kimse yoktu",
+        "declined": "İmzalamayı reddetti"
+      },
+      "pad": "İmza alanı — parmağınızla imzalayın",
+      "clear": "Temizle",
+      "name": "İmzalayanın adı soyadı",
+      "role": "Görevi",
+      "privacy": "İmza ve ad, bu bakımın yapıldığını onaylamak için saklanır.",
+      "missing": {
+        "choose": "Bina yetkilisi onayını seçin",
+        "ink": "İmza alanına imza atılmadı",
+        "name": "İmzalayanın adını yazın",
+        "role": "İmzalayanın görevini seçin"
+      },
+      "none": "Bu bakım, imza özelliğinden önce kaydedildi.",
+      "imageAlt": "{{name}} imzası",
+      "amended": "İmzadan sonra düzenlendi",
+      "filter": "İmza"
+    },
+    "signerRole": {
+      "manager": "Yönetici",
+      "caretaker": "Kapıcı",
+      "staff": "Site/bina görevlisi",
+      "other": "Diğer"
+    },
+    "signatureState": {
+      "signed": "İmzalı",
+      "pending": "İmza bekleniyor",
+      "not_present": "Kimse yoktu",
+      "declined": "İmza reddedildi",
+      "none": "İmza bilgisi yok"
+    }
   },
   "outbox": {
     "title": "Gönderilmeyi bekleyenler",
@@ -808,7 +846,10 @@
       }
     },
     "requestIdLabel": "Hata kimliği",
-    "requestIdHelp": "Destek ekibine bu kimliği iletin"
+    "requestIdHelp": "Destek ekibine bu kimliği iletin",
+    "SIGNATURE_EXISTS": "Bu bakımın imzası zaten kayıtlı",
+    "SIGNATURE_NOT_EXPECTED": "Bu bakım imzalı olarak kaydedilmedi; imza eklenemez",
+    "SIGNATURE_CANNOT_BE_DELETED": "Bakım imzası kalıcıdır ve silinemez"
   },
   "nav": {
     "groups": {
@@ -1718,7 +1759,8 @@
       "parts": "Değiştirilen parçalar: {{parts}}",
       "fullChecklist": "Kontrol listesinin tamamı ({{count}} madde)",
       "photo": "{{index}}. fotoğraf",
-      "report": "Muayene raporu (PDF)"
+      "report": "Muayene raporu (PDF)",
+      "signature": "İmzayı gör"
     },
     "faults": {
       "title": "Arızalar",

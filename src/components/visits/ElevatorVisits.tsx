@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { attentionCount, elevatorHistoryParams } from "@/lib/visit";
 import { buttonVariants } from "@/components/ui/button";
 import { VisitStatusChip } from "@/components/ui/status-chip";
+import { SignatureStateChip } from "@/components/visits/VisitSignature";
 
 /**
  * The elevator's recent visits.
@@ -121,6 +122,7 @@ export function VisitHistoryList({
                     </span>
                   )}
                   <VisitStatusChip value={visit.status} />
+                  <SignatureStateChip value={visit.signature_state} />
                 </span>
               </Link>
             </li>

@@ -499,7 +499,18 @@ const EXPECT_BY_ROLE = {
     },
   },
   "/elevators/e1/visits/new": {
-    all: ["Fren sistemi", "Topraklama", "0/16", "2026-0043", "16 madde daha yanıtlanmalı"],
+    all: [
+      "Fren sistemi",
+      "Topraklama",
+      "0/16",
+      "2026-0043",
+      "16 madde daha yanıtlanmalı",
+      // The building's answer, none of it chosen yet.
+      "Bina yetkilisi onayı",
+      "İmza al",
+      "Binada kimse yoktu",
+      "İmzalamayı reddetti",
+    ],
     add: {
       owner: ["Teknisyen seçin"],
       operations: ["Teknisyen seçin"],
@@ -522,7 +533,16 @@ const EXPECT_BY_ROLE = {
     replace: { accountant: [VISITS_RESTRICTED] },
   },
   "/maintenance-visits/v1": {
-    all: ["Halatlarda yer yer", "2 madde dikkat gerektiriyor", "Kabin aydınlatma armatürü"],
+    // The building's signature: its state, who signed and in what role.
+    all: [
+      "Halatlarda yer yer",
+      "2 madde dikkat gerektiriyor",
+      "Kabin aydınlatma armatürü",
+      "Bina yetkilisi onayı",
+      "İmzalı",
+      "Ayşe Kaya",
+      "Yönetici",
+    ],
     replace: { accountant: [VISITS_RESTRICTED] },
   },
   "/maintenance-visits/v2": {
