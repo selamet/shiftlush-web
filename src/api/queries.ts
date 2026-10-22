@@ -1203,7 +1203,28 @@ export const planKeys = {
   list: (params: ListParams) => ["planned-visits", "list", params] as const,
   summary: (params: ListParams) => ["planned-visits", "summary", params] as const,
   every: (params: ListParams) => ["planned-visits", "every", params] as const,
+  route: (params: RouteParams) => ["planned-visits", "route", params] as const,
 } as const;
+
+export type Route = Schemas["Route"];
+export type RouteStop = Schemas["RouteStop"];
+export interface RouteParams {
+  /** A user id, or "me". */
+  technician: string;
+  date: string;
+}
+
+/**
+ * One technician's day in the order that drives least, with each stop's
+ * position and distance from the one before. Under `planKeys.all`, so every
+ * plan edit — a drop, an assignment — reorders the day too.
+ */
+export function routeQuery(params: RouteParams) {
+  return queryOptions({
+    queryKey: planKeys.route(params),
+    queryFn: ({ signal }) => api.get<Route>("/planned-visits/route/", { query: { ...params }, signal }),
+  });
+}
 
 /** A month's rows. `period` is required by the server; every caller names one. */
 export function plannedVisitListQuery(params: ListParams & { period: string }) {

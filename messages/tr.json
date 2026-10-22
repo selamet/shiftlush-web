@@ -423,6 +423,7 @@
       "floorCount": "Kat sayısı",
       "unitCount": "Daire / ofis sayısı",
       "isActive": "Aktif",
+      "hasLocation": "Konumu var",
       "street": "Sokak / Cadde",
       "buildingNumber": "Kapı no"
     },
@@ -717,6 +718,8 @@
     "noChanges": "Değişiklik yok",
     "changedFields": "Atılacak değişiklikler: {{fields}}",
     "neighborhoodKept": "Kayıtlı mahalle, yenisini seçmediğiniz sürece korunur.",
+    "startPoint": "Günün başlangıç noktası",
+    "startPointHint": "Haritadaki konum, teknisyenlere önerilen günlük rotanın başlangıç noktasıdır. Boş bırakılırsa rota en kısa sırayı veren duraktan başlar.",
     "logoNone": "Logo yüklenmedi",
     "logoHint": "Son yüklenen dosya firmanın geçerli logosu olur. Öncekiler listede kalır.",
     "profileReadOnly": "Bu bilgiler kullanıcı kaydınızdan gelir; buradan değiştirilemez.",
@@ -1428,7 +1431,20 @@
       "dayHint": "Boş bırakırsanız bakım \"Günü belirsiz\" listesine döner.",
       "refused": "{{lift}} taşınamadı: {{reason}}",
       "openWeek": "{{date}} haftasını aç",
-      "phone": "Takvim geniş ekranda açılır. Telefonda planı liste olarak kullanın."
+      "phone": "Takvim geniş ekranda açılır. Telefonda planı liste olarak kullanın.",
+      "showRoute": "{{name}} — {{date}} rotası",
+      "missingPositions": "{{count}} binanın konumu yok; rotada bu binalar sona kalır.",
+      "missingPositionsLink": "Konumu olmayan binalar"
+    },
+    "route": {
+      "suggested": "Önerilen sıra · kuş uçuşu ~{{km}} km",
+      "unplaced": "Konumu bilinmeyen",
+      "directions": "Yol tarifi",
+      "directionsTo": "{{lift}} için yol tarifi",
+      "title": "{{name}} · {{date}}",
+      "map": "Günün durakları haritada",
+      "empty": "Bu gün için planlanmış bakım yok.",
+      "fromStart": "Firmanın başlangıç noktasından"
     }
   },
   "fault": {

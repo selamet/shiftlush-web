@@ -107,3 +107,21 @@
     margin-top: -18px !important;
   }
 }
+
+/* A numbered stop on a day's route (plan/RouteMap). */
+.sl-route-stop span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  font: 600 12px/1 var(--font-sans, inherit);
+  box-shadow: 0 0 0 2px var(--color-card);
+}
+
+.sl-map .sl-route-line {
+  stroke: var(--color-primary);
+  stroke-opacity: 0.8;
+}

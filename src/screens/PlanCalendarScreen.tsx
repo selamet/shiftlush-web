@@ -16,8 +16,10 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { ChevronLeft, ChevronRight, Move } from "lucide-react";
+import { ChevronLeft, ChevronRight, Move, Route as RouteIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
+  buildingListQuery,
   planKeys,
   plannedVisitEveryQuery,
   updatePlannedVisit,
@@ -55,6 +57,7 @@ import { calendarFilters } from "@/screens/list-searches";
 import { PlanRestricted } from "@/components/plan/PlanRestricted";
 import { PlanRowFlags } from "@/components/plan/PlanRowFlags";
 import { PlanViewSwitch } from "@/components/plan/PlanViewSwitch";
+import { DayRoute } from "@/components/plan/DayRoute";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -183,6 +186,13 @@ function WeekView({
   const [refusal, setRefusal] = useState<string | null>(null);
   const [dragging, setDragging] = useState<PlannedVisit | null>(null);
   const [moving, setMoving] = useState<PlannedVisit | null>(null);
+  const [routeFor, setRouteFor] = useState<{ technician: { id: string; name: string }; day: string } | null>(
+    null,
+  );
+  // Buildings a route cannot place, counted once for the notice; the list
+  // behind the link is the same filter.
+  const missing = useQuery(buildingListQuery({ has_location: "false", page_size: 1 }));
+  const missingCount = missing.data?.pagination.total ?? 0;
 
   const rows = [...planned, ...waiting]
     .flatMap((query) => query.data ?? [])
@@ -268,6 +278,17 @@ function WeekView({
         </div>
 
         {refusal && <Alert tone="error" block title={refusal} />}
+        {missingCount > 0 && (
+          <Alert tone="info" block title={t("plan.calendar.missingPositions", { count: missingCount })}>
+            <Link
+              to="/buildings"
+              search={{ has_location: "false" }}
+              className="text-primary hover:underline focus-ring"
+            >
+              {t("plan.calendar.missingPositionsLink")}
+            </Link>
+          </Alert>
+        )}
         {failed && <Alert tone="error" block title={errorMessage(failed.error, t)} />}
 
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
@@ -298,6 +319,9 @@ function WeekView({
                   cells={layout.cells}
                   dragging={dragging}
                   onMove={setMoving}
+                  onRoute={(day) =>
+                    person.id && setRouteFor({ technician: { id: person.id, name: person.name }, day })
+                  }
                 />
               ))}
             </div>
@@ -305,6 +329,9 @@ function WeekView({
           <Tray rows={layout.tray} dragging={dragging} today={today} onMove={setMoving} />
         </div>
       </div>
+      {routeFor && (
+        <DayRoute technician={routeFor.technician} day={routeFor.day} onClose={() => setRouteFor(null)} />
+      )}
       {moving && (
         <MoveDialog
           row={moving}
@@ -328,6 +355,7 @@ function PersonRow({
   cells,
   dragging,
   onMove,
+  onRoute,
 }: {
   person: Person;
   days: string[];
@@ -335,7 +363,9 @@ function PersonRow({
   cells: Map<string, PlannedVisit[]>;
   dragging: PlannedVisit | null;
   onMove: (row: PlannedVisit) => void;
+  onRoute: (day: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="flex items-start border-b border-border-subtle px-3 py-2 text-cell font-medium">{person.name}</div>
@@ -347,6 +377,14 @@ function PersonRow({
           sunday={index === 6}
           blocked={dragging !== null && !isDropAllowed(dragging, day, today)}
           onMove={onMove}
+          route={
+            person.id
+              ? {
+                  label: t("plan.calendar.showRoute", { name: person.name, date: toDisplay(day) }),
+                  open: () => onRoute(day),
+                }
+              : undefined
+          }
         />
       ))}
     </>
@@ -359,12 +397,15 @@ function DayCell({
   sunday,
   blocked,
   onMove,
+  route,
 }: {
   id: string;
   rows: PlannedVisit[];
   sunday: boolean;
   blocked: boolean;
   onMove: (row: PlannedVisit) => void;
+  /** A technician's day can be seen as a route; the unassigned row cannot. */
+  route?: { label: string; open: () => void };
 }) {
   const { t } = useTranslation();
   const { setNodeRef, isOver } = useDroppable({ id, disabled: blocked });
@@ -380,11 +421,18 @@ function DayCell({
       )}
     >
       {busy > 0 && (
+        <span className="flex items-center justify-end gap-1">
+        {route && (
+          <Button size="icon" variant="ghost" className="size-6 [&_svg]:size-3.5" aria-label={route.label} title={route.label} onClick={route.open}>
+            <RouteIcon />
+          </Button>
+        )}
         <span
           className={cn("tnum self-end text-help text-muted-foreground", busy > BUSY_DAY && "font-semibold text-warning")}
           title={busy > BUSY_DAY ? t("plan.calendar.busy", { count: busy }) : undefined}
         >
           {busy}
+        </span>
         </span>
       )}
       {rows.map((row) => (

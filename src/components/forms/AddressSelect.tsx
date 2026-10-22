@@ -85,9 +85,10 @@ export function AddressSelect({
   required?: boolean;
   /**
    * Passed only by the screens whose write contract has `latitude` and
-   * `longitude` — buildings and complexes. Its absence is what keeps the map
-   * off the customer form and the settings screen, where a pin someone placed
-   * would be dropped on save with nothing said about it.
+   * `longitude` — buildings, complexes, and the company, whose pin is where a
+   * technician's day starts. Its absence is what keeps the map off the
+   * customer form, where a pin someone placed would be dropped on save with
+   * nothing said about it.
    */
   location?: { initial: Coordinates | null };
 }) {

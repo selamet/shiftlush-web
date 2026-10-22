@@ -107,6 +107,9 @@ export const buildingFilters = [
     ],
   }),
   booleanFilter({ param: "is_active", labelKey: "building.fields.isActive" }),
+  // "No" is where the calendar's missing-positions notice links: the buildings
+  // a route cannot place.
+  booleanFilter({ param: "has_location", labelKey: "building.fields.hasLocation" }),
 ];
 
 export const buildingListSearch = listSearchSchema(buildingFilters);

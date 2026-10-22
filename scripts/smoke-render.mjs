@@ -476,7 +476,18 @@ const EXPECT_BY_ROLE = {
   "/today": {
     all: ["Bugün ve Bu hafta listeleri teknisyenler içindir"],
     replace: {
-      technician: ["Sol asansör", "Sağ asansör", "Servis asansörü", "Yapıldı", "bakım kaldı"],
+      // Today is the suggested route: the distance, a way to each placed stop,
+      // and the stops it could not place under their own heading.
+      technician: [
+        "Sol asansör",
+        "Sağ asansör",
+        "Servis asansörü",
+        "Yapıldı",
+        "bakım kaldı",
+        "Önerilen sıra",
+        "Yol tarifi",
+        "Konumu bilinmeyen",
+      ],
       accountant: ["Bakım planı rolünüzde görünmüyor"],
     },
   },
