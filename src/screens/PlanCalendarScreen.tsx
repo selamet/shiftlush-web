@@ -447,7 +447,9 @@ function VisitCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "relative flex flex-col gap-0.5 rounded-md border border-border bg-card px-2 py-1 text-help shadow-sm",
+        // min-w-0 and the chip override: a narrow day column must shrink the
+        // card's flags onto a second line, never push them out of the card.
+        "relative flex min-w-0 flex-col gap-0.5 overflow-hidden rounded-md border border-border bg-card px-2 py-1 text-help shadow-sm [&_.inline-flex]:max-w-full [&_.inline-flex]:whitespace-normal",
         row.is_overdue && "border-l-[3px] border-l-foreground",
         closed && "opacity-60 shadow-none",
         isDragging && "z-20 shadow-lg",
