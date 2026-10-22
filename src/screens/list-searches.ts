@@ -294,6 +294,23 @@ export const planFilters: ListFilter[] = [
 
 export const planListSearch = listSearchSchema(planFilters);
 
+/**
+ * The calendar's address: the week on screen (any day of it; today when
+ * absent) and the month view when asked for. Carried like a list's filters,
+ * so a planning week can be shared as a link.
+ */
+export const calendarFilters: ListFilter[] = [
+  { ...dateFilter({ param: "week", labelKey: "plan.calendar.week" }), kind: "scope" },
+  {
+    param: "view",
+    labelKey: "plan.calendar.views",
+    options: [{ value: "month", labelKey: "plan.calendar.monthView" }],
+    kind: "scope",
+  },
+];
+
+export const calendarSearch = listSearchSchema(calendarFilters);
+
 /** The month the plan screen shows when the address names none: this one. */
 export function currentPeriod(): string {
   return periodOf(todayIso());

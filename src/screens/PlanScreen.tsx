@@ -34,6 +34,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PlanStatusChip } from "@/components/ui/status-chip";
 import { PlanRowFlags } from "@/components/plan/PlanRowFlags";
+import { PlanViewSwitch } from "@/components/plan/PlanViewSwitch";
 
 /** One row being edited in place: the technician ("" for nobody) and the day ("" for none). */
 interface Editing {
@@ -288,7 +289,10 @@ export function PlanScreen() {
       emptyTitleKey="plan.empty"
       headerExtra={
         <div className="flex flex-col gap-4">
-          <MonthPicker period={period} list={list} />
+          <span className="flex flex-wrap items-center justify-between gap-3">
+            <MonthPicker period={period} list={list} />
+            <PlanViewSwitch current="list" />
+          </span>
           <SummaryHeader summary={summary.data} list={list} />
         </div>
       }

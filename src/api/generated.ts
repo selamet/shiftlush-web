@@ -4957,6 +4957,8 @@ export interface components {
          *     * `INVALID_POSTAL_CODE` - Postal code must be five digits
          *     * `END_DATE_BEFORE_START_DATE` - End date must be after the start date
          *     * `INSTALLATION_DATE_IN_FUTURE` - Installation date cannot be in the future
+         *     * `PLANNED_DATE_OUTSIDE_PERIOD` - A planned visit's day must fall inside its month
+         *     * `PLANNED_DATE_IN_PAST` - A visit cannot be planned for a past day
          *     * `RECORD_IN_USE` - Record is referenced by other records
          *     * `DUPLICATE_REGISTRATION_NUMBER` - Registration number already exists for this company
          *     * `DUPLICATE_CONTRACT_NUMBER` - Contract number already exists for this company
@@ -4976,6 +4978,7 @@ export interface components {
          *     * `INVOICE_LINES_NEED_PRICE` - Every line needs a price before the draft can be issued
          *     * `DUPLICATE_INVOICE_NUMBER` - Another issued invoice of this company already has this number
          *     * `FAULT_TRANSITION_NOT_ALLOWED` - The fault is not in a state this action can be taken from
+         *     * `PLAN_ROW_CLOSED` - The planned visit is done or cancelled; its day can no longer change
          *     * `NOTIFICATION_EMAIL_LOCKED` - This notification is always e-mailed and cannot be turned off
          *     * `LAST_OWNER_CANNOT_BE_DEACTIVATED` - A company must keep at least one active owner
          *     * `ONLY_TECHNICIANS_ARE_ASSIGNED` - Customer assignments apply to technicians only
@@ -4998,7 +5001,7 @@ export interface components {
          *     * `ATTACHMENT_TARGET_MISMATCH` - Attachment does not belong to the record it is being linked to
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "INVOICE_TRANSITION_NOT_ALLOWED" | "INVOICE_LINES_NEED_PRICE" | "DUPLICATE_INVOICE_NUMBER" | "FAULT_TRANSITION_NOT_ALLOWED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
+        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "PLANNED_DATE_OUTSIDE_PERIOD" | "PLANNED_DATE_IN_PAST" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "INVOICE_TRANSITION_NOT_ALLOWED" | "INVOICE_LINES_NEED_PRICE" | "DUPLICATE_INVOICE_NUMBER" | "FAULT_TRANSITION_NOT_ALLOWED" | "PLAN_ROW_CLOSED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
         /** @description The shape of every error response. There is no `message` field: the backend sends codes, and the words live in the client's translation file, so wording changes in one place and adding a language does not touch the API. */
         ErrorResponse: {
             error: {
@@ -8022,6 +8025,10 @@ export interface operations {
                 page_size?: number;
                 /** @description The month, as "YYYY-MM". Required: the plan is always read a month at a time. */
                 period: string;
+                /** @description Rows planned on or after this day. Rows with no planned day are left out. */
+                planned_from?: string;
+                /** @description Rows planned on or before this day. Rows with no planned day are left out. */
+                planned_to?: string;
                 /**
                  * @description * `planned` - Planned
                  *     * `done` - Done
@@ -8031,6 +8038,8 @@ export interface operations {
                 /** @description A user id, or "me" for the signed-in user. */
                 technician?: string;
                 unassigned?: boolean;
+                /** @description true: only rows with no planned day; false: only rows with one. */
+                unscheduled?: boolean;
             };
             header?: never;
             path?: never;
