@@ -86,6 +86,7 @@ import {
   inspectionDueDays,
   inspectionDueSearch,
   faultListSearch,
+  calendarSearch,
   planListParams,
   planListSearch,
   notificationListSearch,
@@ -236,6 +237,10 @@ const NotificationListScreen = lazyRouteComponent(
   "NotificationListScreen",
 );
 const PlanScreen = lazyRouteComponent(() => import("@/screens/PlanScreen"), "PlanScreen");
+const PlanCalendarScreen = lazyRouteComponent(
+  () => import("@/screens/PlanCalendarScreen"),
+  "PlanCalendarScreen",
+);
 const TodayScreen = lazyRouteComponent(
   () => import("@/screens/TechnicianPlanScreen"),
   "TodayScreen",
@@ -964,6 +969,9 @@ export const routeTree = rootRoute.addChildren([
       },
       planListSearch,
     ),
+    // The same rows by day and technician. No loader: a week is two periods
+    // and a tray, fetched page by page, and the list is a click away.
+    shellChild("/plan/calendar", PlanCalendarScreen, undefined, calendarSearch),
     // A technician's landing screen, so it is warmed before the first paint.
     // The week is not: it may be two months, and is one tap away.
     shellChild("/today", TodayScreen, () =>

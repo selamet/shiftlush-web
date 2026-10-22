@@ -1202,6 +1202,7 @@ export const planKeys = {
   all: ["planned-visits"] as const,
   list: (params: ListParams) => ["planned-visits", "list", params] as const,
   summary: (params: ListParams) => ["planned-visits", "summary", params] as const,
+  every: (params: ListParams) => ["planned-visits", "every", params] as const,
 } as const;
 
 /** A month's rows. `period` is required by the server; every caller names one. */
@@ -1210,6 +1211,29 @@ export function plannedVisitListQuery(params: ListParams & { period: string }) {
     queryKey: planKeys.list(params),
     queryFn: ({ signal }) =>
       api.get<Paginated<PlannedVisit>>("/planned-visits/", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+/**
+ * Every row matching `params`, page after page, for the calendar: a week or a
+ * month has to be whole to be drawn, and the server serves at most
+ * `MAX_PAGE_SIZE` a page. A firm's month is a few hundred rows at most.
+ */
+export function plannedVisitEveryQuery(params: ListParams & { period: string }) {
+  return queryOptions({
+    queryKey: planKeys.every(params),
+    queryFn: async ({ signal }) => {
+      const rows: PlannedVisit[] = [];
+      for (let page = 1; ; page += 1) {
+        const batch = await api.get<Paginated<PlannedVisit>>("/planned-visits/", {
+          query: { ...params, page, page_size: MAX_PAGE_SIZE },
+          signal,
+        });
+        rows.push(...batch.results);
+        if (page >= batch.pagination.total_pages) return rows;
+      }
+    },
     placeholderData: (previous) => previous,
   });
 }

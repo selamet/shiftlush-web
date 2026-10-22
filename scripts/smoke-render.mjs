@@ -118,6 +118,8 @@ const PATHS = [
   "/notifications?unread=%22true%22",
   "/plan",
   "/plan?unassigned=%22true%22",
+  "/plan/calendar",
+  "/plan/calendar?view=%22month%22",
   "/today",
   "/week",
   "/faults",
@@ -448,6 +450,22 @@ const EXPECT_BY_ROLE = {
   },
   "/plan?unassigned=%22true%22": {
     all: ["Yük asansörü", "Yalnızca atanmamışlar"],
+    replace: {
+      technician: ["Bakım planı rolünüzde görünmüyor"],
+      accountant: ["Bakım planı rolünüzde görünmüyor"],
+    },
+  },
+  // The same rows by day: the week with its unassigned row and its tray, the
+  // month with the way back to a week. Office only, like the list.
+  "/plan/calendar": {
+    all: ["Takvim", "Bu hafta", "Günü belirsiz", "Atanmamış", "Ay görünümü"],
+    replace: {
+      technician: ["Bakım planı rolünüzde görünmüyor"],
+      accountant: ["Bakım planı rolünüzde görünmüyor"],
+    },
+  },
+  "/plan/calendar?view=%22month%22": {
+    all: ["Takvim", "Hafta görünümü"],
     replace: {
       technician: ["Bakım planı rolünüzde görünmüyor"],
       accountant: ["Bakım planı rolünüzde görünmüyor"],
