@@ -10,6 +10,9 @@ import {
   useDroppable,
   useSensor,
   useSensors,
+  pointerWithin,
+  rectIntersection,
+  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -22,7 +25,7 @@ import {
   type PlannedVisit,
   type PlannedVisitEdit,
 } from "@/api/queries";
-import { errorMessage } from "@/api/errors";
+import { errorMessage, fieldErrors } from "@/api/errors";
 import {
   addDays,
   endOfMonth,
@@ -60,6 +63,17 @@ import { Modal } from "@/components/ui/modal";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const TRAY = "tray";
+
+/**
+ * The cell under the pointer is the one meant. dnd-kit's default reads the
+ * card's own rectangle, and a card picked up by its top-left corner then lands
+ * a column to the right of where the hand let go. The keyboard has no pointer,
+ * so it falls back to the rectangle.
+ */
+const underThePointer: CollisionDetection = (args) => {
+  const hits = pointerWithin(args);
+  return hits.length > 0 ? hits : rectIntersection(args);
+};
 
 interface Person {
   id: string | null;
@@ -184,7 +198,10 @@ function WeekView({
       setMoved((current) => ({ ...current, [row.id]: body as Partial<PlannedVisit> }));
     },
     onError: (error, { row }) => {
-      setRefusal(t("plan.calendar.refused", { lift: row.elevator_name, reason: errorMessage(error, t) }));
+      // The rule that refused it — "outside its month", "a past day" — rather
+      // than the generic "the form has errors" a validation failure carries.
+      const reason = Object.values(fieldErrors(error, t))[0] ?? errorMessage(error, t);
+      setRefusal(t("plan.calendar.refused", { lift: row.elevator_name, reason }));
     },
     onSettled: async (_data, _error, { row }) => {
       await queryClient.invalidateQueries({ queryKey: planKeys.all });
@@ -227,7 +244,10 @@ function WeekView({
   const labels = weekdayLabels();
 
   return (
-    <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={underThePointer}
+      onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Button size="icon" variant="ghost" aria-label={t("plan.calendar.previousWeek")} onClick={() => onMove(addDays(days[0], -7))}>
@@ -252,7 +272,7 @@ function WeekView({
 
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
           <div className="min-w-0 flex-1 overflow-x-auto rounded-lg border border-border-subtle bg-card" aria-busy={loading}>
-            <div className="grid min-w-[60rem] grid-cols-[10rem_repeat(7,minmax(7.5rem,1fr))]">
+            <div className="grid min-w-[50rem] grid-cols-[9rem_repeat(7,minmax(5.75rem,1fr))]">
               <div className="border-b border-border bg-background" />
               {days.map((day, index) => (
                 <div
@@ -393,7 +413,7 @@ function Tray({
       ref={setNodeRef}
       aria-label={t("plan.calendar.tray")}
       className={cn(
-        "flex max-h-[70vh] flex-col gap-2 overflow-y-auto rounded-lg border border-border-subtle bg-card p-3 xl:w-72",
+        "flex max-h-[70vh] flex-col gap-2 overflow-y-auto rounded-lg border border-border-subtle bg-card p-3 xl:w-64 xl:shrink-0",
         isOver && !blocked && "outline outline-2 -outline-offset-2 outline-primary",
       )}
     >
