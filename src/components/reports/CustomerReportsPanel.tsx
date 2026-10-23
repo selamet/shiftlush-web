@@ -25,6 +25,13 @@ import { DownloadReportButton, reportMonth, SendReportButton, useOpenReport } fr
  * look" before the 1st decides for everybody.
  */
 export function CustomerReportsPanel({ customerId }: { customerId: string }) {
+  // Keyed by customer so that going back or forward from one customer to
+  // another remounts the panel: the rendered preview held by `FileOffer` is
+  // the first customer's PDF and must never be offered under the second.
+  return <ReportsPanelBody key={customerId} customerId={customerId} />;
+}
+
+function ReportsPanelBody({ customerId }: { customerId: string }) {
   const { t } = useTranslation();
   const { role } = useSession();
   const canSend = canSendReports(role);

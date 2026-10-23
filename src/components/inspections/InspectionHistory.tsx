@@ -17,6 +17,7 @@ import {
 import { errorMessage } from "@/api/errors";
 import { toDisplay, todayIso } from "@/lib/date";
 import { enumLabel } from "@/lib/i18n";
+import { openSignedUrl } from "@/lib/open-signed-url";
 import { elevatorInspectionParams } from "@/lib/inspections";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -138,8 +139,7 @@ function InspectionEntry({ inspection, canWrite }: { inspection: Inspection; can
   async function openReport(id: string) {
     setDownloadError("");
     try {
-      const { download_url } = await attachmentDownloadUrl(id);
-      window.open(download_url, "_blank", "noopener,noreferrer");
+      await openSignedUrl(async () => (await attachmentDownloadUrl(id)).download_url);
     } catch (error) {
       setDownloadError(errorMessage(error, t));
     }

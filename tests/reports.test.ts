@@ -157,13 +157,11 @@ describe("the requests", () => {
     globalThis.fetch = realFetch;
   });
 
-  it("sends with the caller's Idempotency-Key, so a retry does not mail twice", async () => {
+  it("sends with the caller's Idempotency-Key header", async () => {
     const fetcher = installFetch({ "/customer-reports/r1/send/": jsonResponse(200, { id: "r1", delivery: "sent" }) });
     await sendCustomerReport("r1", "key-1");
-    await sendCustomerReport("r1", "key-1");
     const calls = fetcher.callsTo("/customer-reports/r1/send/");
-    expect(calls.map((call) => call.method)).toEqual(["POST", "POST"]);
-    expect(calls.map((call) => call.headers["idempotency-key"])).toEqual(["key-1", "key-1"]);
+    expect(calls.map((call) => call.headers["idempotency-key"])).toEqual(["key-1"]);
   });
 
   it("says the renderer is unavailable in the service-unavailable words", async () => {

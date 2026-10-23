@@ -20,6 +20,7 @@ import {
 } from "@/lib/upload";
 import { formatFileSize } from "@/lib/format";
 import { enumLabel } from "@/lib/i18n";
+import { openSignedUrl } from "@/lib/open-signed-url";
 import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 import { Alert } from "@/components/ui/alert";
@@ -204,8 +205,7 @@ export function AttachmentsPanel({
   async function download(file: Attachment) {
     setListError(null);
     try {
-      const { download_url } = await attachmentDownloadUrl(file.id);
-      window.open(download_url, "_blank", "noopener,noreferrer");
+      await openSignedUrl(async () => (await attachmentDownloadUrl(file.id)).download_url);
     } catch (error) {
       setListError(errorMessage(error, t));
     }
