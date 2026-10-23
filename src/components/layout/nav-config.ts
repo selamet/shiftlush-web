@@ -11,6 +11,7 @@ import {
   Wrench,
   FileText,
   Receipt,
+  FileChartColumn,
   QrCode,
   UserCog,
   ScrollText,
@@ -144,6 +145,15 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: "billing.title",
         icon: Receipt,
         roles: ["owner", "admin", "accountant"],
+      },
+      {
+        // What each customer was told about their month. The accountant reads
+        // them — they are what the customer was sent — and the technician has
+        // the lifts, not the customer's paperwork.
+        to: "/reports",
+        labelKey: "report.title",
+        icon: FileChartColumn,
+        roles: ["owner", "admin", "operations", "accountant"],
       },
     ],
   },

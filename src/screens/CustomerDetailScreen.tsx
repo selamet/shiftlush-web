@@ -19,6 +19,8 @@ import { enumLabel } from "@/lib/i18n";
 import { formatDate, formatMoney, formatPhone, telHref } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { canManagePortal } from "@/lib/portal";
+import { canReadReports } from "@/lib/reports";
+import { CustomerReportsPanel } from "@/components/reports/CustomerReportsPanel";
 import { PortalAccessCard } from "@/components/customers/PortalAccessCard";
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -148,6 +150,11 @@ function ContactList({ customer, canWrite }: { customer: Customer; canWrite: boo
             {contact.is_primary && (
               <span className="rounded-sm border border-border-strong px-1.5 text-help text-muted-foreground">
                 {t("customerDetail.primaryBadge")}
+              </span>
+            )}
+            {contact.receives_monthly_report && (
+              <span className="rounded-sm border border-dashed border-border-strong px-1.5 text-help text-muted-foreground">
+                {t("customerDetail.receivesReportBadge")}
               </span>
             )}
             {canWrite && (
@@ -357,6 +364,14 @@ export function CustomerDetailScreen() {
           {canManagePortal(role) && (
             <Card title={t("portalAccess.title")}>
               <PortalAccessCard customer={customer} />
+            </Card>
+          )}
+
+          {/* What the customer was sent each month. The office and the
+              accountant read it; the technician has the lifts. */}
+          {canReadReports(role) && (
+            <Card title={t("report.panelTitle")}>
+              <CustomerReportsPanel customerId={customer.id} />
             </Card>
           )}
 
