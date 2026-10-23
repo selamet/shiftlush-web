@@ -34,5 +34,14 @@
     "data": { "amount": "1250.00" },
     "read_at": "2026-10-10T09:00:00Z",
     "created_at": "2026-10-10T06:00:00Z"
+  },
+  {
+    "id": "n5",
+    "kind": "monthly_reports_ready",
+    "subject_type": "reports",
+    "subject_id": "co-1",
+    "data": { "period": "2026-09", "count": 4, "sent": 1, "no_recipient": 1, "not_enabled": 1, "failed": 1 },
+    "read_at": "2026-10-01T09:00:00Z",
+    "created_at": "2026-10-01T05:00:00Z"
   }
 ]

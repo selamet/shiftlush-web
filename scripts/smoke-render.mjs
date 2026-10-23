@@ -73,6 +73,8 @@ const PATHS = [
   "/customers/c1/edit",
   "/customers/c1/contacts/new",
   "/customers/c1/contacts/c1-contact-1",
+  // A contact with no e-mail: the monthly report box is there, off, and says why.
+  "/customers/c1/contacts/c1-contact-2",
   "/customers/c6/edit",
   "/complexes",
   "/complexes/new",
@@ -136,6 +138,11 @@ const PATHS = [
   "/billing?needs_price=%22true%22",
   "/billing/d1",
   "/billing/d2",
+  "/reports",
+  // The two the office acts on, and a month from before the switch was on —
+  // the way the bell's monthly notice arrives here.
+  "/reports?delivery=%22no_recipient%22",
+  "/reports?period=%222026-08%22",
   "/settings",
   // Its own route rather than a tab behind a click, which is what makes it
   // renderable here at all: the password form and the session list are the two
@@ -180,6 +187,9 @@ const EXPECT = {
     "Tümünü okundu say",
     // The bell is in the top bar of every signed-in page.
     "Bildirimler",
+    // The monthly reports notice, worded as its e-mail, and leading to that month's reports.
+    "Eylül 2026 raporları hazır: 1 gönderildi, 1 alıcısız, 1 gönderim kapalı, 1 başarısız.",
+    'href="/reports?period=2026-09"',
   ],
   "/notifications?unread=%22true%22": ["Sol asansör asansörünün bakımı gecikti", "Yeni"],
 
@@ -195,7 +205,12 @@ const EXPECT = {
   // The contact form is reached through the customer, so it has to name the
   // customer; and the edit form has to arrive with the contact in its inputs.
   "/customers/c1/contacts/new": "Dadaş",
-  "/customers/c1/contacts/c1-contact-1": "Ayşe Demir",
+  "/customers/c1/contacts/c1-contact-1": ["Ayşe Demir", "Aylık raporu alır", "Her ayın bakım raporu bu kişiye e-postayla gönderilir."],
+  "/customers/c1/contacts/c1-contact-2": [
+    "Mustafa Kaya",
+    "Aylık raporu alır",
+    "Rapor e-postayla gider; işaretlemek için önce bir e-posta adresi girin.",
+  ],
   // An individual customer, so the half of the form only they see is actually
   // rendered rather than only type-checked. The label is the tell: a TC field
   // where an organisation would show a tax office.
@@ -268,7 +283,14 @@ const EXPECT = {
   // four differ only in whether the fields can be written. A screen that filled
   // the form for the owner and left it empty for everybody else would pass a
   // check that only looked at one of them.
-  "/settings": ["Yükseliş Asansör Bakım ve Servis Ltd. Şti.", "Cumhuriyet Caddesi"],
+  // The monthly report switch, where it stands, for everybody: the demo
+  // firm's is off, so nothing reaches a customer's inbox.
+  "/settings": [
+    "Yükseliş Asansör Bakım ve Servis Ltd. Şti.",
+    "Cumhuriyet Caddesi",
+    "Aylık müşteri raporları",
+    "Kapalı: raporlar hazırlanıyor, gönderilmiyor",
+  ],
   // Three independent things on the profile tab, so three assertions. The
   // password form has to be a form and not the sentence it replaced; the
   // session list has to have read the three rows the mock serves — the device
@@ -329,6 +351,16 @@ const EXPECT_ABSENT = {
  */
 const VISITS_RESTRICTED = "Bakım kayıtları rolünüzde görünmüyor";
 const BILLING_RESTRICTED = "Faturalar rolünüzde görünmüyor";
+const REPORTS_RESTRICTED = "Raporlar rolünüzde görünmüyor";
+/** September's reports as the office reads them: each delivery, its lead, a failure's reason. */
+const REPORT_ROWS = [
+  "Dadaş Konakları Site Yönetimi",
+  "1 asansörün bakımı bu ay yapılamadı.",
+  "Bakım 3 / 4",
+  "Bu ay 1 acil arıza oldu; ortalama müdahale süresi 38 dakika.",
+  "1 asansörde düzeltme süresi geçti.",
+  "Neden: Not sent; failed: zeynepkaya@example.com",
+];
 const EXPECT_BY_ROLE = {
   // The money roles only: owner (and admin) and the accountant. Operations
   // runs the fleet and the technician the lifts; both get the restricted state.
@@ -371,8 +403,63 @@ const EXPECT_BY_ROLE = {
   "/contracts/k1": { add: { owner: ["Fatura taslakları"], accountant: ["Fatura taslakları"] } },
   // The office's say over the customer portal: the contact with an account,
   // and the way to switch it off. Owner, admin and operations only.
+  // The reports, for the office and the accountant: the panel with each month,
+  // its lead and its delivery; this month's preview and "send" for the office.
+  "/reports": {
+    replace: {
+      owner: [...REPORT_ROWS, "Yeniden gönder"],
+      operations: [...REPORT_ROWS, "Yeniden gönder"],
+      accountant: REPORT_ROWS,
+      technician: [REPORTS_RESTRICTED],
+    },
+  },
+  "/settings": {
+    add: {
+      operations: ["Bu ayarı yalnızca firma sahibi değiştirebilir."],
+      technician: ["Bu ayarı yalnızca firma sahibi değiştirebilir."],
+      accountant: ["Bu ayarı yalnızca firma sahibi değiştirebilir."],
+    },
+  },
+  "/reports?delivery=%22no_recipient%22": {
+    replace: {
+      owner: ["Erzurum Ticaret Merkezi A.Ş.", "Bu ay 1 acil arıza oldu"],
+      operations: ["Erzurum Ticaret Merkezi A.Ş.", "Bu ay 1 acil arıza oldu"],
+      accountant: ["Erzurum Ticaret Merkezi A.Ş.", "Bu ay 1 acil arıza oldu"],
+      technician: [REPORTS_RESTRICTED],
+    },
+  },
+  "/reports?period=%222026-08%22": {
+    replace: {
+      owner: ["Tüm asansörlerin bakımı yapıldı.", "Ağustos 2026"],
+      operations: ["Tüm asansörlerin bakımı yapıldı.", "Ağustos 2026"],
+      accountant: ["Tüm asansörlerin bakımı yapıldı.", "Ağustos 2026"],
+      technician: [REPORTS_RESTRICTED],
+    },
+  },
   "/customers/c1": {
-    add: { owner: ["Portal erişimi", "Etkin", "Erişimi kapat"], operations: ["Portal erişimi", "Etkin", "Erişimi kapat"] },
+    add: {
+      owner: [
+        "Portal erişimi",
+        "Etkin",
+        "Erişimi kapat",
+        "Aylık raporlar",
+        "Bu ayın önizlemesi",
+        "Eylül 2026",
+        "1 asansörün bakımı bu ay yapılamadı.",
+        "Yeniden gönder",
+        "Aylık rapor",
+      ],
+      operations: [
+        "Portal erişimi",
+        "Etkin",
+        "Erişimi kapat",
+        "Aylık raporlar",
+        "Bu ayın önizlemesi",
+        "Eylül 2026",
+        "Yeniden gönder",
+      ],
+      accountant: ["Aylık raporlar", "Eylül 2026", "Ağustos 2026", "Tüm asansörlerin bakımı yapıldı."],
+    },
   },
   "/elevators/e1": {
     // The maintenance dates as the server sends them on the elevator.
@@ -559,7 +646,18 @@ const EXPECT_ABSENT_BY_ROLE = {
   // An issued draft cannot be edited: no price box, no new line.
   "/billing/d2": { replace: { owner: ["Satır ekle"], accountant: ["Satır ekle"] } },
   "/contracts/k1": { add: { operations: ["Fatura taslakları"] } },
-  "/customers/c1": { add: { technician: ["Portal erişimi"], accountant: ["Portal erişimi"] } },
+  "/customers/c1": {
+    add: {
+      technician: ["Portal erişimi", "Aylık raporlar"],
+      // The accountant reads reports; previewing and sending are the office's.
+      accountant: ["Portal erişimi", "Bu ayın önizlemesi", "Yeniden gönder"],
+    },
+  },
+  // Only the failed row says why; the filter reached the request.
+  "/reports?delivery=%22no_recipient%22": { all: ["Neden: Not sent"] },
+  "/reports": { add: { accountant: ["Yeniden gönder"] } },
+  // The switch is the owner's: everybody else is told so, the owner is not.
+  "/settings": { add: { owner: ["Bu ayarı yalnızca firma sahibi değiştirebilir."] } },
   "/elevators/e1": {
     replace: { accountant: ["Bakım kaydı gir", "Bakım geçmişi", "Bu ayın planı", "Arıza bildir", "Muayene geçmişi"] },
     // Read-only for a technician: no record, no fault, no "fixed".
@@ -752,6 +850,12 @@ try {
       ["Bakım ziyaretleri", "Halatlar ve kablolar", "PK-2026-18442", "Muayene raporu (PDF)", "1. fotoğraf"],
     ],
     ["/portal/faults", portalMe, ["Arıza bildir", "Kabinde mahsur kalan var", "K7M2QX", "Kılavuz raylar yağlandı."]],
+    // The customer's own reports, newest first, each with its lead and a download.
+    [
+      "/portal/reports",
+      portalMe,
+      ["Raporlar", "Eylül 2026", "1 asansörün bakımı bu ay yapılamadı.", "Ağustos 2026", "Bakım 3 / 4", "İndir"],
+    ],
   ];
   for (const [path, me, needles] of PORTAL) {
     requested.length = 0;

@@ -22,9 +22,23 @@
         "phone": "0532 418 27 06",
         "email": "aysedemir@example.com",
         "is_primary": true,
+        "receives_monthly_report": true,
         "notes": "",
         "created_at": "2026-01-12T09:00:00Z",
         "updated_at": "2026-01-12T09:00:00Z"
+      },
+      {
+        "id": "c1-contact-2",
+        "customer_id": "c1",
+        "full_name": "Mustafa Kaya",
+        "role": "caretaker",
+        "phone": "0533 214 55 90",
+        "email": "",
+        "is_primary": false,
+        "receives_monthly_report": false,
+        "notes": "",
+        "created_at": "2026-03-02T09:00:00Z",
+        "updated_at": "2026-03-02T09:00:00Z"
       }
     ],
     "building_count": 4,
@@ -58,6 +72,7 @@
         "phone": "0533 207 94 18",
         "email": "hakancelik@example.com",
         "is_primary": true,
+        "receives_monthly_report": false,
         "notes": "",
         "created_at": "2026-01-12T09:00:00Z",
         "updated_at": "2026-01-12T09:00:00Z"
@@ -94,6 +109,7 @@
         "phone": "0442 233 30 90",
         "email": "zeynepkaya@example.com",
         "is_primary": true,
+        "receives_monthly_report": true,
         "notes": "",
         "created_at": "2026-01-12T09:00:00Z",
         "updated_at": "2026-01-12T09:00:00Z"
@@ -130,6 +146,7 @@
         "phone": "0535 619 72 44",
         "email": "emresahin@example.com",
         "is_primary": true,
+        "receives_monthly_report": false,
         "notes": "",
         "created_at": "2026-01-12T09:00:00Z",
         "updated_at": "2026-01-12T09:00:00Z"

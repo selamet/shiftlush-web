@@ -508,6 +508,15 @@ function resolve(path, search, method, body) {
       return { ...portalFaults[0], ...body, id: "pf-new", reference: "N3W0NE", status: "open" };
     }
     if (path === "/api/v1/portal/faults/") return page(portalFaults);
+    // The signed-in contact's own customer's reports, without the office's
+    // delivery state, recipients or errors — the portal's shape.
+    if (path === "/api/v1/portal/reports/") {
+      return page(
+        fixture("demo-customer-reports")
+          .filter((report) => report.customer === "c1")
+          .map(({ id, period, file, generated_at, summary }) => ({ id, period, file, generated_at, summary })),
+      );
+    }
     const file = /^\/api\/v1\/portal\/files\/([^/]+)\/download-url\/$/.exec(path);
     if (file) return { download_url: `https://files.example/${file[1]}`, expires_in: 300 };
     return null;
@@ -535,6 +544,33 @@ function resolve(path, search, method, body) {
   }
   const portalOff = /^\/api\/v1\/portal-accounts\/([^/]+)\/deactivate\/$/.exec(path);
   if (method === "POST" && portalOff) return { id: portalOff[1], status: "inactive" };
+
+  // Monthly customer reports: September for three customers — one sent, one
+  // with nobody ticked, one whose mail failed — and August's, made while the
+  // firm's switch was off. The preview answers with bytes, as the server does.
+  if (path.startsWith("/api/v1/customer-reports/")) {
+    const reports = fixture("demo-customer-reports");
+    if (method === "POST" && path === "/api/v1/customer-reports/preview/") {
+      return { __raw: "%PDF-1.4\n", type: "application/pdf" };
+    }
+    const sent = /^\/api\/v1\/customer-reports\/([^/]+)\/send\/$/.exec(path);
+    if (method === "POST" && sent) {
+      const report = reports.find((one) => one.id === sent[1]);
+      return report ? { ...report, delivery: "sent", sent_at: "2026-10-23T09:00:00Z", recipients: ["aysedemir@example.com"], error: "" } : null;
+    }
+    const link = /^\/api\/v1\/customer-reports\/([^/]+)\/download-url\/$/.exec(path);
+    if (link) return { download_url: `https://files.example/${link[1]}.pdf`, expires_in: 300 };
+    const one = /^\/api\/v1\/customer-reports\/([^/]+)\/$/.exec(path);
+    if (one) return reports.find((report) => report.id === one[1]) ?? null;
+    if (path === "/api/v1/customer-reports/") {
+      let rows = reports;
+      for (const param of ["customer", "period", "delivery"]) {
+        const value = search.get(param);
+        if (value) rows = rows.filter((row) => row[param] === value);
+      }
+      return page(rows);
+    }
+  }
 
   // Invoice drafts: one waiting for a price on a fault line, one issued, one
   // paid. The CSV and the PDF answer with bytes, as the server does.
