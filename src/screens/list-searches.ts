@@ -417,3 +417,28 @@ export const billingFilters: ListFilter[] = [
 ];
 
 export const billingListSearch = listSearchSchema(billingFilters);
+
+/**
+ * What `GET /customer-reports/` narrows by. `period` is the report's month,
+ * offered on screen as the months that have ended; `delivery` is where it got
+ * to, and "no recipient" and "failed" are what the office acts on. `customer`
+ * arrives on the link from a customer's own panel, and the menu names them.
+ */
+export const reportFilters: ListFilter[] = [
+  {
+    param: "period",
+    labelKey: "report.fields.period",
+    options: [],
+    accepts: isPeriod,
+    formatValue: (value) => monthYearLabel(`${value}-01`),
+  },
+  enumFilter({
+    param: "delivery",
+    labelKey: "report.fields.delivery",
+    namespace: "report.delivery",
+    values: ["pending", "sent", "not_enabled", "no_recipient", "failed"],
+  }),
+  idMenuFilter({ param: "customer", labelKey: "report.fields.customer" }),
+];
+
+export const reportListSearch = listSearchSchema(reportFilters);

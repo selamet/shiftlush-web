@@ -85,6 +85,8 @@ const RUNTIME_NAMESPACES = [
   "fault.priority",
   "billing.status",
   "billing.lineKind",
+  "report.delivery",
+  "report.lead",
   "portal.attention",
   "portalAccess.state",
   "inspection.kind",

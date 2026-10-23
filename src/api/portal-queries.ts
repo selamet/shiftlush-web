@@ -21,6 +21,7 @@ export type PortalVisit = Schemas["PortalVisit"];
 export type PortalInspection = Schemas["PortalInspection"];
 export type PortalFault = Schemas["PortalFault"];
 export type PortalFaultReport = Schemas["PortalFaultReportRequest"];
+export type PortalReport = Schemas["PortalReport"];
 
 /** A file a visit carries, as the portal describes it: enough to name it and fetch it. */
 export interface PortalFile {
@@ -38,6 +39,7 @@ export const portalKeys = {
   visits: (params: ListParams) => ["portal", "visits", params] as const,
   inspections: (params: ListParams) => ["portal", "inspections", params] as const,
   faults: (params: ListParams) => ["portal", "faults", params] as const,
+  reports: ["portal", "reports"] as const,
 } as const;
 
 /** A customer's lifts fit in one page; a building manager is not paging through a fleet. */
@@ -86,6 +88,18 @@ export function portalFaultsQuery(params: ListParams = ALL) {
     queryKey: portalKeys.faults(params),
     queryFn: ({ signal }) =>
       portal.api.get<Paginated<PortalFault>>("/portal/faults/", { query: params, signal }),
+  });
+}
+
+/**
+ * The customer's monthly reports, newest first. A few a year, so one page;
+ * the PDF downloads through the portal's files endpoint like any other file.
+ */
+export function portalReportsQuery() {
+  return queryOptions({
+    queryKey: portalKeys.reports,
+    queryFn: ({ signal }) =>
+      portal.api.get<Paginated<PortalReport>>("/portal/reports/", { query: ALL, signal }),
   });
 }
 
