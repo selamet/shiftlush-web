@@ -15,6 +15,7 @@ import {
 } from "@/api/portal-queries";
 import { toDisplay } from "@/lib/date";
 import { enumLabel } from "@/lib/i18n";
+import { openSignedUrl } from "@/lib/open-signed-url";
 import { cn } from "@/lib/utils";
 import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -141,8 +142,7 @@ function useOpenFile() {
   async function open(id: string) {
     setFailure("");
     try {
-      const { download_url } = await portalFileUrl(id);
-      window.open(download_url, "_blank", "noopener,noreferrer");
+      await openSignedUrl(async () => (await portalFileUrl(id)).download_url);
     } catch (error) {
       setFailure(errorMessage(error, t));
     }

@@ -9,6 +9,7 @@ import {
 } from "@/api/queries";
 import { errorMessage } from "@/api/errors";
 import { monthYearLabel } from "@/lib/date";
+import { openSignedUrl } from "@/lib/open-signed-url";
 import { useSubmit } from "@/lib/form";
 import { sendLabelKey } from "@/lib/reports";
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,7 @@ export function useOpenReport() {
   async function open(report: Pick<CustomerReport, "id">) {
     setFailure("");
     try {
-      const { download_url } = await customerReportDownloadUrl(report.id);
-      window.open(download_url, "_blank", "noopener,noreferrer");
+      await openSignedUrl(async () => (await customerReportDownloadUrl(report.id)).download_url);
     } catch (error) {
       setFailure(errorMessage(error, t));
     }

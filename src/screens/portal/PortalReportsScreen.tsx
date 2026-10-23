@@ -5,6 +5,7 @@ import { FileDown } from "lucide-react";
 import { errorMessage, supportReference } from "@/api/errors";
 import { portalFileUrl, portalReportsQuery, type PortalReport } from "@/api/portal-queries";
 import { monthYearLabel } from "@/lib/date";
+import { openSignedUrl } from "@/lib/open-signed-url";
 import { leadSentence, visitCounts } from "@/lib/reports";
 import { ListError, TableSkeleton } from "@/components/list/ListStates";
 import { Button } from "@/components/ui/button";
@@ -27,8 +28,8 @@ export function PortalReportsScreen() {
     if (!report.file) return;
     setFailure("");
     try {
-      const { download_url } = await portalFileUrl(report.file);
-      window.open(download_url, "_blank", "noopener,noreferrer");
+      const file = report.file;
+      await openSignedUrl(async () => (await portalFileUrl(file)).download_url);
     } catch (error) {
       setFailure(errorMessage(error, t));
     }
