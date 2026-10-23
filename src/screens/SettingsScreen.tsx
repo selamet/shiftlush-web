@@ -26,6 +26,8 @@ import { ChangePasswordForm } from "@/components/settings/ChangePasswordForm";
 import { SessionList } from "@/components/settings/SessionList";
 import { NotificationPreferencesForm } from "@/components/settings/NotificationPreferencesForm";
 import { DetailSkeleton, ListError } from "@/components/list/ListStates";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { canToggleMonthlyReports } from "@/lib/reports";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -556,6 +558,8 @@ function CompanyForm({ record }: { record: Company }) {
         )}
       </form>
 
+      <MonthlyReportsSwitch record={record} />
+
       {/* Outside the form: the logo is saved the moment it lands, and a file
           picker nested in a form that submits natively is a picker that can
           submit the page. */}
@@ -590,6 +594,68 @@ function CompanyForm({ record }: { record: Company }) {
         </div>
       </Section>
     </div>
+  );
+}
+
+/**
+ * The firm's switch for the monthly customer report e-mails.
+ *
+ * Outside the company form and saved the moment it is flipped, like the logo:
+ * it is one decision, not a field to batch with the tax number. Turning it on
+ * is the moment reports start reaching customers' inboxes, so it asks first;
+ * turning it off stops that and needs no second thought. The API offers no
+ * count of who would receive the next round, so the question says what
+ * happens rather than to how many. The owner alone may change it; everybody
+ * else sees where it stands.
+ */
+function MonthlyReportsSwitch({ record }: { record: Company }) {
+  const { t } = useTranslation();
+  const { role } = useSession();
+  const canToggle = canToggleMonthlyReports(role);
+  const [confirming, setConfirming] = useState(false);
+
+  const toggle = useSubmit<boolean, Company>({
+    mutationFn: (enabled) => updateCompany({ monthly_reports_enabled: enabled }),
+    invalidate: [companyKeys.all],
+  });
+
+  const enabled = Boolean(record.monthly_reports_enabled);
+
+  return (
+    <Section title={t("report.settings.title")}>
+      <div className="flex flex-col gap-3">
+        <p className="text-help text-muted-foreground">{t("report.settings.hint")}</p>
+        {toggle.state.message && <Alert tone="error" block title={toggle.state.message} />}
+        <label className="flex items-center gap-2.5" htmlFor="co-monthly-reports">
+          <input
+            id="co-monthly-reports"
+            type="checkbox"
+            role="switch"
+            aria-checked={enabled}
+            checked={enabled}
+            disabled={!canToggle || toggle.state.pending}
+            onChange={(event) => {
+              if (event.currentTarget.checked) setConfirming(true);
+              else toggle.submit(false);
+            }}
+            className="checkbox"
+          />
+          <span className="text-body">{enabled ? t("report.settings.on") : t("report.settings.off")}</span>
+        </label>
+        {!canToggle && <p className="text-help text-muted-foreground">{t("report.settings.ownerOnly")}</p>}
+      </div>
+      <ConfirmDialog
+        open={confirming}
+        title={t("report.settings.enableTitle")}
+        body={t("report.settings.enableBody")}
+        confirmLabel={t("report.settings.enableConfirm")}
+        onConfirm={() => {
+          setConfirming(false);
+          toggle.submit(true);
+        }}
+        onCancel={() => setConfirming(false)}
+      />
+    </Section>
   );
 }
 

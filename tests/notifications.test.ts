@@ -236,6 +236,25 @@ describe("describeNotification", () => {
     ).toContain("Dadaş ile yapılan 2026-0043 numaralı sözleşmenin 01.10.2026 – 31.10.2026 dönemi için");
   });
 
+  it("words the monthly reports notice as its e-mail does", () => {
+    const words = describeNotification(
+      notification("monthly_reports_ready", { period: "2026-10", count: 16, sent: 14, no_recipient: 2, not_enabled: 0, failed: 0 }),
+      t,
+    );
+    expect(words).toEqual({
+      title: "Ekim 2026 raporları hazır",
+      body: "Ekim 2026 raporları hazır: 14 gönderildi, 2 alıcısız.",
+      known: true,
+    });
+    expect(
+      describeNotification(
+        notification("monthly_reports_ready", { period: "2026-10", count: 5, sent: 0, no_recipient: 0, not_enabled: 4, failed: 1 }),
+        t,
+      ).body,
+    ).toBe("Ekim 2026 raporları hazır: 0 gönderildi, 4 gönderim kapalı, 1 başarısız.");
+    expect(describeNotification(notification("monthly_reports_ready", { period: "2026-10" }), t).known).toBe(false);
+  });
+
   it("falls back to a plain notice for a kind this client does not know", () => {
     const words = describeNotification(notification("invoice_overdue", { amount: "100" }), t);
     expect(words).toEqual({
@@ -266,6 +285,16 @@ describe("notificationTarget", () => {
 
   it("leads a billing notice to the billing screen", () => {
     expect(notificationTarget({ subject_type: "billing", subject_id: "co1" })).toEqual({ to: "/billing" });
+  });
+
+  it("leads the monthly reports notice to the reports screen for that month", () => {
+    expect(
+      notificationTarget({ subject_type: "reports", subject_id: "co1", data: { period: "2026-10" } }),
+    ).toEqual({ to: "/reports", search: { period: "2026-10" } });
+    expect(notificationTarget({ subject_type: "reports", subject_id: "co1", data: { period: "soon" } })).toEqual({
+      to: "/reports",
+      search: {},
+    });
   });
 
   it("leads a fault notice to the fault", () => {

@@ -255,6 +255,24 @@ export function InvoiceStatusChip({ value }: { value: string }) {
   return <EnumChip namespace="billing.status" value={value} map={INVOICE_STATUS} />;
 }
 
+/**
+ * Where a monthly report got to. Sent is what was meant to happen and earns a
+ * tick; "not enabled" is the firm's own choice and recedes; pending is the
+ * system's and is dashed; no recipient and failed are the office's work, so
+ * they carry the warning — never ink, because pressing "send" undoes either.
+ */
+const REPORT_DELIVERY: Record<string, { weight: ChipWeight; icon?: typeof Pause }> = {
+  pending: { weight: "dashed" },
+  sent: { weight: "outline", icon: Check },
+  not_enabled: { weight: "recessed" },
+  no_recipient: { weight: "outline", icon: TriangleAlert },
+  failed: { weight: "outline", icon: TriangleAlert },
+};
+
+export function ReportDeliveryChip({ value }: { value: string }) {
+  return <EnumChip namespace="report.delivery" value={value} map={REPORT_DELIVERY} />;
+}
+
 export function ChecklistResultChip({ value }: { value: string }) {
   return <EnumChip namespace="visit.checklistResult" value={value} map={CHECKLIST_RESULT} />;
 }

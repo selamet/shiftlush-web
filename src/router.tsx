@@ -37,6 +37,7 @@ import {
   sessionListQuery,
   invoiceDraftListQuery,
   invoiceDraftQuery,
+  customerReportListQuery,
   portalAccountsQuery,
   inspectionDueQuery,
   inspectionListQuery,
@@ -68,11 +69,13 @@ import {
   portalElevatorsQuery,
   portalFaultsQuery,
   portalInspectionsQuery,
+  portalReportsQuery,
   portalVisitsQuery,
   type PortalMe,
 } from "@/api/portal-queries";
 import { canManagePortal } from "@/lib/portal";
 import { canUseBilling } from "@/lib/billing";
+import { canReadReports, customerReportPanelParams } from "@/lib/reports";
 import type { ListSearch } from "@/lib/list-search";
 import type { Role } from "@/components/layout/nav-config";
 import {
@@ -84,6 +87,7 @@ import {
   elevatorListSearch,
   userListSearch,
   billingListSearch,
+  reportListSearch,
   inspectionDueDays,
   inspectionDueSearch,
   faultListSearch,
@@ -314,6 +318,14 @@ const BillingListScreen = lazyRouteComponent(
 const BillingDetailScreen = lazyRouteComponent(
   () => import("@/screens/BillingDetailScreen"),
   "BillingDetailScreen",
+);
+const ReportListScreen = lazyRouteComponent(
+  () => import("@/screens/ReportListScreen"),
+  "ReportListScreen",
+);
+const PortalReportsScreen = lazyRouteComponent(
+  () => import("@/screens/portal/PortalReportsScreen"),
+  "PortalReportsScreen",
 );
 const RegisterScreen = lazyRouteComponent(
   () => import("@/screens/RegisterScreen"),
@@ -557,6 +569,16 @@ async function prefetchContractDrafts(contractId: string) {
   await queryClient.ensureQueryData(invoiceDraftListQuery({ contract: contractId, page_size: 6 }));
 }
 
+/**
+ * A customer's monthly reports, for the roles that read them — asked only of
+ * them, for the reason `prefetchPortalAccounts` below gives.
+ */
+async function prefetchCustomerReports(customerId: string) {
+  const role = sessionOverride ? sessionOverride.role : (await ensureSession())?.role;
+  if (!canReadReports(role ?? null)) return;
+  await queryClient.ensureQueryData(customerReportListQuery(customerReportPanelParams(customerId)));
+}
+
 async function prefetchPortalAccounts(customerId: string) {
   const role = sessionOverride ? sessionOverride.role : (await ensureSession())?.role;
   if (!canManagePortal(role ?? null)) return;
@@ -694,6 +716,7 @@ const portalTree = portalRoute.addChildren([
         queryClient.ensureQueryData(portalInspectionsQuery({ elevator: params.id, page_size: 10 })),
       ]);
     }),
+    portalChild("/reports", PortalReportsScreen, () => queryClient.ensureQueryData(portalReportsQuery())),
     portalChild("/faults", PortalFaultsScreen, async () => {
       await Promise.all([
         queryClient.ensureQueryData(portalElevatorsQuery()),
@@ -805,6 +828,7 @@ export const routeTree = rootRoute.addChildren([
         queryClient.ensureQueryData(buildingListQuery({ customer: id, page_size: 100 })),
         queryClient.ensureQueryData(contractListQuery({ customer: id, page_size: 100 })),
         prefetchPortalAccounts(id),
+        prefetchCustomerReports(id),
       ]);
     }),
     shellChild("/complexes/new", ComplexFormScreen),
@@ -906,6 +930,17 @@ export const routeTree = rootRoute.addChildren([
       BillingListScreen,
       ({ deps }) => queryClient.ensureQueryData(invoiceDraftListQuery(billingListSearch.params(deps.search))),
       billingListSearch,
+    ),
+    // Every customer's report for a month; the bell's monthly notice links here.
+    shellChild(
+      "/reports",
+      ReportListScreen,
+      async ({ deps }) => {
+        const role = sessionOverride ? sessionOverride.role : (await ensureSession())?.role;
+        if (!canReadReports(role ?? null)) return;
+        await queryClient.ensureQueryData(customerReportListQuery(reportListSearch.params(deps.search)));
+      },
+      reportListSearch,
     ),
     shellChild("/billing/$id", BillingDetailScreen, ({ params }) =>
       queryClient.ensureQueryData(invoiceDraftQuery(params.id)),

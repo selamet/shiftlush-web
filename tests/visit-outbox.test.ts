@@ -178,6 +178,7 @@ describe("photoFailure", () => {
     expect(photoFailure(offline())).toBe("retry");
     expect(photoFailure(new ApiError({ code: "INTERNAL_ERROR", status: 500 }))).toBe("retry");
     expect(photoFailure(new ApiError({ code: "THROTTLED", status: 429 }))).toBe("retry");
+    expect(photoFailure(new ApiError({ code: "IDEMPOTENCY_KEY_IN_FLIGHT", status: 409 }))).toBe("retry");
     expect(photoFailure(new UploadError("expired", 403))).toBe("retry");
     expect(photoFailure(new UploadError("network"))).toBe("retry");
     expect(photoFailure(new UploadError("rejected", 503))).toBe("retry");

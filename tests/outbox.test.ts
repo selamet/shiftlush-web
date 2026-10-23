@@ -47,6 +47,7 @@ const offline = () => new ApiError({ code: "NETWORK_ERROR", status: 0 });
 const refused = () =>
   new ApiError({ code: "VALIDATION_ERROR", status: 400, requestId: "req-9" });
 const serverFault = () => new ApiError({ code: "INTERNAL_ERROR", status: 500 });
+const inFlight = () => new ApiError({ code: "IDEMPOTENCY_KEY_IN_FLIGHT", status: 409, requestId: "req-7" });
 
 describe("storing", () => {
   it("lists a user's entries oldest first, and nobody else's", async () => {
@@ -144,6 +145,23 @@ describe("sending", () => {
     // Never sent again on its own, however much time passes.
     await drainOutbox("user-1", send, NOW + 24 * 3600_000);
     expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries a send whose first request is still in flight, with the same key and body", async () => {
+    await addEntry(visit("key-456"), NOW);
+    const send = vi.fn<Sender>().mockRejectedValueOnce(inFlight()).mockResolvedValueOnce();
+
+    expect(await drainOutbox("user-1", send, NOW)).toEqual({ sent: 0, retrying: 1, refused: 0 });
+    const [entry] = await listEntries("user-1");
+    expect(entry).toMatchObject({ state: "pending", attempts: 1, nextAttemptAt: NOW + 30_000 });
+
+    // The later answer — a 201, or the replay of the first one — clears it.
+    expect((await drainOutbox("user-1", send, NOW + 30_000)).sent).toBe(1);
+    expect(send.mock.calls.map(([sent]) => [sent.id, sent.body])).toEqual([
+      ["key-456", visit("key-456").body],
+      ["key-456", visit("key-456").body],
+    ]);
+    expect(await listEntries("user-1")).toEqual([]);
   });
 
   it("backs off further after each server fault", async () => {
@@ -329,9 +347,11 @@ describe("classifyFailure", () => {
     [offline(), "retry"],
     [serverFault(), "retry"],
     [new ApiError({ code: "THROTTLED", status: 429 }), "retry"],
+    [inFlight(), "retry"],
     [refused(), "refuse"],
     [new ApiError({ code: "PERMISSION_DENIED", status: 403 }), "refuse"],
     [new ApiError({ code: "IDEMPOTENCY_KEY_REUSED", status: 409 }), "refuse"],
+    [new ApiError({ code: "ELEVATOR_ALREADY_CONTRACTED", status: 409 }), "refuse"],
     [new TypeError("x is undefined"), "refuse"],
   ])("%o → %s", (error, expected) => {
     expect(classifyFailure(error)).toBe(expected);

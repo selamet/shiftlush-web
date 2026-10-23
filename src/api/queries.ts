@@ -1584,3 +1584,59 @@ export function fetchInvoiceCsv(params: ListParams) {
 export function fetchInvoicePdf(id: string) {
   return api.getFile(`/invoice-drafts/${id}/pdf/`);
 }
+
+// --------------------------------------------------------------------------
+// Monthly customer reports
+//
+// One PDF per customer per month, made by the server on the 1st and e-mailed
+// to the contacts the office ticked once the firm switches it on. Read by the
+// office and the accountant; sent and previewed by the office only.
+// --------------------------------------------------------------------------
+
+export type CustomerReport = Schemas["CustomerReportRead"];
+
+export const reportKeys = {
+  all: ["customer-reports"] as const,
+  list: (params: ListParams) => ["customer-reports", "list", params] as const,
+} as const;
+
+export function customerReportListQuery(params: ListParams = {}) {
+  return queryOptions({
+    queryKey: reportKeys.list(params),
+    queryFn: ({ signal }) =>
+      api.get<Paginated<CustomerReport>>("/customer-reports/", { query: params, signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+/**
+ * Sending a report now, or again, to the customer's current recipients.
+ *
+ * The server requires an Idempotency-Key here: the request mails a customer,
+ * and a retry after a dropped connection must not mail them twice. Refused
+ * with REPORT_NO_RECIPIENT when nobody is ticked, and 503 when the file was
+ * missing and the PDF renderer is not available to make it again.
+ */
+export function sendCustomerReport(id: string, idempotencyKey: string) {
+  return api.post<CustomerReport>(`/customer-reports/${id}/send/`, undefined, { idempotencyKey });
+}
+
+/**
+ * A short-lived link to the report's PDF, asked for at the moment of the click.
+ *
+ * The report's own endpoint rather than the attachments': the accountant reads
+ * reports but not the firm's attachments, and this one is allowed to whoever
+ * may read the report.
+ */
+export function customerReportDownloadUrl(id: string) {
+  return api.get<Schemas["DownloadUrl"]>(`/customer-reports/${id}/download-url/`);
+}
+
+/**
+ * Any month's PDF, the current one to date included, rendered and not stored.
+ * The answer is the bytes; the caller offers them to open. 503 when the PDF
+ * renderer is not available in this deployment.
+ */
+export function previewCustomerReport(body: Schemas["ReportPreviewRequest"]) {
+  return api.postFile("/customer-reports/preview/", body);
+}

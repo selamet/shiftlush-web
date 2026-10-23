@@ -183,13 +183,19 @@ export function subscribe(listener: () => void): () => void {
  *
  * Retried: no connection (status 0), a server fault (5xx), and a throttle (429)
  * — each of those says nothing about the request and may well pass later.
- * Refused: every other 4xx, where the server read the request and decided.
+ * Also a 409 IDEMPOTENCY_KEY_IN_FLIGHT: the first request with this key is
+ * still being saved, and the same key and body sent later get its answer — the
+ * record, or the replay of it. Parking that as refused would show a visit that
+ * is being recorded as rejected.
+ * Refused: every other 4xx, where the server read the request and decided —
+ * every other 409 included.
  * Anything that is not an ApiError is a bug in the sending code rather than
  * the network, and retrying a bug forever helps nobody, so it is refused too.
  */
 export function classifyFailure(error: unknown): "retry" | "refuse" {
   if (!(error instanceof ApiError)) return "refuse";
   if (error.status === 0 || error.status === 429 || error.status >= 500) return "retry";
+  if (error.status === 409 && error.code === "IDEMPOTENCY_KEY_IN_FLIGHT") return "retry";
   return "refuse";
 }
 

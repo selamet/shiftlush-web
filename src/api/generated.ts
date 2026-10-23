@@ -745,6 +745,111 @@ export interface paths {
         patch: operations["customer_contacts_partial_update"];
         trace?: never;
     };
+    "/api/v1/customer-reports/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["customer_reports_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer-reports/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["customer_reports_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer-reports/{id}/download-url/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description A short-lived URL for the report's PDF, as the attachments endpoint gives.
+         *
+         *     Here so that whoever may read reports may read their file, without
+         *     needing to read every attachment in the firm.
+         */
+        get: operations["customer_reports_download_url_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer-reports/{id}/regenerate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Render it again from the current record. The old file is kept, soft-deleted. */
+        post: operations["customer_reports_regenerate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer-reports/{id}/send/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Send it, or send it again, to the customer's current recipients now. */
+        post: operations["customer_reports_send_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer-reports/preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The PDF of any month, the current one to date included. Stores nothing. */
+        post: operations["customer_reports_preview_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/customers/": {
         parameters: {
             query?: never;
@@ -2278,6 +2383,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portal/reports/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The monthly reports of the contact's own customer, newest first.
+         *
+         *     The PDF downloads through the portal files endpoint.
+         */
+        get: operations["portal_reports_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/portal/reports/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The monthly reports of the contact's own customer, newest first.
+         *
+         *     The PDF downloads through the portal files endpoint.
+         */
+        get: operations["portal_reports_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/portal/visits/": {
         parameters: {
             query?: never;
@@ -2519,10 +2666,11 @@ export interface components {
          *     * `inspection_report` - Inspection report
          *     * `logo` - Logo
          *     * `signature` - Signature
+         *     * `monthly_report` - Monthly report
          *     * `other` - Other
          * @enum {string}
          */
-        AttachmentCategory: "photo" | "ce_certificate" | "declaration_of_conformity" | "permit" | "signed_contract" | "inspection_report" | "logo" | "signature" | "other";
+        AttachmentCategory: "photo" | "ce_certificate" | "declaration_of_conformity" | "permit" | "signed_contract" | "inspection_report" | "logo" | "signature" | "monthly_report" | "other";
         /**
          * @description The second half of an upload.
          *
@@ -2697,6 +2845,7 @@ export interface components {
             /** Format: uuid */
             logo?: string | null;
             readonly logo_url: string;
+            monthly_reports_enabled?: boolean;
             readonly is_active: boolean;
             /** Format: date-time */
             readonly created_at: string;
@@ -2926,6 +3075,7 @@ export interface components {
             phone?: string;
             email?: string;
             is_primary?: boolean;
+            receives_monthly_report?: boolean;
             notes?: string;
         };
         CustomerContactRead: {
@@ -2939,6 +3089,7 @@ export interface components {
             /** Format: email */
             readonly email: string;
             readonly is_primary: boolean;
+            readonly receives_monthly_report: boolean;
             readonly notes: string;
             /** Format: date-time */
             readonly created_at: string;
@@ -2960,6 +3111,7 @@ export interface components {
             phone?: string;
             email?: string;
             is_primary?: boolean;
+            receives_monthly_report?: boolean;
             notes?: string;
         };
         /**
@@ -3001,6 +3153,25 @@ export interface components {
             /** Format: date-time */
             readonly updated_at: string;
         };
+        /** @description The office's view. The PDF downloads through the attachments' `download-url`. */
+        CustomerReportRead: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly customer: string;
+            readonly customer_name: string;
+            readonly period: string;
+            /** Format: uuid */
+            readonly file: string | null;
+            /** Format: date-time */
+            readonly generated_at: string | null;
+            readonly summary: unknown;
+            readonly delivery: components["schemas"]["DeliveryEnum"];
+            /** Format: date-time */
+            readonly sent_at: string | null;
+            readonly recipients: unknown;
+            readonly error: string;
+        };
         /**
          * @description * `complex_management` - Complex management
          *     * `building_management` - Building management
@@ -3032,6 +3203,15 @@ export interface components {
             notes?: string;
             is_active?: boolean;
         };
+        /**
+         * @description * `pending` - Pending
+         *     * `sent` - Sent
+         *     * `not_enabled` - Not enabled
+         *     * `no_recipient` - No recipient
+         *     * `failed` - Failed
+         * @enum {string}
+         */
+        DeliveryEnum: "pending" | "sent" | "not_enabled" | "no_recipient" | "failed";
         District: {
             /** Format: int64 */
             id: number;
@@ -3867,9 +4047,10 @@ export interface components {
          *     * `inspection_red_label` - Red inspection label
          *     * `billing_vat_missing` - Contract not drafted: VAT rate missing
          *     * `invoice_drafts_ready` - Invoice drafts ready
+         *     * `monthly_reports_ready` - Monthly reports ready
          * @enum {string}
          */
-        NotificationKind: "contract_renewal_due" | "contract_expired" | "contract_auto_renewed" | "contract_auto_renewal_blocked" | "maintenance_overdue" | "visit_assigned" | "fault_reported" | "fault_emergency" | "fault_assigned" | "fault_resolved" | "inspection_due" | "correction_deadline_near" | "correction_deadline_passed" | "inspection_red_label" | "billing_vat_missing" | "invoice_drafts_ready";
+        NotificationKind: "contract_renewal_due" | "contract_expired" | "contract_auto_renewed" | "contract_auto_renewal_blocked" | "maintenance_overdue" | "visit_assigned" | "fault_reported" | "fault_emergency" | "fault_assigned" | "fault_resolved" | "inspection_due" | "correction_deadline_near" | "correction_deadline_passed" | "inspection_red_label" | "billing_vat_missing" | "invoice_drafts_ready" | "monthly_reports_ready";
         NotificationPreference: {
             kind: components["schemas"]["NotificationKind"];
             email: boolean;
@@ -3962,6 +4143,19 @@ export interface components {
         };
         PaginatedCustomerReadList: {
             results: components["schemas"]["CustomerRead"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedCustomerReportReadList: {
+            results: components["schemas"]["CustomerReportRead"][];
             pagination: {
                 /** @example 1 */
                 page: number;
@@ -4129,6 +4323,19 @@ export interface components {
                 total_pages: number;
             };
         };
+        PaginatedPortalReportList: {
+            results: components["schemas"]["PortalReport"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
         PaginatedPortalVisitList: {
             results: components["schemas"]["PortalVisit"][];
             pagination: {
@@ -4233,6 +4440,7 @@ export interface components {
             longitude?: string | null;
             /** Format: uuid */
             logo?: string | null;
+            monthly_reports_enabled?: boolean;
         };
         PatchedComplexWriteRequest: {
             /** Format: uuid */
@@ -4285,6 +4493,7 @@ export interface components {
             phone?: string;
             email?: string;
             is_primary?: boolean;
+            receives_monthly_report?: boolean;
             notes?: string;
         };
         /**
@@ -4732,6 +4941,17 @@ export interface components {
             /** Format: email */
             email: string;
         };
+        /** @description The contact's view: no delivery state, recipients or errors, which are the office's. */
+        PortalReport: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly period: string;
+            /** Format: uuid */
+            readonly file: string | null;
+            /** Format: date-time */
+            readonly generated_at: string | null;
+            readonly summary: unknown;
+        };
         PortalTokenResponse: {
             access: string;
             account: components["schemas"]["PortalMe"];
@@ -4824,6 +5044,19 @@ export interface components {
             carry_elevators: boolean;
             /** @default true */
             copy_terms: boolean;
+        };
+        /**
+         * @description Rejects fields it does not know about.
+         *
+         *     DRF ignores unknown keys by default, which silently swallows a typo: the
+         *     client sends `emial`, gets a 200, and the value never arrives. Failing is
+         *     the kinder answer.
+         */
+        ReportPreviewRequest: {
+            /** Format: uuid */
+            customer: string;
+            /** @description A month, "YYYY-MM". */
+            period: string;
         };
         ResolveRequest: {
             /** @default  */
@@ -5128,6 +5361,7 @@ export interface components {
          *     * `INVITATION_ALREADY_PENDING` - This address already holds an invitation that has not been accepted
          *     * `IDEMPOTENCY_KEY_REUSED` - Idempotency key was reused with a different request body
          *     * `IDEMPOTENCY_KEY_REQUIRED` - This request must carry an Idempotency-Key header
+         *     * `IDEMPOTENCY_KEY_IN_FLIGHT` - A request with this Idempotency-Key is still being processed; retry later
          *     * `ELEVATOR_ALREADY_CONTRACTED` - Elevator is already covered by an open contract
          *     * `NO_ACTIVE_CONTRACT_FOR_ELEVATOR` - The named contract is not active or does not cover this elevator
          *     * `CONTACT_NOT_OF_CUSTOMER` - The contact does not belong to this customer
@@ -5139,6 +5373,10 @@ export interface components {
          *     * `SIGNATURE_NOT_EXPECTED` - The visit was not recorded as signed, so it takes no signature
          *     * `SIGNATURE_CANNOT_BE_DELETED` - A visit's signature is kept for good and cannot be deleted
          *     * `INVOICE_LINES_NEED_PRICE` - Every line needs a price before the draft can be issued
+         *     * `MONTHLY_REPORT_NEEDS_EMAIL` - A contact without an e-mail address cannot receive the monthly report
+         *     * `REPORT_NO_RECIPIENT` - Nobody on this customer is set to receive the monthly report
+         *     * `REPORT_FILE_CANNOT_BE_DELETED` - A monthly report's file belongs to the report and cannot be deleted
+         *     * `CATEGORY_NOT_UPLOADABLE` - Files of this category are made by the server and cannot be uploaded
          *     * `DUPLICATE_INVOICE_NUMBER` - Another issued invoice of this company already has this number
          *     * `FAULT_TRANSITION_NOT_ALLOWED` - The fault is not in a state this action can be taken from
          *     * `PLAN_ROW_CLOSED` - The planned visit is done or cancelled; its day can no longer change
@@ -5164,7 +5402,7 @@ export interface components {
          *     * `ATTACHMENT_TARGET_MISMATCH` - Attachment does not belong to the record it is being linked to
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "PLANNED_DATE_OUTSIDE_PERIOD" | "PLANNED_DATE_IN_PAST" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "INVOICE_TRANSITION_NOT_ALLOWED" | "SIGNATURE_EXISTS" | "SIGNATURE_NOT_EXPECTED" | "SIGNATURE_CANNOT_BE_DELETED" | "INVOICE_LINES_NEED_PRICE" | "DUPLICATE_INVOICE_NUMBER" | "FAULT_TRANSITION_NOT_ALLOWED" | "PLAN_ROW_CLOSED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
+        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "PLANNED_DATE_OUTSIDE_PERIOD" | "PLANNED_DATE_IN_PAST" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "IDEMPOTENCY_KEY_IN_FLIGHT" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "INVOICE_TRANSITION_NOT_ALLOWED" | "SIGNATURE_EXISTS" | "SIGNATURE_NOT_EXPECTED" | "SIGNATURE_CANNOT_BE_DELETED" | "INVOICE_LINES_NEED_PRICE" | "MONTHLY_REPORT_NEEDS_EMAIL" | "REPORT_NO_RECIPIENT" | "REPORT_FILE_CANNOT_BE_DELETED" | "CATEGORY_NOT_UPLOADABLE" | "DUPLICATE_INVOICE_NUMBER" | "FAULT_TRANSITION_NOT_ALLOWED" | "PLAN_ROW_CLOSED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
         /** @description The shape of every error response. There is no `message` field: the backend sends codes, and the words live in the client's translation file, so wording changes in one place and adding a language does not touch the API. */
         ErrorResponse: {
             error: {
@@ -5197,9 +5435,10 @@ export interface operations {
                  *     * `inspection_report` - Inspection report
                  *     * `logo` - Logo
                  *     * `signature` - Signature
+                 *     * `monthly_report` - Monthly report
                  *     * `other` - Other
                  */
-                category?: "ce_certificate" | "declaration_of_conformity" | "inspection_report" | "logo" | "other" | "permit" | "photo" | "signature" | "signed_contract";
+                category?: "ce_certificate" | "declaration_of_conformity" | "inspection_report" | "logo" | "monthly_report" | "other" | "permit" | "photo" | "signature" | "signed_contract";
                 object_id?: string;
                 /**
                  * @description * `elevator` - Elevator
@@ -6346,6 +6585,155 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CustomerContactRead"];
+                };
+            };
+        };
+    };
+    customer_reports_list: {
+        parameters: {
+            query?: {
+                customer?: string;
+                /**
+                 * @description * `pending` - Pending
+                 *     * `sent` - Sent
+                 *     * `not_enabled` - Not enabled
+                 *     * `no_recipient` - No recipient
+                 *     * `failed` - Failed
+                 */
+                delivery?: "failed" | "no_recipient" | "not_enabled" | "pending" | "sent";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                period?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCustomerReportReadList"];
+                };
+            };
+        };
+    };
+    customer_reports_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this customer report. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerReportRead"];
+                };
+            };
+        };
+    };
+    customer_reports_download_url_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this customer report. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadUrl"];
+                };
+            };
+        };
+    };
+    customer_reports_regenerate_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this customer report. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerReportRead"];
+                };
+            };
+        };
+    };
+    customer_reports_send_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this customer report. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerReportRead"];
+                };
+            };
+        };
+    };
+    customer_reports_preview_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportPreviewRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReportPreviewRequest"];
+                "multipart/form-data": components["schemas"]["ReportPreviewRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
                 };
             };
         };
@@ -7781,7 +8169,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description Generated once per visit form and reused on every retry, so a visit sent again from a device outbox is recorded once. */
+                /** @description Generated once per visit form and reused on every retry, so a visit sent again from a device outbox is recorded once. While the first request with this key is still running, a retry is refused with 409 IDEMPOTENCY_KEY_IN_FLIGHT and nothing is recorded; retry later with the same key to receive the answer. */
                 "Idempotency-Key": string;
             };
             path?: never;
@@ -8066,8 +8454,9 @@ export interface operations {
                  *     * `inspection_red_label` - Red inspection label
                  *     * `billing_vat_missing` - Contract not drafted: VAT rate missing
                  *     * `invoice_drafts_ready` - Invoice drafts ready
+                 *     * `monthly_reports_ready` - Monthly reports ready
                  */
-                kind?: "billing_vat_missing" | "contract_auto_renewal_blocked" | "contract_auto_renewed" | "contract_expired" | "contract_renewal_due" | "correction_deadline_near" | "correction_deadline_passed" | "fault_assigned" | "fault_emergency" | "fault_reported" | "fault_resolved" | "inspection_due" | "inspection_red_label" | "invoice_drafts_ready" | "maintenance_overdue" | "visit_assigned";
+                kind?: "billing_vat_missing" | "contract_auto_renewal_blocked" | "contract_auto_renewed" | "contract_expired" | "contract_renewal_due" | "correction_deadline_near" | "correction_deadline_passed" | "fault_assigned" | "fault_emergency" | "fault_reported" | "fault_resolved" | "inspection_due" | "inspection_red_label" | "invoice_drafts_ready" | "maintenance_overdue" | "monthly_reports_ready" | "visit_assigned";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -8737,6 +9126,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PortalMe"];
+                };
+            };
+        };
+    };
+    portal_reports_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedPortalReportList"];
+                };
+            };
+        };
+    };
+    portal_reports_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this customer report. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalReport"];
                 };
             };
         };

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +15,7 @@ import {
 import { allOf, type ContactRole } from "@/api/enums";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
+import { canReceiveReport, receivesAfterEmailChange } from "@/lib/reports";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
@@ -69,6 +71,12 @@ function ContactForm({ customer, record }: { customer: Customer; record?: Custom
   const navigate = useNavigate();
   const editing = Boolean(record);
   const idempotencyKey = useIdempotencyKey();
+  /* The e-mail is followed as it is typed, because the monthly report box
+     depends on it: the report travels by e-mail, so the box is off and
+     disabled while there is no address, and clearing the address clears it. */
+  const [email, setEmail] = useState(record?.email ?? "");
+  const [receives, setReceives] = useState(record?.receives_monthly_report ?? false);
+  const canReceive = canReceiveReport(email);
 
   const { submit, state } = useSubmit<Partial<CustomerContactWrite>, CustomerContact>({
     mutationFn: async (body) => {
@@ -112,6 +120,9 @@ function ContactForm({ customer, record }: { customer: Customer; record?: Custom
       // An unticked box sends nothing, which would read as "leave it alone" and
       // make demoting the primary contact impossible from this form.
       is_primary: (form.elements.namedItem("is_primary") as HTMLInputElement).checked,
+      // Sent either way, for the same reason; never true without an address,
+      // which the server would refuse with MONTHLY_REPORT_NEEDS_EMAIL.
+      receives_monthly_report: receives && canReceiveReport(values.email ?? ""),
     });
   }
 
@@ -191,6 +202,11 @@ function ContactForm({ customer, record }: { customer: Customer; record?: Custom
               type="email"
               defaultValue={record?.email}
               invalid={Boolean(state.fields.email)}
+              onChange={(event) => {
+                const next = event.currentTarget.value;
+                setEmail(next);
+                setReceives((current) => receivesAfterEmailChange(current, next));
+              }}
             />
           </Field>
         </div>
@@ -213,6 +229,27 @@ function ContactForm({ customer, record }: { customer: Customer; record?: Custom
                 demoted first, in the submit above. The server itself would
                 refuse the second primary rather than move it. */}
             <span className="text-help text-muted-foreground">{t("contact.isPrimaryHint")}</span>
+          </span>
+        </label>
+
+        <label className="flex items-start gap-2.5" htmlFor="kf-receives-report">
+          <input
+            id="kf-receives-report"
+            name="receives_monthly_report"
+            type="checkbox"
+            checked={receives && canReceive}
+            disabled={!canReceive}
+            onChange={(event) => setReceives(event.currentTarget.checked)}
+            className="checkbox mt-0.5"
+          />
+          <span className="flex flex-col leading-tight">
+            <span className="text-body">{t("contact.fields.receivesMonthlyReport")}</span>
+            <span className="text-help text-muted-foreground">
+              {canReceive ? t("contact.receivesMonthlyReportHint") : t("contact.receivesMonthlyReportNeedsEmail")}
+            </span>
+            {state.fields.receives_monthly_report && (
+              <span className="text-help text-destructive">{state.fields.receives_monthly_report}</span>
+            )}
           </span>
         </label>
 

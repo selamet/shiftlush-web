@@ -426,9 +426,12 @@
       "phone": "Telefon",
       "email": "E-posta",
       "isPrimary": "Birincil iletişim kişisi",
-      "notes": "Notlar"
+      "notes": "Notlar",
+      "receivesMonthlyReport": "Aylık raporu alır"
     },
-    "isPrimaryHint": "Müşteri başına bir kişi birincil olabilir; işaretlerseniz önceki kişiden alınır."
+    "isPrimaryHint": "Müşteri başına bir kişi birincil olabilir; işaretlerseniz önceki kişiden alınır.",
+    "receivesMonthlyReportHint": "Her ayın bakım raporu bu kişiye e-postayla gönderilir.",
+    "receivesMonthlyReportNeedsEmail": "Rapor e-postayla gider; işaretlemek için önce bir e-posta adresi girin."
   },
   "customerContact": {
     "title": "İletişim kişileri",
@@ -628,7 +631,8 @@
       "signed_contract": "İmzalı sözleşme",
       "inspection_report": "Kontrol raporu",
       "logo": "Logo",
-      "other": "Diğer"
+      "other": "Diğer",
+      "monthly_report": "Aylık rapor"
     },
     "categoryLabel": "Belge türü",
     "choose": "Dosya seç",
@@ -801,6 +805,7 @@
     "INVITATION_ALREADY_PENDING": "Bu adrese gönderilmiş, henüz kabul edilmemiş bir davet var. Yeni davet yerine mevcut daveti tekrar gönderin.",
     "IDEMPOTENCY_KEY_REUSED": "Bu işlem farklı bilgilerle tekrarlandı",
     "IDEMPOTENCY_KEY_REQUIRED": "İstek eksik gönderildi, lütfen tekrar deneyin",
+    "IDEMPOTENCY_KEY_IN_FLIGHT": "Aynı işlem hâlâ sürüyor; birkaç saniye sonra tekrar deneyin",
     "ELEVATOR_ALREADY_CONTRACTED": "Bu asansör zaten aktif bir sözleşmede",
     "NO_ACTIVE_CONTRACT_FOR_ELEVATOR": "Seçilen sözleşme aktif değil ya da bu asansörü kapsamıyor",
     "CONTACT_NOT_OF_CUSTOMER": "Bu kişi bu müşteriye ait değil",
@@ -849,7 +854,11 @@
     "requestIdHelp": "Destek ekibine bu kimliği iletin",
     "SIGNATURE_EXISTS": "Bu bakımın imzası zaten kayıtlı",
     "SIGNATURE_NOT_EXPECTED": "Bu bakım imzalı olarak kaydedilmedi; imza eklenemez",
-    "SIGNATURE_CANNOT_BE_DELETED": "Bakım imzası kalıcıdır ve silinemez"
+    "SIGNATURE_CANNOT_BE_DELETED": "Bakım imzası kalıcıdır ve silinemez",
+    "MONTHLY_REPORT_NEEDS_EMAIL": "Aylık rapor e-postayla gönderilir; e-posta adresi olmayan kişi raporu alamaz",
+    "REPORT_NO_RECIPIENT": "Bu müşteride aylık raporu alan kimse yok. Önce bir iletişim kişisini “Aylık raporu alır” olarak işaretleyin",
+    "REPORT_FILE_CANNOT_BE_DELETED": "Aylık raporun dosyası rapora aittir ve silinemez",
+    "CATEGORY_NOT_UPLOADABLE": "Bu türdeki dosyaları sistem kendisi oluşturur; yüklenemez"
   },
   "nav": {
     "groups": {
@@ -1211,7 +1220,8 @@
     "deleteContactBody": "{{name}} kaydı silinir; bakım ekibi bu kişiyi müşteri kartında artık göremez.",
     "makePrimary": "Birincil yap",
     "billingAddress": "Fatura adresi",
-    "noAddress": "Fatura adresi girilmemiş"
+    "noAddress": "Fatura adresi girilmemiş",
+    "receivesReportBadge": "Aylık rapor"
   },
   "complexDetail": {
     "buildings": "Site içindeki binalar"
@@ -1328,7 +1338,8 @@
       "correction_deadline_passed": "MÜHÜR RİSKİ: {{elevator}} ({{building}}) düzeltme süresi doldu",
       "inspection_red_label": "Kırmızı etiket: {{elevator}} ({{building}}) kullanılmamalı",
       "invoice_drafts_ready": "{{month}} için {{count}} fatura taslağı hazır",
-      "billing_vat_missing": "KDV oranı eksik: {{number}} numaralı sözleşmenin faturası hazırlanamadı"
+      "billing_vat_missing": "KDV oranı eksik: {{number}} numaralı sözleşmenin faturası hazırlanamadı",
+      "monthly_reports_ready": "{{month}} raporları hazır"
     },
     "body": {
       "contract_renewal_due": "{{contract}} sözleşmenin süresi {{date}} tarihinde doluyor.",
@@ -1353,7 +1364,8 @@
       "inspection_red_label": "{{building}} binasındaki {{elevator}} asansörü {{inspected}} tarihli periyodik muayenede kırmızı etiket aldı: asansör güvensiz ve kullanılmamalı. Asansör hizmet dışı olarak işaretlendi. Kusurların {{deadline}} tarihine kadar giderilmesi gerekiyor, aksi halde asansör mühürlenir.",
       "invoice_drafts_ready": "{{month}} için {{count}} fatura taslağı hazır. Taslakları kontrol edip e-Fatura / e-Arşiv sisteminizden düzenledikten sonra fatura numarasını ShiftLush’a girebilirsiniz.",
       "invoice_drafts_ready_unpriced": "{{month}} için {{count}} fatura taslağı hazır, {{unpriced}} tanesinde fiyat eksik. Taslakları kontrol edip e-Fatura / e-Arşiv sisteminizden düzenledikten sonra fatura numarasını ShiftLush’a girebilirsiniz.",
-      "billing_vat_missing": "{{contract}} sözleşmenin {{start}} – {{end}} dönemi için fatura taslağı hazırlanmadı, çünkü sözleşmede KDV oranı tanımlı değil. KDV oranını sözleşmeye girdiğinizde taslak bir sonraki çalışmada hazırlanır."
+      "billing_vat_missing": "{{contract}} sözleşmenin {{start}} – {{end}} dönemi için fatura taslağı hazırlanmadı, çünkü sözleşmede KDV oranı tanımlı değil. KDV oranını sözleşmeye girdiğinizde taslak bir sonraki çalışmada hazırlanır.",
+      "monthly_reports_ready": "{{month}} raporları hazır: {{parts}}."
     },
     "unknown": {
       "title": "Yeni bildirim",
@@ -1375,7 +1387,8 @@
       "correction_deadline_passed": "Düzeltme süresi doldu (mühür riski)",
       "inspection_red_label": "Kırmızı etiket",
       "invoice_drafts_ready": "Fatura taslakları hazır",
-      "billing_vat_missing": "KDV oranı eksik, fatura hazırlanamadı"
+      "billing_vat_missing": "KDV oranı eksik, fatura hazırlanamadı",
+      "monthly_reports_ready": "Aylık müşteri raporları hazır"
     },
     "preferences": {
       "title": "Bildirimler",
@@ -1390,6 +1403,12 @@
       "notRunningSentence": "Asansör çalışmıyor.",
       "trapped": "Asansörde mahsur kalan var.",
       "description": "Açıklama: “{{description}}”"
+    },
+    "monthlyReports": {
+      "sent": "{{count}} gönderildi",
+      "noRecipient": "{{count}} alıcısız",
+      "notEnabled": "{{count}} gönderim kapalı",
+      "failed": "{{count}} başarısız"
     }
   },
   "plan": {
@@ -1705,7 +1724,8 @@
     "passwordHint": "En az {{count}} karakter.",
     "nav": {
       "lifts": "Asansörlerim",
-      "faults": "Arızalar"
+      "faults": "Arızalar",
+      "reports": "Raporlar"
     },
     "fields": {
       "email": "E-posta",
@@ -1781,6 +1801,13 @@
       "noPast": "Geçmiş arıza yok.",
       "reportedAt": "Bildirildi: {{at}}",
       "technician": "Teknisyen: {{name}}"
+    },
+    "reports": {
+      "title": "Raporlar",
+      "intro": "Her ay, bir önceki ayda asansörlerinizde yapılan işlerin raporu burada.",
+      "empty": "Henüz rapor yok. İlk rapor ayın 1'inde hazırlanır.",
+      "download": "İndir",
+      "noFile": "Dosya hazırlanıyor"
     }
   },
   "portalAccess": {
@@ -1875,6 +1902,58 @@
       "elevator_fee": "Asansör bedeli",
       "fault": "Arıza",
       "manual": "Elle eklenen"
+    }
+  },
+  "report": {
+    "title": "Raporlar",
+    "restricted": "Raporlar rolünüzde görünmüyor",
+    "panelTitle": "Aylık raporlar",
+    "empty": "Bu filtreye uyan rapor yok",
+    "noReportsForCustomer": "Bu müşteri için henüz rapor hazırlanmadı.",
+    "intro": "Her ayın 1'inde, önceki ayın raporu her müşteri için hazırlanır. “Alıcı yok” ve “Başarısız” olanlar sizin elinizden geçmeyi bekler.",
+    "previewThisMonth": "Bu ayın önizlemesi",
+    "previewHint": "Bu ayın bugüne kadarki kayıtlarıyla hazırlanır; saklanmaz ve kimseye gönderilmez.",
+    "previewFilename": "onizleme-{{period}}.pdf",
+    "download": "İndir",
+    "noFile": "Dosya yok",
+    "viewAll": "Tüm raporlar ({{count}})",
+    "send": "Gönder",
+    "resend": "Yeniden gönder",
+    "sendTitle": "Rapor şimdi gönderilsin mi?",
+    "sendBody": "{{customer}} için {{month}} raporu, “Aylık raporu alır” işaretli iletişim kişilerine şimdi e-postayla gönderilir.",
+    "resendBody": "{{customer}} için {{month}} raporu daha önce gönderildi. Yeniden gönderirseniz işaretli iletişim kişileri aynı raporu bir kez daha alır.",
+    "sentTo": "{{when}} tarihinde gönderildi: {{recipients}}",
+    "failedReason": "Neden: {{error}}",
+    "visits": "Bakım {{completed}} / {{planned}}",
+    "fields": {
+      "customer": "Müşteri",
+      "period": "Ay",
+      "delivery": "Gönderim",
+      "lead": "Özet"
+    },
+    "delivery": {
+      "pending": "Bekliyor",
+      "sent": "Gönderildi",
+      "not_enabled": "Gönderim kapalı",
+      "no_recipient": "Alıcı yok",
+      "failed": "Başarısız"
+    },
+    "lead": {
+      "correction_passed": "{{count}} asansörde düzeltme süresi geçti.",
+      "missed": "{{count}} asansörün bakımı bu ay yapılamadı.",
+      "emergencies": "Bu ay {{count}} acil arıza oldu; ortalama müdahale süresi {{minutes}} dakika.",
+      "emergenciesNoMinutes": "Bu ay {{count}} acil arıza oldu.",
+      "all_done": "Tüm asansörlerin bakımı yapıldı."
+    },
+    "settings": {
+      "title": "Aylık müşteri raporları",
+      "hint": "Her ayın 1'inde önceki ayın bakım raporu, müşterilerin “Aylık raporu alır” işaretli iletişim kişilerine PDF olarak e-postayla gönderilir. Kapalıyken raporlar yine hazırlanır ve Raporlar ekranında okunabilir, ama kimseye gönderilmez.",
+      "on": "Açık: raporlar müşterilere e-postayla gönderiliyor",
+      "off": "Kapalı: raporlar hazırlanıyor, gönderilmiyor",
+      "ownerOnly": "Bu ayarı yalnızca firma sahibi değiştirebilir.",
+      "enableTitle": "Aylık raporlar müşterilere gönderilsin mi?",
+      "enableBody": "Açtığınızda, bir sonraki ayın 1'inden itibaren her müşterinin “Aylık raporu alır” işaretli iletişim kişilerine rapor e-postayla gönderilir.",
+      "enableConfirm": "Gönderimi aç"
     }
   }
 }

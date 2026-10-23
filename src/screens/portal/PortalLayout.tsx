@@ -6,7 +6,7 @@ import { usePortalSession } from "@/lib/portal-session";
 import { cn } from "@/lib/utils";
 
 /**
- * The portal's frame: who this is for, who to call, and two places to go.
+ * The portal's frame: who this is for, who to call, and three places to go.
  *
  * Deliberately plain. The reader is a building manager checking on their lifts
  * between other things, not somebody who uses this every day: the customer's
@@ -45,6 +45,7 @@ export function PortalLayout() {
         <nav className="mx-auto flex w-full max-w-3xl items-center gap-1 px-4 pb-2">
           <PortalNavLink to="/portal" label={t("portal.nav.lifts")} exact />
           <PortalNavLink to="/portal/faults" label={t("portal.nav.faults")} />
+          <PortalNavLink to="/portal/reports" label={t("portal.nav.reports")} />
           <button
             type="button"
             onClick={() =>
