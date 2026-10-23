@@ -19,6 +19,7 @@ import type { AppNotification } from "@/api/queries";
 import { monthYearLabel, toDisplay } from "@/lib/date";
 import { formatDate } from "@/lib/format";
 import { DEFAULT_LOCALE } from "@/lib/i18n";
+import { isPeriod } from "@/lib/plan";
 
 /** The `data` keys a kind cannot be worded without. Mirrors `NotificationKind`'s docstring. */
 const REQUIRED: Record<string, readonly string[]> = {
@@ -30,6 +31,7 @@ const REQUIRED: Record<string, readonly string[]> = {
   visit_assigned: ["period", "count"],
   invoice_drafts_ready: ["period", "count"],
   billing_vat_missing: ["contract_number", "period_start", "period_end"],
+  monthly_reports_ready: ["period", "sent"],
   fault_reported: ["reference", "elevator_name", "building_name"],
   fault_emergency: ["reference", "elevator_name", "building_name"],
   fault_assigned: ["reference", "elevator_name", "building_name"],
@@ -165,6 +167,28 @@ export function describeNotification(notification: AppNotification, t: TFunction
         }),
         known: true,
       };
+    case "monthly_reports_ready": {
+      // Worded as the e-mail is: what was sent always, and each kind of
+      // "not sent" only when there was some.
+      const month = monthYearLabel(`${text(data, "period")}-01`) || text(data, "period");
+      const counts = {
+        sent: Number(text(data, "sent")),
+        noRecipient: Number(text(data, "no_recipient") || "0"),
+        notEnabled: Number(text(data, "not_enabled") || "0"),
+        failed: Number(text(data, "failed") || "0"),
+      };
+      if (!Object.values(counts).every(Number.isInteger)) {
+        return { title: t("notification.unknown.title"), body: t("notification.unknown.body"), known: false };
+      }
+      const parts = (Object.keys(counts) as (keyof typeof counts)[])
+        .filter((key) => key === "sent" || counts[key] > 0)
+        .map((key) => t(`notification.monthlyReports.${key}`, { count: counts[key] }));
+      return {
+        title: t("notification.subject.monthly_reports_ready", { month }),
+        body: t("notification.body.monthly_reports_ready", { month, parts: parts.join(", ") }),
+        known: true,
+      };
+    }
     case "visit_assigned": {
       // The month as the e-mail spells it — month name and year — from Intl rather
       // than a list of month names in this file.
@@ -298,13 +322,21 @@ function describeFault(
  * their "today" screen, which is where newly assigned lifts are worked from.
  */
 export function notificationTarget(
-  notification: Pick<AppNotification, "subject_type" | "subject_id">,
+  notification: Pick<AppNotification, "subject_type" | "subject_id"> & { data?: AppNotification["data"] },
 ):
   | { to: "/contracts/$id" | "/elevators/$id"; params: { id: string } }
   | { to: "/faults/$id"; params: { id: string } }
   | { to: "/today" | "/billing"; params?: undefined }
+  | { to: "/reports"; params?: undefined; search: { period?: string } }
   | null {
   if (notification.subject_type === "plan") return { to: "/today" };
+  // The firm's reports for one month: the reports screen, narrowed to it.
+  // A period that is not a month is left off rather than sent as a filter
+  // the screen would drop anyway.
+  if (notification.subject_type === "reports") {
+    const period = notification.data ? text(notification.data, "period") : "";
+    return { to: "/reports", search: isPeriod(period) ? { period } : {} };
+  }
   // The firm's billing as a whole, not one draft: the drafts are listed there.
   if (notification.subject_type === "billing") return { to: "/billing" };
   if (!notification.subject_id) return null;

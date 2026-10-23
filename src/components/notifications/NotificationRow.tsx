@@ -108,7 +108,13 @@ export function NotificationRow({
   );
 
   return target ? (
-    <Link to={target.to} params={target.params} onClick={follow} className={className}>
+    <Link
+      to={target.to}
+      params={target.params}
+      search={"search" in target ? target.search : undefined}
+      onClick={follow}
+      className={className}
+    >
       {content}
     </Link>
   ) : (
