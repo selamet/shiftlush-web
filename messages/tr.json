@@ -1042,7 +1042,7 @@
     "flowNotBlocked": "Akış tıkanmaz",
     "goToAddressNote": "Adres tarifine geç",
     "noteIsSoleSource": "Mahalle boş bırakıldığında adres tarifi tek adres kaynağıdır",
-    "addressNoteHint": "Zorunlu — yeni siteler ve TOKİ bölgeleri adres veri setinde yoktur",
+    "addressNoteHint": "Zorunlu değil — yeni siteler ve TOKİ bölgeleri adres veri setinde yoktur, tarif teknisyenin işini kolaylaştırır",
     "locationHint": "Zorunlu değil, ama teknisyen sahada haritadan yön alır",
     "mapUnavailable": "Harita katmanı henüz bağlanmadı",
     "suggestionShort": "Öneri kesin değil",

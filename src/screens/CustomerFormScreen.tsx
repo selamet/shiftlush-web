@@ -208,8 +208,8 @@ function CustomerForm({ record }: { record?: Customer }) {
             <Field
               label={t("customer.fields.taxNumber")}
               htmlFor="cf-tax-number"
-              required
-              // The check digit is the server's rule and cannot be reproduced
+              // Optional: the record is often opened before the paperwork
+              // arrives. The check digit is the server's rule and cannot be reproduced
               // here without becoming a second copy of it.
               error={state.fields.tax_number}
             >
@@ -217,7 +217,6 @@ function CustomerForm({ record }: { record?: Customer }) {
                 name="tax_number"
                 inputMode="numeric"
                 maxLength={11}
-                required
                 defaultValue={record?.tax_number}
                 invalid={Boolean(state.fields.tax_number)}
               />

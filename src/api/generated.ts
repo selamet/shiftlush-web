@@ -2798,7 +2798,7 @@ export interface components {
             neighborhood?: number | null;
             street?: string;
             building_number?: string;
-            address_note: string;
+            address_note?: string;
             /** Format: decimal */
             latitude?: string | null;
             /** Format: decimal */

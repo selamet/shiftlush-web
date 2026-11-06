@@ -252,14 +252,12 @@ export function BuildingFormScreen() {
         <Field
           label={t("building.fields.addressNote")}
           htmlFor="bf-note"
-          required
-          // Required by the server: a lift engineer arriving at an address in a
-          // district they do not know needs the sentence that gets them to the
-          // right entrance.
+          // Optional, but often the only thing that gets a lift engineer to the
+          // right entrance in a district they do not know.
           hint={t("building.addressNoteHint")}
           error={state.fields.address_note}
         >
-          <Textarea name="address_note" rows={2} required defaultValue={record?.address_note} />
+          <Textarea name="address_note" rows={2} defaultValue={record?.address_note} />
         </Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
