@@ -1616,7 +1616,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Record the payment date. From `issued` only. */
+        /**
+         * @deprecated
+         * @description Deprecated: record a collection with `applies` instead (POST /collections/).
+         *
+         *     Collects everything the issued invoice still owes, dated `paid_on`, into
+         *     `cash_account` (the firm's main till when omitted). From `issued` only.
+         */
         post: operations["invoice_drafts_mark_paid_create"];
         delete?: never;
         options?: never;
@@ -1680,6 +1686,565 @@ export interface paths {
         head?: never;
         /** @description One line of a draft: price it, correct it, or take it off. Draft only. */
         patch: operations["invoice_lines_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/ledger/accounts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every account with its balance; `totals` cover every row the filters select. */
+        get: operations["ledger_accounts_list"];
+        put?: never;
+        /** @description Open an account for a party that has none: a staff member, mostly. */
+        post: operations["ledger_accounts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/accounts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Each party's account with the firm, and its balance.
+         *
+         *     No update and no delete: an account's balance is its movements, and an
+         *     account that is no longer wanted is made inactive by the party it names.
+         */
+        get: operations["ledger_accounts_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/accounts/{id}/open-invoices/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The issued invoices a collection on this account can still pay.
+         *
+         *     Its customer's, in its currency, with something left to pay; oldest
+         *     first. Empty for a supplier or staff account. Readable by operations,
+         *     which applies an advance to them (`POST /collections/{id}/apply/`).
+         */
+        get: operations["ledger_accounts_open_invoices_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/accounts/{id}/statement/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Its movements from `start` to `end` (both optional, inclusive), each with
+         *     the running balance after it, under the opening balance before `start`.
+         *     A reversal is its own row. `start` after `end` is `400` on `start`.
+         */
+        get: operations["ledger_accounts_statement_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/accounts/{id}/statement.csv/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The statement as CSV: semicolons, UTF-8 with a BOM, decimal commas. */
+        get: operations["ledger_accounts_statement.csv_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/accounts/{id}/statement.pdf/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The statement as a PDF. `503` where the renderer is not installed. */
+        get: operations["ledger_accounts_statement.pdf_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/accounts/{id}/statement/send/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description E-mail the statement's PDF to the customer's contacts who receive reports.
+         *
+         *     The body is `{start, end}`, both optional. The mails go out after this
+         *     commits. No recipient is `409 REPORT_NO_RECIPIENT`; requires
+         *     `Idempotency-Key`.
+         */
+        post: operations["ledger_accounts_statement_send_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/cash-accounts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every cash account. Operations gets the picker shape, without balance or IBAN. */
+        get: operations["ledger_cash_accounts_list"];
+        put?: never;
+        /** @description Where the firm's money is: tills, bank accounts and card POS. */
+        post: operations["ledger_cash_accounts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/cash-accounts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One cash account. Operations gets the picker shape, without balance or IBAN. */
+        get: operations["ledger_cash_accounts_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Rename it, set its IBAN, or make it inactive. The currency is fixed once used. */
+        patch: operations["ledger_cash_accounts_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/ledger/cash-accounts/{id}/movements/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Its movements, newest first. */
+        get: operations["ledger_cash_accounts_movements_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/collections/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Money received (tahsilat): a credit on the account, cash in. */
+        get: operations["ledger_collections_list"];
+        put?: never;
+        /** @description Record money received, and the invoices it pays. */
+        post: operations["ledger_collections_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/collections/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Money received (tahsilat): a credit on the account, cash in. */
+        get: operations["ledger_collections_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/collections/{id}/apply/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Apply what the collection has not yet applied to invoices it pays.
+         *
+         *     An advance settles invoices this way. Each invoice up to what it still
+         *     owes, all together up to the collection's unallocated amount; the
+         *     collection's own customer and currency. No money moves: the collection
+         *     posted when it was recorded.
+         */
+        post: operations["ledger_collections_apply_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/collections/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Post the reversal of each of its movements. Once: again is `409 ALREADY_REVERSED`. */
+        post: operations["ledger_collections_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/finance/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description `period`: `today` (the default), `yesterday`, `week` (from Monday) or `month`. */
+        get: operations["ledger_finance_summary_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/manual-entries/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A debit or credit with no cash behind it, and a reason. Owner and accountant. */
+        get: operations["ledger_manual_entries_list"];
+        put?: never;
+        /** @description A debit or credit with no cash behind it, and a reason. Owner and accountant. */
+        post: operations["ledger_manual_entries_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/manual-entries/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A debit or credit with no cash behind it, and a reason. Owner and accountant. */
+        get: operations["ledger_manual_entries_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/manual-entries/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Post the reversal of each of its movements. Once: again is `409 ALREADY_REVERSED`. */
+        post: operations["ledger_manual_entries_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/opening-balances/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A balance carried over at go-live (devir). Owner and accountant. */
+        get: operations["ledger_opening_balances_list"];
+        put?: never;
+        /** @description A balance carried over at go-live (devir). Owner and accountant. */
+        post: operations["ledger_opening_balances_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/opening-balances/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A balance carried over at go-live (devir). Owner and accountant. */
+        get: operations["ledger_opening_balances_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/opening-balances/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Post the reversal of each of its movements. Once: again is `409 ALREADY_REVERSED`. */
+        post: operations["ledger_opening_balances_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/payments-out/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Money paid out (tediye): a debit on the account, cash out. */
+        get: operations["ledger_payments_out_list"];
+        put?: never;
+        /** @description Money paid out (tediye): a debit on the account, cash out. */
+        post: operations["ledger_payments_out_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/payments-out/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Money paid out (tediye): a debit on the account, cash out. */
+        get: operations["ledger_payments_out_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/payments-out/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Post the reversal of each of its movements. Once: again is `409 ALREADY_REVERSED`. */
+        post: operations["ledger_payments_out_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/settings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The ledger's settings for the firm: the closed-through date.
+         *
+         *     A singleton with no id, like `/company`: the only firm a request can
+         *     address is its own. Owner and accountant.
+         */
+        get: operations["ledger_settings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description The ledger's settings for the firm: the closed-through date.
+         *
+         *     A singleton with no id, like `/company`: the only firm a request can
+         *     address is its own. Owner and accountant.
+         */
+        patch: operations["ledger_settings_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/ledger/suppliers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Whom the firm buys from. Each comes with its account. */
+        get: operations["ledger_suppliers_list"];
+        put?: never;
+        /** @description Whom the firm buys from. Each comes with its account. */
+        post: operations["ledger_suppliers_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/suppliers/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Whom the firm buys from. Each comes with its account. */
+        get: operations["ledger_suppliers_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Whom the firm buys from. Each comes with its account. */
+        patch: operations["ledger_suppliers_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/ledger/transfers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A transfer (virman), between two accounts or two cash accounts. */
+        get: operations["ledger_transfers_list"];
+        put?: never;
+        /** @description A transfer (virman), between two accounts or two cash accounts. */
+        post: operations["ledger_transfers_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/transfers/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A transfer (virman), between two accounts or two cash accounts. */
+        get: operations["ledger_transfers_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ledger/transfers/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Post the reversal of each of its movements. Once: again is `409 ALREADY_REVERSED`. */
+        post: operations["ledger_transfers_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/maintenance-visits/": {
@@ -2615,6 +3180,75 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * @description Open an account for a party that has none: a staff member, mostly.
+         *
+         *     A customer's account comes with the customer, and a supplier's with the
+         *     supplier; asking again for one that exists is `unique`.
+         */
+        AccountCreateRequest: {
+            kind: components["schemas"]["LedgerAccountKind"];
+            /**
+             * Format: uuid
+             * @description For `customer`.
+             */
+            customer?: string;
+            /**
+             * Format: uuid
+             * @description For `supplier`.
+             */
+            supplier?: string;
+            /**
+             * Format: uuid
+             * @description For `staff`: a member of the firm.
+             */
+            user?: string;
+            /** @default TRY */
+            currency: string;
+        };
+        AccountDetail: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly kind: components["schemas"]["LedgerAccountKind"];
+            readonly name: string;
+            /** Format: uuid */
+            readonly customer: string | null;
+            /** Format: uuid */
+            readonly supplier: string | null;
+            /** Format: uuid */
+            readonly user: string | null;
+            readonly currency: string;
+            readonly is_active: boolean;
+            /**
+             * Format: decimal
+             * @description Debits less credits. Positive: the party owes the firm.
+             */
+            readonly balance: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly last_movement: components["schemas"]["Movement"] | null;
+        };
+        AccountRead: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly kind: components["schemas"]["LedgerAccountKind"];
+            readonly name: string;
+            /** Format: uuid */
+            readonly customer: string | null;
+            /** Format: uuid */
+            readonly supplier: string | null;
+            /** Format: uuid */
+            readonly user: string | null;
+            readonly currency: string;
+            readonly is_active: boolean;
+            /**
+             * Format: decimal
+             * @description Debits less credits. Positive: the party owes the firm.
+             */
+            readonly balance: string;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        /**
          * @description * `create` - Create
          *     * `update` - Update
          *     * `delete` - Delete
@@ -2625,6 +3259,18 @@ export interface components {
             elevator_ids: string[];
             /** Format: decimal */
             unit_price?: string | null;
+        };
+        ApplyRequest: {
+            /**
+             * Format: uuid
+             * @description An issued invoice of the collection's customer.
+             */
+            invoice: string;
+            /**
+             * Format: decimal
+             * @description What this collection pays of it.
+             */
+            amount: string;
         };
         AssignRequest: {
             /** Format: uuid */
@@ -2820,6 +3466,130 @@ export interface components {
         };
         CancelRequest: {
             reason: string;
+        };
+        /**
+         * @description * `cash` - Cash
+         *     * `bank` - Bank
+         *     * `card` - Card
+         * @enum {string}
+         */
+        CashAccountKind: "cash" | "bank" | "card";
+        CashAccountListItem: components["schemas"]["CashAccountRead"] | components["schemas"]["CashAccountPicker"];
+        /**
+         * @description A cash account to pick, for a role that records money but does not read
+         *     the ledger (operations): what it is, never what it holds or its IBAN.
+         */
+        CashAccountPicker: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly name: string;
+            readonly kind: components["schemas"]["CashAccountKind"];
+            readonly currency: string;
+            readonly is_active: boolean;
+        };
+        CashAccountRead: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly kind: components["schemas"]["CashAccountKind"];
+            readonly name: string;
+            readonly role: components["schemas"]["CashAccountRole"];
+            readonly currency: string;
+            readonly iban: string;
+            readonly is_active: boolean;
+            /**
+             * Format: decimal
+             * @description What came in less what went out.
+             */
+            readonly balance: string;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        /**
+         * @description * `default` - Default till
+         *     * `carried_over` - Carried over from M7
+         * @enum {string}
+         */
+        CashAccountRole: "default" | "carried_over";
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported, as in every other app.
+         */
+        CashAccountWriteRequest: {
+            kind: components["schemas"]["CashAccountKind"];
+            name: string;
+            currency?: string;
+            iban?: string;
+            is_active?: boolean;
+        };
+        /**
+         * @description * `in` - In
+         *     * `out` - Out
+         * @enum {string}
+         */
+        CashDirection: "in" | "out";
+        CollectionApplication: {
+            /** Format: uuid */
+            readonly invoice: string;
+            /** Format: decimal */
+            readonly amount: string;
+        };
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported, as in every other app.
+         */
+        CollectionApplyRequest: {
+            /** @description The invoices it pays, each up to what it still owes, all together up to what the collection has not yet applied. */
+            applies: components["schemas"]["ApplyRequest"][];
+        };
+        /** @description What every document takes: an amount and a business date. */
+        CollectionCreateRequest: {
+            /**
+             * Format: decimal
+             * @description Above zero, to the cent.
+             */
+            amount: string;
+            /**
+             * Format: date
+             * @description The business date: not after today, nor in a closed period. Today when omitted.
+             */
+            date?: string;
+            /**
+             * Format: uuid
+             * @description The party's account.
+             */
+            account: string;
+            /**
+             * Format: uuid
+             * @description Where the money went.
+             */
+            cash_account: string;
+            method: components["schemas"]["PaymentMethod"];
+            /** @default  */
+            note: string;
+            /** @description The invoices it pays, each up to what it still owes. None: an advance. */
+            applies?: components["schemas"]["ApplyRequest"][];
+        };
+        CollectionRead: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly number: string;
+            /** Format: uuid */
+            readonly account: string;
+            /** Format: uuid */
+            readonly cash_account: string;
+            /** Format: decimal */
+            readonly amount: string;
+            readonly method: components["schemas"]["PaymentMethod"];
+            /** Format: date */
+            readonly date: string;
+            readonly note: string;
+            readonly applies: components["schemas"]["CollectionApplication"][];
+            /** Format: date-time */
+            readonly cancelled_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
         };
         Company: {
             /** Format: uuid */
@@ -3061,6 +3831,17 @@ export interface components {
             /** Format: date */
             readonly certificate_valid_until: string | null;
         };
+        /** @description One of the customer's ledger accounts, as the customer page shows it. */
+        CustomerAccount: {
+            /** Format: uuid */
+            readonly id: string;
+            /**
+             * Format: decimal
+             * @description Debits less credits. Positive: the customer owes the firm.
+             */
+            readonly balance: string;
+            readonly currency: string;
+        };
         /**
          * @description The same contact, created under `/customers/{id}/contacts`.
          *
@@ -3148,6 +3929,8 @@ export interface components {
             readonly building_count: number;
             /** @default 0 */
             readonly elevator_count: number;
+            /** @description The customer's ledger accounts, one per currency, each with its balance; TRY first. Absent for roles that may not see balances (the technician). */
+            readonly accounts?: components["schemas"]["CustomerAccount"][];
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -3580,6 +4363,64 @@ export interface components {
          * @enum {string}
          */
         FaultStatus: "open" | "assigned" | "on_site" | "resolved" | "closed" | "cancelled";
+        FinanceCashLine: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: components["schemas"]["CashAccountKind"];
+            /**
+             * @description `default` for the firm's main till, `carried_over` for a till holding the payments M7 recorded before the ledger, blank for one the firm made.
+             *
+             *     * `default` - Default till
+             *     * `carried_over` - Carried over from M7
+             */
+            role: components["schemas"]["CashAccountRole"] | components["schemas"]["BlankEnum"];
+            /** @description An inactive cash account is listed while it holds money or moved. */
+            is_active: boolean;
+            /**
+             * Format: decimal
+             * @description Its balance today.
+             */
+            balance: string;
+            /** Format: decimal */
+            money_in: string;
+            /** Format: decimal */
+            money_out: string;
+        };
+        FinanceCurrency: {
+            currency: string;
+            /**
+             * Format: decimal
+             * @description What the firm is owed, today.
+             */
+            receivables: string;
+            /**
+             * Format: decimal
+             * @description What the firm owes, today.
+             */
+            payables: string;
+            /** @description Every cash account that is active, holds money, or moved in the period. */
+            cash_accounts: components["schemas"]["FinanceCashLine"][];
+            /**
+             * Format: decimal
+             * @description The cash lines' `money_in`, added up. Transfers between cash accounts, openings, and documents cancelled within the period are left out.
+             */
+            money_in: string;
+            /**
+             * Format: decimal
+             * @description The cash lines' `money_out`, added up.
+             */
+            money_out: string;
+        };
+        FinanceSummary: {
+            period: components["schemas"]["PeriodEnum"];
+            /** Format: date */
+            date_from: string;
+            /** Format: date */
+            date_to: string;
+            /** @description One entry per currency; amounts in two currencies are never added. */
+            currencies: components["schemas"]["FinanceCurrency"][];
+        };
         /** @description One level of the address, resolved to a row the client can select. */
         GeocodeMatch: {
             /** @description Feeds straight back into the province/district/neighborhood endpoints. */
@@ -3757,6 +4598,16 @@ export interface components {
             readonly vat_amount: string;
             /** Format: decimal */
             readonly total: string;
+            /**
+             * Format: decimal
+             * @description What collections still standing have paid of this invoice.
+             */
+            readonly collected: string;
+            /**
+             * Format: decimal
+             * @description The total less `collected`: what the customer still owes on it.
+             */
+            readonly remaining: string;
             /** @description Whether any line still waits for a price; such a draft cannot be issued. */
             readonly needs_price: boolean;
             readonly invoice_number: string;
@@ -3816,8 +4667,18 @@ export interface components {
             unit_price: string;
         };
         InvoiceMarkPaidRequest: {
-            /** Format: date */
+            /**
+             * Format: date
+             * @description The collection's date.
+             */
             paid_on: string;
+            /**
+             * Format: uuid
+             * @description Where the money went. The firm's main till when omitted.
+             */
+            cash_account?: string | null;
+            /** @default transfer */
+            method: components["schemas"]["PaymentMethod"];
         };
         /**
          * @description * `draft` - Draft
@@ -3836,6 +4697,31 @@ export interface components {
          */
         LabelRequestRequest: {
             elevator_ids: string[];
+        };
+        /**
+         * @description * `customer` - Customer
+         *     * `supplier` - Supplier
+         *     * `staff` - Staff
+         * @enum {string}
+         */
+        LedgerAccountKind: "customer" | "supplier" | "staff";
+        /**
+         * @description * `debit` - Debit
+         *     * `credit` - Credit
+         * @enum {string}
+         */
+        LedgerDirection: "debit" | "credit";
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported, as in every other app.
+         */
+        LedgerSettings: {
+            /**
+             * Format: date
+             * @description The books are closed through this day, inclusive: nothing can be dated on or before it. Null: nothing is closed. Not after today.
+             */
+            closed_through: string | null;
         };
         /**
          * @description Rejects fields it does not know about.
@@ -3960,6 +4846,43 @@ export interface components {
             /** Format: date-time */
             signed_at?: string | null;
         };
+        /** @description What every document takes: an amount and a business date. */
+        ManualEntryCreateRequest: {
+            /**
+             * Format: decimal
+             * @description Above zero, to the cent.
+             */
+            amount: string;
+            /**
+             * Format: date
+             * @description The business date: not after today, nor in a closed period. Today when omitted.
+             */
+            date?: string;
+            /**
+             * Format: uuid
+             * @description The party's account.
+             */
+            account: string;
+            direction: components["schemas"]["LedgerDirection"];
+            /** @description Why; shown on the statement. */
+            reason: string;
+        };
+        ManualEntryRead: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly account: string;
+            readonly direction: components["schemas"]["LedgerDirection"];
+            /** Format: decimal */
+            readonly amount: string;
+            /** Format: date */
+            readonly date: string;
+            readonly reason: string;
+            /** Format: date-time */
+            readonly cancelled_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
         /**
          * @description * `application/pdf` - application/pdf
          *     * `image/jpeg` - image/jpeg
@@ -3968,6 +4891,42 @@ export interface components {
          * @enum {string}
          */
         MimeTypeEnum: "application/pdf" | "image/jpeg" | "image/png" | "image/webp";
+        Movement: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: date */
+            readonly date: string;
+            /** Format: uuid */
+            readonly account: string | null;
+            /** Format: uuid */
+            readonly cash_account: string | null;
+            readonly direction: components["schemas"]["LedgerDirection"];
+            readonly cash_direction: components["schemas"]["CashDirection"];
+            /** Format: decimal */
+            readonly amount: string;
+            readonly currency: string;
+            readonly source: components["schemas"]["MovementSource"];
+            readonly document_type: string;
+            /** Format: uuid */
+            readonly document_id: string | null;
+            /** Format: uuid */
+            readonly reverses: string | null;
+            readonly description: string;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        /**
+         * @description * `invoice` - Invoice
+         *     * `invoice_cancel` - Invoice cancelled
+         *     * `collection` - Collection
+         *     * `payment_out` - Payment out
+         *     * `manual` - Manual entry
+         *     * `transfer` - Transfer
+         *     * `opening` - Opening balance
+         *     * `reversal` - Reversal
+         * @enum {string}
+         */
+        MovementSource: "invoice" | "invoice_cancel" | "collection" | "payment_out" | "manual" | "transfer" | "opening" | "reversal";
         Neighborhood: {
             /** Format: int64 */
             id: number;
@@ -4063,6 +5022,98 @@ export interface components {
         };
         /** @enum {unknown} */
         NullEnum: null;
+        /** @description An invoice a collection can still pay, as the picker lists it. */
+        OpenInvoice: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly invoice_number: string;
+            /** Format: date */
+            readonly invoice_date: string | null;
+            /** Format: decimal */
+            readonly total: string;
+            /**
+             * Format: decimal
+             * @description The total less what standing collections pay of it.
+             */
+            readonly remaining: string;
+        };
+        /** @description What every document takes: an amount and a business date. */
+        OpeningBalanceCreateRequest: {
+            /**
+             * Format: decimal
+             * @description Above zero, to the cent.
+             */
+            amount: string;
+            /**
+             * Format: date
+             * @description The business date: not after today, nor in a closed period. Today when omitted.
+             */
+            date?: string;
+            /**
+             * Format: uuid
+             * @description An account, or ...
+             */
+            account?: string;
+            /**
+             * Format: uuid
+             * @description ... a cash account.
+             */
+            cash_account?: string;
+            /**
+             * @description On a cash account, a debit is money in the till.
+             *
+             *     * `debit` - Debit
+             *     * `credit` - Credit
+             */
+            direction: components["schemas"]["LedgerDirection"];
+        };
+        OpeningBalanceRead: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly account: string | null;
+            /** Format: uuid */
+            readonly cash_account: string | null;
+            readonly direction: components["schemas"]["LedgerDirection"];
+            /** Format: decimal */
+            readonly amount: string;
+            /** Format: date */
+            readonly date: string;
+            /** Format: date-time */
+            readonly cancelled_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        PaginatedAccountReadList: {
+            results: components["schemas"]["AccountRead"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+            totals: {
+                /**
+                 * Format: decimal
+                 * @description The positive balances, summed.
+                 */
+                receivables: string;
+                /**
+                 * Format: decimal
+                 * @description The negative balances, summed, as a positive amount.
+                 */
+                payables: string;
+                /**
+                 * Format: decimal
+                 * @description Receivables less payables.
+                 */
+                net: string;
+            };
+        };
         PaginatedAttachmentList: {
             results: components["schemas"]["Attachment"][];
             pagination: {
@@ -4091,6 +5142,32 @@ export interface components {
         };
         PaginatedBuildingReadList: {
             results: components["schemas"]["BuildingRead"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedCashAccountListItemList: {
+            results: components["schemas"]["CashAccountListItem"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedCollectionReadList: {
+            results: components["schemas"]["CollectionRead"][];
             pagination: {
                 /** @example 1 */
                 page: number;
@@ -4245,8 +5322,60 @@ export interface components {
                 total_pages: number;
             };
         };
+        PaginatedManualEntryReadList: {
+            results: components["schemas"]["ManualEntryRead"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedMovementList: {
+            results: components["schemas"]["Movement"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
         PaginatedNotificationList: {
             results: components["schemas"]["Notification"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedOpeningBalanceReadList: {
+            results: components["schemas"]["OpeningBalanceRead"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedPaymentOutReadList: {
+            results: components["schemas"]["PaymentOutRead"][];
             pagination: {
                 /** @example 1 */
                 page: number;
@@ -4349,6 +5478,32 @@ export interface components {
                 total_pages: number;
             };
         };
+        PaginatedSupplierReadList: {
+            results: components["schemas"]["SupplierRead"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
+        PaginatedTransferReadList: {
+            results: components["schemas"]["TransferRead"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
         PaginatedUserList: {
             results: components["schemas"]["User"][];
             pagination: {
@@ -4417,6 +5572,18 @@ export interface components {
             floor_count?: number | null;
             /** Format: int64 */
             unit_count?: number | null;
+            is_active?: boolean;
+        };
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported, as in every other app.
+         */
+        PatchedCashAccountWriteRequest: {
+            kind?: components["schemas"]["CashAccountKind"];
+            name?: string;
+            currency?: string;
+            iban?: string;
             is_active?: boolean;
         };
         PatchedCompanyRequest: {
@@ -4608,6 +5775,18 @@ export interface components {
         /**
          * @description Rejects a field the client sent that this serializer does not declare.
          *
+         *     Copied rather than imported, as in every other app.
+         */
+        PatchedLedgerSettingsRequest: {
+            /**
+             * Format: date
+             * @description The books are closed through this day, inclusive: nothing can be dated on or before it. Null: nothing is closed. Not after today.
+             */
+            closed_through?: string | null;
+        };
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
          *     Copied rather than imported - every app that needs this defines its own
          *     (see apps/contracts, apps/customers, apps/elevators, apps/properties);
          *     there is no shared core.serializers module to pull it from.
@@ -4656,6 +5835,20 @@ export interface components {
             /** Format: date */
             planned_date?: string | null;
         };
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported, as in every other app.
+         */
+        PatchedSupplierWriteRequest: {
+            name?: string;
+            tax_office?: string;
+            tax_number?: string;
+            phone?: string;
+            email?: string;
+            address_note?: string;
+            notes?: string;
+        };
         PatchedUserUpdateRequest: {
             first_name?: string;
             last_name?: string;
@@ -4665,6 +5858,66 @@ export interface components {
             /** Format: date */
             certificate_valid_until?: string | null;
         };
+        /**
+         * @description * `cash` - Cash
+         *     * `transfer` - Transfer
+         *     * `card` - Card
+         * @enum {string}
+         */
+        PaymentMethod: "cash" | "transfer" | "card";
+        /** @description What every document takes: an amount and a business date. */
+        PaymentOutCreateRequest: {
+            /**
+             * Format: decimal
+             * @description Above zero, to the cent.
+             */
+            amount: string;
+            /**
+             * Format: date
+             * @description The business date: not after today, nor in a closed period. Today when omitted.
+             */
+            date?: string;
+            /**
+             * Format: uuid
+             * @description The party's account.
+             */
+            account: string;
+            /**
+             * Format: uuid
+             * @description Where the money came from.
+             */
+            cash_account: string;
+            method: components["schemas"]["PaymentMethod"];
+            /** @default  */
+            note: string;
+        };
+        PaymentOutRead: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly number: string;
+            /** Format: uuid */
+            readonly account: string;
+            /** Format: uuid */
+            readonly cash_account: string;
+            /** Format: decimal */
+            readonly amount: string;
+            readonly method: components["schemas"]["PaymentMethod"];
+            /** Format: date */
+            readonly date: string;
+            readonly note: string;
+            /** Format: date-time */
+            readonly cancelled_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        /**
+         * @description * `today` - today
+         *     * `yesterday` - yesterday
+         *     * `week` - week
+         *     * `month` - month
+         * @enum {string}
+         */
+        PeriodEnum: "today" | "yesterday" | "week" | "month";
         PlanStatusCounts: {
             planned: number;
             done: number;
@@ -5206,6 +6459,103 @@ export interface components {
          * @enum {string}
          */
         SignerRoleEnum: "manager" | "caretaker" | "staff" | "other";
+        Statement: {
+            /** Format: uuid */
+            account: string;
+            account_name: string;
+            currency: string;
+            /** Format: date */
+            start: string | null;
+            /** Format: date */
+            end: string | null;
+            /**
+             * Format: decimal
+             * @description The balance before `start`; 0 without one.
+             */
+            opening: string;
+            /** Format: decimal */
+            total_debit: string;
+            /** Format: decimal */
+            total_credit: string;
+            /**
+             * Format: decimal
+             * @description The balance after the last row.
+             */
+            closing: string;
+            rows: components["schemas"]["StatementRow"][];
+        };
+        /** @description The range of a statement, from the query string or the send body. */
+        StatementQueryRequest: {
+            /**
+             * Format: date
+             * @description Inclusive. The opening balance is everything dated before it.
+             */
+            start?: string | null;
+            /**
+             * Format: date
+             * @description Inclusive.
+             */
+            end?: string | null;
+        };
+        StatementRow: {
+            /** Format: uuid */
+            movement_id: string;
+            /** Format: date */
+            date: string;
+            description: string;
+            /** Format: decimal */
+            debit: string;
+            /** Format: decimal */
+            credit: string;
+            /**
+             * Format: decimal
+             * @description The account's balance after this row.
+             */
+            balance: string;
+            /** @description The source document as "app_label.model_name", e.g. "ledger.collection". */
+            document_type: string;
+            /** Format: uuid */
+            document_id: string | null;
+            /** @description The mirror of an earlier row: a cancelled document shows as both. */
+            is_reversal: boolean;
+        };
+        StatementSent: {
+            /** @description Each address the statement was sent to. */
+            recipients: string[];
+        };
+        SupplierRead: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly name: string;
+            readonly tax_office: string;
+            readonly tax_number: string;
+            readonly phone: string;
+            /** Format: email */
+            readonly email: string;
+            readonly address_note: string;
+            readonly notes: string;
+            /**
+             * Format: uuid
+             * @description The supplier's account.
+             */
+            readonly account: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        /**
+         * @description Rejects a field the client sent that this serializer does not declare.
+         *
+         *     Copied rather than imported, as in every other app.
+         */
+        SupplierWriteRequest: {
+            name: string;
+            tax_office?: string;
+            tax_number?: string;
+            phone?: string;
+            email?: string;
+            address_note?: string;
+            notes?: string;
+        };
         /** @description One choice in the "who did the work" field — a name and nothing else. */
         TechnicianOption: {
             /** Format: uuid */
@@ -5249,6 +6599,70 @@ export interface components {
         TokenResponse: {
             readonly access: string;
             readonly user: components["schemas"]["CurrentUser"];
+        };
+        /** @description What every document takes: an amount and a business date. */
+        TransferCreateRequest: {
+            /**
+             * Format: decimal
+             * @description Above zero, to the cent.
+             */
+            amount: string;
+            /**
+             * Format: date
+             * @description The business date: not after today, nor in a closed period. Today when omitted.
+             */
+            date?: string;
+            kind: components["schemas"]["TransferKind"];
+            /**
+             * Format: uuid
+             * @description For `account`: credited.
+             */
+            from_account?: string;
+            /**
+             * Format: uuid
+             * @description For `account`: debited.
+             */
+            to_account?: string;
+            /**
+             * Format: uuid
+             * @description For `cash`: money out.
+             */
+            from_cash?: string;
+            /**
+             * Format: uuid
+             * @description For `cash`: money in.
+             */
+            to_cash?: string;
+            /** @default  */
+            note: string;
+        };
+        /**
+         * @description * `account` - Between accounts
+         *     * `cash` - Between cash accounts
+         * @enum {string}
+         */
+        TransferKind: "account" | "cash";
+        TransferRead: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly kind: components["schemas"]["TransferKind"];
+            /** Format: uuid */
+            readonly from_account: string | null;
+            /** Format: uuid */
+            readonly to_account: string | null;
+            /** Format: uuid */
+            readonly from_cash: string | null;
+            /** Format: uuid */
+            readonly to_cash: string | null;
+            /** Format: decimal */
+            readonly amount: string;
+            /** Format: date */
+            readonly date: string;
+            readonly note: string;
+            /** Format: date-time */
+            readonly cancelled_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
         };
         /**
          * @description * `province` - province
@@ -5390,6 +6804,11 @@ export interface components {
          *     * `FIELD_REQUIRED_FOR_CUSTOMER_TYPE` - This customer type requires this field
          *     * `FIELD_NOT_VALID_FOR_CUSTOMER_TYPE` - This field does not apply to this customer type
          *     * `STATUS_NOT_USER_SELECTABLE` - This status is assigned by the system
+         *     * `CURRENCY_MISMATCH` - The amount's currency differs from its account's or its cash account's
+         *     * `PERIOD_CLOSED` - The date falls in a period the firm has closed
+         *     * `ALREADY_REVERSED` - This document has already been cancelled
+         *     * `INVOICE_HAS_COLLECTIONS` - Collections are applied to this invoice; cancel them first
+         *     * `OVERPAYMENT_ON_INVOICE` - The amount applied exceeds the invoice's remaining balance
          *     * `INVALID_CREDENTIALS` - E-mail or password is incorrect
          *     * `ACCOUNT_LOCKED` - Too many failed attempts from this address; try again later
          *     * `ACCOUNT_INACTIVE` - Account is not active
@@ -5402,7 +6821,7 @@ export interface components {
          *     * `ATTACHMENT_TARGET_MISMATCH` - Attachment does not belong to the record it is being linked to
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "PLANNED_DATE_OUTSIDE_PERIOD" | "PLANNED_DATE_IN_PAST" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "IDEMPOTENCY_KEY_IN_FLIGHT" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "INVOICE_TRANSITION_NOT_ALLOWED" | "SIGNATURE_EXISTS" | "SIGNATURE_NOT_EXPECTED" | "SIGNATURE_CANNOT_BE_DELETED" | "INVOICE_LINES_NEED_PRICE" | "MONTHLY_REPORT_NEEDS_EMAIL" | "REPORT_NO_RECIPIENT" | "REPORT_FILE_CANNOT_BE_DELETED" | "CATEGORY_NOT_UPLOADABLE" | "DUPLICATE_INVOICE_NUMBER" | "FAULT_TRANSITION_NOT_ALLOWED" | "PLAN_ROW_CLOSED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
+        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "PLANNED_DATE_OUTSIDE_PERIOD" | "PLANNED_DATE_IN_PAST" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "IDEMPOTENCY_KEY_IN_FLIGHT" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "INVOICE_TRANSITION_NOT_ALLOWED" | "SIGNATURE_EXISTS" | "SIGNATURE_NOT_EXPECTED" | "SIGNATURE_CANNOT_BE_DELETED" | "INVOICE_LINES_NEED_PRICE" | "MONTHLY_REPORT_NEEDS_EMAIL" | "REPORT_NO_RECIPIENT" | "REPORT_FILE_CANNOT_BE_DELETED" | "CATEGORY_NOT_UPLOADABLE" | "DUPLICATE_INVOICE_NUMBER" | "FAULT_TRANSITION_NOT_ALLOWED" | "PLAN_ROW_CLOSED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "CURRENCY_MISMATCH" | "PERIOD_CLOSED" | "ALREADY_REVERSED" | "INVOICE_HAS_COLLECTIONS" | "OVERPAYMENT_ON_INVOICE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
         /** @description The shape of every error response. There is no `message` field: the backend sends codes, and the words live in the client's translation file, so wording changes in one place and adding a language does not touch the API. */
         ErrorResponse: {
             error: {
@@ -8114,6 +9533,1120 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InvoiceLine"];
+                };
+            };
+        };
+    };
+    ledger_accounts_list: {
+        parameters: {
+            query?: {
+                /** @description Whether the balance is anything but zero. */
+                has_balance?: boolean;
+                is_active?: boolean;
+                /**
+                 * @description * `customer` - Customer
+                 *     * `supplier` - Supplier
+                 *     * `staff` - Staff
+                 */
+                kind?: "customer" | "staff" | "supplier";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description Owes the firm, and has an issued invoice still unpaid that is older than `overdue_days`. */
+                overdue?: boolean;
+                /** @description Days, for `overdue`. 30 when omitted. */
+                overdue_days?: unknown;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description Part of the name. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedAccountReadList"];
+                };
+            };
+        };
+    };
+    ledger_accounts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["AccountCreateRequest"];
+                "multipart/form-data": components["schemas"]["AccountCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRead"];
+                };
+            };
+        };
+    };
+    ledger_accounts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this account. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDetail"];
+                };
+            };
+        };
+    };
+    ledger_accounts_open_invoices_list: {
+        parameters: {
+            query?: {
+                /** @description Whether the balance is anything but zero. */
+                has_balance?: boolean;
+                is_active?: boolean;
+                /**
+                 * @description * `customer` - Customer
+                 *     * `supplier` - Supplier
+                 *     * `staff` - Staff
+                 */
+                kind?: "customer" | "staff" | "supplier";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description Owes the firm, and has an issued invoice still unpaid that is older than `overdue_days`. */
+                overdue?: boolean;
+                /** @description Days, for `overdue`. 30 when omitted. */
+                overdue_days?: unknown;
+                /** @description Part of the name. */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this account. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenInvoice"][];
+                };
+            };
+        };
+    };
+    ledger_accounts_statement_retrieve: {
+        parameters: {
+            query?: {
+                /** @description Inclusive. */
+                end?: string | null;
+                /** @description Inclusive. The opening balance is everything dated before it. */
+                start?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this account. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Statement"];
+                };
+            };
+        };
+    };
+    "ledger_accounts_statement.csv_retrieve": {
+        parameters: {
+            query?: {
+                /** @description Inclusive. */
+                end?: string | null;
+                /** @description Inclusive. The opening balance is everything dated before it. */
+                start?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this account. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+        };
+    };
+    "ledger_accounts_statement.pdf_retrieve": {
+        parameters: {
+            query?: {
+                /** @description Inclusive. */
+                end?: string | null;
+                /** @description Inclusive. The opening balance is everything dated before it. */
+                start?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this account. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+        };
+    };
+    ledger_accounts_statement_send_create: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Required. The same key with the same body answers what the first request did, and records nothing more. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description A UUID string identifying this account. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StatementQueryRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["StatementQueryRequest"];
+                "multipart/form-data": components["schemas"]["StatementQueryRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementSent"];
+                };
+            };
+        };
+    };
+    ledger_cash_accounts_list: {
+        parameters: {
+            query?: {
+                is_active?: boolean;
+                /**
+                 * @description * `cash` - Cash
+                 *     * `bank` - Bank
+                 *     * `card` - Card
+                 */
+                kind?: "bank" | "card" | "cash";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCashAccountListItemList"];
+                };
+            };
+        };
+    };
+    ledger_cash_accounts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CashAccountWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CashAccountWriteRequest"];
+                "multipart/form-data": components["schemas"]["CashAccountWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashAccountRead"];
+                };
+            };
+        };
+    };
+    ledger_cash_accounts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cash account. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashAccountListItem"];
+                };
+            };
+        };
+    };
+    ledger_cash_accounts_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cash account. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCashAccountWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCashAccountWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedCashAccountWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashAccountRead"];
+                };
+            };
+        };
+    };
+    ledger_cash_accounts_movements_list: {
+        parameters: {
+            query?: {
+                is_active?: boolean;
+                /**
+                 * @description * `cash` - Cash
+                 *     * `bank` - Bank
+                 *     * `card` - Card
+                 */
+                kind?: "bank" | "card" | "cash";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cash account. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedMovementList"];
+                };
+            };
+        };
+    };
+    ledger_collections_list: {
+        parameters: {
+            query?: {
+                account?: string;
+                cash_account?: string;
+                /** @description `date_after` / `date_before`. */
+                date_after?: string;
+                /** @description `date_after` / `date_before`. */
+                date_before?: string;
+                /**
+                 * @description * `cash` - Cash
+                 *     * `transfer` - Transfer
+                 *     * `card` - Card
+                 */
+                method?: "card" | "cash" | "transfer";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCollectionReadList"];
+                };
+            };
+        };
+    };
+    ledger_collections_create: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Required. The same key with the same body answers what the first request did, and records nothing more. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CollectionCreateRequest"];
+                "multipart/form-data": components["schemas"]["CollectionCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionRead"];
+                };
+            };
+        };
+    };
+    ledger_collections_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this collection. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionRead"];
+                };
+            };
+        };
+    };
+    ledger_collections_apply_create: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Required. The same key with the same body answers what the first request did, and records nothing more. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description A UUID string identifying this collection. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionApplyRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CollectionApplyRequest"];
+                "multipart/form-data": components["schemas"]["CollectionApplyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionRead"];
+                };
+            };
+        };
+    };
+    ledger_collections_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this collection. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionRead"];
+                };
+            };
+        };
+    };
+    ledger_finance_summary_retrieve: {
+        parameters: {
+            query?: {
+                /**
+                 * @description * `today` - today
+                 *     * `yesterday` - yesterday
+                 *     * `week` - week
+                 *     * `month` - month
+                 */
+                period?: "today" | "yesterday" | "week" | "month";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceSummary"];
+                };
+            };
+        };
+    };
+    ledger_manual_entries_list: {
+        parameters: {
+            query?: {
+                account?: string;
+                /**
+                 * @description * `debit` - Debit
+                 *     * `credit` - Credit
+                 */
+                direction?: "credit" | "debit";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedManualEntryReadList"];
+                };
+            };
+        };
+    };
+    ledger_manual_entries_create: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Required. The same key with the same body answers what the first request did, and records nothing more. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualEntryCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ManualEntryCreateRequest"];
+                "multipart/form-data": components["schemas"]["ManualEntryCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManualEntryRead"];
+                };
+            };
+        };
+    };
+    ledger_manual_entries_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this manual entry. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManualEntryRead"];
+                };
+            };
+        };
+    };
+    ledger_manual_entries_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this manual entry. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManualEntryRead"];
+                };
+            };
+        };
+    };
+    ledger_opening_balances_list: {
+        parameters: {
+            query?: {
+                account?: string;
+                cash_account?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedOpeningBalanceReadList"];
+                };
+            };
+        };
+    };
+    ledger_opening_balances_create: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Required. The same key with the same body answers what the first request did, and records nothing more. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpeningBalanceCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["OpeningBalanceCreateRequest"];
+                "multipart/form-data": components["schemas"]["OpeningBalanceCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpeningBalanceRead"];
+                };
+            };
+        };
+    };
+    ledger_opening_balances_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this opening balance. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpeningBalanceRead"];
+                };
+            };
+        };
+    };
+    ledger_opening_balances_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this opening balance. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpeningBalanceRead"];
+                };
+            };
+        };
+    };
+    ledger_payments_out_list: {
+        parameters: {
+            query?: {
+                account?: string;
+                cash_account?: string;
+                /** @description `date_after` / `date_before`. */
+                date_after?: string;
+                /** @description `date_after` / `date_before`. */
+                date_before?: string;
+                /**
+                 * @description * `cash` - Cash
+                 *     * `transfer` - Transfer
+                 *     * `card` - Card
+                 */
+                method?: "card" | "cash" | "transfer";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedPaymentOutReadList"];
+                };
+            };
+        };
+    };
+    ledger_payments_out_create: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Required. The same key with the same body answers what the first request did, and records nothing more. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentOutCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PaymentOutCreateRequest"];
+                "multipart/form-data": components["schemas"]["PaymentOutCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentOutRead"];
+                };
+            };
+        };
+    };
+    ledger_payments_out_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this payment out. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentOutRead"];
+                };
+            };
+        };
+    };
+    ledger_payments_out_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this payment out. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentOutRead"];
+                };
+            };
+        };
+    };
+    ledger_settings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LedgerSettings"];
+                };
+            };
+        };
+    };
+    ledger_settings_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedLedgerSettingsRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedLedgerSettingsRequest"];
+                "multipart/form-data": components["schemas"]["PatchedLedgerSettingsRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LedgerSettings"];
+                };
+            };
+        };
+    };
+    ledger_suppliers_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSupplierReadList"];
+                };
+            };
+        };
+    };
+    ledger_suppliers_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SupplierWriteRequest"];
+                "multipart/form-data": components["schemas"]["SupplierWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierRead"];
+                };
+            };
+        };
+    };
+    ledger_suppliers_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this supplier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierRead"];
+                };
+            };
+        };
+    };
+    ledger_suppliers_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this supplier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedSupplierWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedSupplierWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedSupplierWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierRead"];
+                };
+            };
+        };
+    };
+    ledger_transfers_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description * `account` - Between accounts
+                 *     * `cash` - Between cash accounts
+                 */
+                kind?: "account" | "cash";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedTransferReadList"];
+                };
+            };
+        };
+    };
+    ledger_transfers_create: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Required. The same key with the same body answers what the first request did, and records nothing more. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["TransferCreateRequest"];
+                "multipart/form-data": components["schemas"]["TransferCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferRead"];
+                };
+            };
+        };
+    };
+    ledger_transfers_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this transfer. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferRead"];
+                };
+            };
+        };
+    };
+    ledger_transfers_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this transfer. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferRead"];
                 };
             };
         };
