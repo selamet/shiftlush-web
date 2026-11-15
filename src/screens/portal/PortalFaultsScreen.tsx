@@ -30,9 +30,9 @@ const EMERGENCY_NUMBER = "112";
  *
  * The form first, because a manager who came here usually came to report
  * something; the list below says what happened to the ones already reported.
- * "Somebody is trapped" is a checkbox of its own, and ticking it puts the
- * emergency number on screen in the heaviest treatment there is: the firm is
- * told at once, but a person stuck in a lift needs 112 as well.
+ * "Somebody is trapped" is a checkbox of its own. The emergency number is
+ * always on screen in the heaviest treatment there is: the firm is told at
+ * once, but a person stuck in a lift needs 112 as well.
  */
 export function PortalFaultsScreen() {
   const { t } = useTranslation();
@@ -154,21 +154,21 @@ function ReportForm({
         <span className="text-cardtitle">{t("portal.faults.someoneTrapped")}</span>
       </label>
 
-      {trapped && (
-        <div role="alert" className="flex flex-col gap-3 rounded-lg border-2 border-foreground bg-foreground p-4 text-background">
-          <p className="flex items-start gap-2 text-cardtitle">
-            <Siren className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-            {t("portal.faults.callEmergency", { number: EMERGENCY_NUMBER })}
-          </p>
-          <a
-            href={`tel:${EMERGENCY_NUMBER}`}
-            className="inline-flex min-h-control-xl items-center justify-center gap-2 rounded-md bg-background px-4 text-cardtitle font-semibold text-foreground focus-ring"
-          >
-            <Phone className="size-5" aria-hidden="true" />
-            {t("portal.faults.callButton", { number: EMERGENCY_NUMBER })}
-          </a>
-        </div>
-      )}
+      {/* Always on screen: a report to the firm is not a rescue. Announced as
+          an alert only once they say somebody is trapped. */}
+      <div role={trapped ? "alert" : "note"} className="flex flex-col gap-3 rounded-lg border-2 border-foreground bg-foreground p-4 text-background">
+        <p className="flex items-start gap-2 text-cardtitle">
+          <Siren className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+          {t("portal.faults.callEmergency", { number: EMERGENCY_NUMBER })}
+        </p>
+        <a
+          href={`tel:${EMERGENCY_NUMBER}`}
+          className="inline-flex min-h-control-xl items-center justify-center gap-2 rounded-md bg-background px-4 text-cardtitle font-semibold text-foreground focus-ring"
+        >
+          <Phone className="size-5" aria-hidden="true" />
+          {t("portal.faults.callButton", { number: EMERGENCY_NUMBER })}
+        </a>
+      </div>
 
       <label className="flex min-h-control-lg items-center gap-3 rounded-lg border border-border p-3 text-body">
         <input type="checkbox" name="elevator_stopped" className="size-5 shrink-0 accent-primary" />

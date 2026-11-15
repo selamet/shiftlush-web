@@ -1625,7 +1625,7 @@
     "descriptionPlaceholder": "Örneğin: kapı kapanmıyor, katlar arasında durdu",
     "name": "Adınız",
     "phone": "Telefonunuz",
-    "phoneHint": "İsteğe bağlı. Firma sizi geri arayabilsin diye.",
+    "phoneHint": "Firma sizi geri arayıp bildirimi doğrulayabilsin diye.",
     "submit": "Arızayı bildir",
     "received": "Bildiriminiz alındı.",
     "referenceLabel": "Referans:",

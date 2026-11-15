@@ -4,7 +4,7 @@ import { useParams } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { CheckCircle2, Phone, Siren } from "lucide-react";
 import { ApiError } from "@/api/client";
-import { errorMessage } from "@/api/errors";
+import { errorMessage, fieldErrors } from "@/api/errors";
 import { reportPublicFault } from "@/api/queries";
 import { publicPriority } from "@/lib/faults";
 import { Alert } from "@/components/ui/alert";
@@ -31,11 +31,16 @@ function failureMessage(error: unknown, t: ReturnType<typeof useTranslation>["t"
   return errorMessage(error, t);
 }
 
+/** The server's word on the phone, next to the phone. */
+function phoneError(error: unknown, t: ReturnType<typeof useTranslation>["t"]): string | undefined {
+  return error ? fieldErrors(error, t).reporter_phone : undefined;
+}
+
 /**
  * What a resident sees after scanning the sticker on a lift without an account.
  *
  * One screen, three questions — what is wrong, is anybody trapped, has the
- * lift stopped — and an optional name and phone for a call back. Large
+ * lift stopped — a phone for the call back, and an optional name. Large
  * targets, no images to download, nothing that needs a second request: it is
  * opened by somebody standing at a broken lift, often on poor signal, and some
  * of them are frightened.
@@ -78,7 +83,8 @@ export function PublicFaultReportScreen() {
           </p>
           <p className="text-help text-muted-foreground">{t("publicFault.referenceHint")}</p>
         </div>
-        {trapped && <CallEmergency />}
+        {/* Still here after sending: the report is not a rescue. */}
+        <CallEmergency urgent={trapped} />
       </PublicFrame>
     );
   }
@@ -111,6 +117,11 @@ export function PublicFaultReportScreen() {
           <Alert tone="error" block title={failureMessage(send.error, t)} />
         )}
 
+        {/* Always on screen, above anything they might fill in. A report to
+            the maintenance firm is not a rescue; this is the number that is.
+            Announced as an alert only once they say somebody is trapped. */}
+        <CallEmergency urgent={trapped} />
+
         <label className="flex min-h-control-xl items-center gap-3 rounded-lg border-2 border-border p-4 text-body has-[:checked]:border-foreground">
           <input
             type="checkbox"
@@ -121,10 +132,6 @@ export function PublicFaultReportScreen() {
           <span className="text-cardtitle">{t("publicFault.someoneTrapped")}</span>
         </label>
 
-        {/* Before anything else they might read, the moment they say it. A
-            report to the maintenance firm is not a rescue; this is the number
-            that is. */}
-        {trapped && <CallEmergency />}
 
         <label className="flex min-h-control-xl items-center gap-3 rounded-lg border-2 border-border p-4 text-body has-[:checked]:border-foreground">
           <input
@@ -158,10 +165,19 @@ export function PublicFaultReportScreen() {
           <Field label={t("publicFault.name")} htmlFor="public-name" hint={t("common.optional")}>
             <Input name="reporter_name" maxLength={100} autoComplete="name" className="h-control-lg text-[1rem]" />
           </Field>
-          <Field label={t("publicFault.phone")} htmlFor="public-phone" hint={t("publicFault.phoneHint")}>
+          {/* Required: the firm has to be able to call back to confirm a
+              report, and the resident is often the only witness. */}
+          <Field
+            label={t("publicFault.phone")}
+            htmlFor="public-phone"
+            required
+            hint={t("publicFault.phoneHint")}
+            error={phoneError(send.error, t)}
+          >
             <Input
               name="reporter_phone"
               type="tel"
+              required
               maxLength={30}
               autoComplete="tel"
               inputMode="tel"
@@ -192,10 +208,10 @@ export function PublicFaultReportScreen() {
 }
 
 /** A tel: link the size of a thumb. */
-function CallEmergency() {
+function CallEmergency({ urgent }: { urgent: boolean }) {
   const { t } = useTranslation();
   return (
-    <div role="alert" className="flex flex-col gap-3 rounded-lg border-2 border-foreground bg-foreground p-4 text-background">
+    <div role={urgent ? "alert" : "note"} className="flex flex-col gap-3 rounded-lg border-2 border-foreground bg-foreground p-4 text-background">
       <p className="flex items-start gap-2 text-cardtitle">
         <Siren className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
         {t("publicFault.callEmergency", { number: EMERGENCY_NUMBER })}

@@ -6264,7 +6264,7 @@ export interface components {
             elevator_stopped: boolean;
             /** @default  */
             reporter_name: string;
-            /** @default  */
+            /** @description A number the office can call back on. Turkish numbers, any common spelling. */
             reporter_phone: string;
             /**
              * @description Leave empty. A form that fills this in is treated as automated.
@@ -11791,7 +11791,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["PublicFaultReportRequest"];
                 "application/x-www-form-urlencoded": components["schemas"]["PublicFaultReportRequest"];
