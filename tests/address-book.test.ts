@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 import type { Complex, CustomerAddress } from "@/api/queries";
-import { addressLine, billingAddressBody, hasAddressContent, pickOptions } from "@/lib/address-book";
+import { addressLine, addressWriteBody, billingAddressBody, hasAddressContent, pickOptions } from "@/lib/address-book";
 
 const empty = {
   street: "",
@@ -146,5 +146,51 @@ describe("billingAddressBody", () => {
 
   it("sends no neighborhood when only the street was typed", () => {
     expect(billingAddressBody({ street: "Ataturk Cd." }, "Billing")?.neighborhood).toBeNull();
+  });
+});
+
+describe("addressWriteBody", () => {
+  const record = {
+    ...billing,
+    neighborhood_id: 5,
+    street: "Ataturk Cd.",
+    latitude: "41.0",
+    longitude: "29.0",
+  } as CustomerAddress;
+
+  it("clears the neighborhood the user emptied", () => {
+    expect(addressWriteBody({ label: "A" }, record, false).neighborhood).toBeNull();
+  });
+
+  it("keeps a neighborhood that was picked", () => {
+    expect(addressWriteBody({ label: "A", neighborhood: "7" }, record, false).neighborhood).toBe("7");
+  });
+
+  it("sends an emptied street as an empty string", () => {
+    expect(addressWriteBody({ label: "A" }, record, false).street).toBe("");
+  });
+
+  it("clears a removed pin", () => {
+    const body = addressWriteBody({ label: "A" }, record, false);
+    expect(body.latitude).toBeNull();
+    expect(body.longitude).toBeNull();
+  });
+
+  it("keeps a pin that is still there", () => {
+    const body = addressWriteBody({ label: "A", latitude: "1", longitude: "2" }, record, true);
+    expect(body).toMatchObject({ latitude: "1", longitude: "2", is_billing: true });
+  });
+
+  it("sends no null for fields the record never had", () => {
+    const body = addressWriteBody({ label: "A" }, { ...record, neighborhood_id: null, latitude: null } as CustomerAddress, false);
+    expect("neighborhood" in body).toBe(false);
+    expect("latitude" in body).toBe(false);
+  });
+
+  it("on create sends no nulls", () => {
+    const body = addressWriteBody({ label: "A" }, undefined, false);
+    expect("neighborhood" in body).toBe(false);
+    expect("latitude" in body).toBe(false);
+    expect(body).toMatchObject({ street: "", is_billing: false });
   });
 });

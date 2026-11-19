@@ -14,6 +14,7 @@ import {
   type CustomerAddressWrite,
 } from "@/api/queries";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
+import { addressWriteBody } from "@/lib/address-book";
 import { parseCoordinates } from "@/lib/map-provider";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -92,26 +93,13 @@ function AddressForm({ customer, record }: { customer: Customer; record?: Custom
     event.preventDefault();
     const form = event.currentTarget;
     const values: Record<string, unknown> = formValues(form);
-    // The picker renders its hidden inputs only while it holds a pin, so a
-    // cleared location is an absent key. On a PATCH that means "leave it
-    // alone", and the coordinates the user just removed would stay on the record.
-    if (editing && record?.latitude != null && values.latitude === undefined) {
-      values.latitude = null;
-      values.longitude = null;
-    }
-    submit({
-      ...(values as unknown as Partial<CustomerAddressWrite>),
-      // formValues drops an empty string, which is right for a field left blank
-      // and wrong for one deliberately cleared: a PATCH without the key keeps
-      // the old text.
-      street: (values.street as string | undefined) ?? "",
-      building_number: (values.building_number as string | undefined) ?? "",
-      unit_number: (values.unit_number as string | undefined) ?? "",
-      address_note: (values.address_note as string | undefined) ?? "",
-      // An unticked box sends nothing, which would read as "leave it alone" and
-      // make un-marking the billing address impossible from this form.
-      is_billing: (form.elements.namedItem("is_billing") as HTMLInputElement).checked,
-    });
+    submit(
+      addressWriteBody(
+        values,
+        record,
+        (form.elements.namedItem("is_billing") as HTMLInputElement).checked,
+      ) as Partial<CustomerAddressWrite>,
+    );
   }
 
   const title = editing ? t("addressForm.editTitle") : t("addressForm.newTitle");

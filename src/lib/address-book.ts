@@ -136,3 +136,32 @@ export function billingAddressBody(
     unit_number: v.unit_number ?? "",
   };
 }
+
+/**
+ * The request body for the address form.
+ *
+ * `formValues` drops an empty string, which is right for a field left blank on
+ * create and wrong for one deliberately cleared on edit: a PATCH without the
+ * key leaves the old value. So on edit every clearable field the record holds
+ * is sent explicitly. The neighbourhood needs it as much as the rest, because
+ * changing the province or district empties it.
+ */
+export function addressWriteBody(
+  values: Record<string, unknown>,
+  record: CustomerAddress | undefined,
+  isBilling: boolean,
+): Record<string, unknown> {
+  const body: Record<string, unknown> = { ...values };
+  if (record && record.neighborhood_id != null && body.neighborhood === undefined) {
+    body.neighborhood = null;
+  }
+  if (record && record.latitude != null && body.latitude === undefined) {
+    body.latitude = null;
+    body.longitude = null;
+  }
+  for (const key of ["street", "building_number", "unit_number", "address_note"]) {
+    body[key] = (values[key] as string | undefined) ?? "";
+  }
+  body.is_billing = isBilling;
+  return body;
+}
