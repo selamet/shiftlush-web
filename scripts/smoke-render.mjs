@@ -205,6 +205,10 @@ const EXPECT = {
   "/customers": "Dadaş",
   // The card rows: both of c1's saved addresses.
   "/customers/c1": ["Dadaş", "Fatura adresi", "Depo"],
+  // The saved-address picker is on screen before a customer is chosen, and
+  // says why it is empty instead of being absent.
+  "/buildings/new": ["Kayıtlı adreslerden seç", "önce müşteriyi seçin"],
+  "/complexes/new": ["Kayıtlı adreslerden seç", "önce müşteriyi seçin"],
   // The edit form must arrive with the record already in its inputs; an empty
   // form here would mean the loader or the defaultValue wiring is broken.
   "/customers/c1/edit": "Dadaş",

@@ -8,6 +8,7 @@ import {
   complexQuery,
   createComplex,
   customerListQuery,
+  customerQuery,
   updateComplex,
   type Complex,
   type ComplexWrite,
@@ -53,8 +54,14 @@ export function ComplexFormScreen() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const selectedCustomer = customerId ?? existing.data?.customer_id ?? search.customer ?? "";
-  const customerRecord = customers.data?.results.find((c) => String(c.id) === selectedCustomer);
-  const addressOptions = pickOptions(customerRecord?.addresses ?? [], null);
+  // The addresses come from the selected customer's own record, not from the
+  // list above: that list is one page of at most 100, and a firm with more
+  // customers than that never saw the addresses of the ones past it.
+  const customerDetail = useQuery({
+    ...customerQuery(selectedCustomer),
+    enabled: Boolean(selectedCustomer),
+  });
+  const addressOptions = pickOptions(customerDetail.data?.addresses ?? [], null);
 
   const { submit, state } = useSubmit<ComplexWrite, Complex>({
     mutationFn: (body) =>
@@ -154,6 +161,8 @@ export function ComplexFormScreen() {
           // Reset when the customer changes, so it offers the new customer's
           // addresses with nothing chosen.
           key={selectedCustomer}
+          customerId={selectedCustomer}
+          loading={customerDetail.isPending && Boolean(selectedCustomer)}
           options={addressOptions}
           onPick={(fill) => {
             // `wrote` is what this pick supplies of its own; the next pick
