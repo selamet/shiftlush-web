@@ -74,9 +74,6 @@ export function BuildingFormScreen() {
   // the customer resets the picker, not what was already filled in.
   const [picked, setPicked] = useState<{ fill: FilledAddress; n: number } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  // The neighbourhood is required, but its select is disabled until a district
-  // is chosen and a disabled control is skipped by the browser's own check.
-  const [neighborhoodMissing, setNeighborhoodMissing] = useState(false);
 
   // A building's customer must match its complex's customer — the server checks
   // it (spec 5.9), so the list is narrowed to the one already chosen rather
@@ -128,14 +125,6 @@ export function BuildingFormScreen() {
         onSubmit={(event) => {
           event.preventDefault();
           const values: Record<string, unknown> = formValues(event.currentTarget);
-          // Without this, a partial pick (province, no district) would save
-          // the new street under the record's old neighbourhood on an edit, or
-          // no neighbourhood at all on a create.
-          if (values.neighborhood === undefined) {
-            setNeighborhoodMissing(true);
-            return;
-          }
-          setNeighborhoodMissing(false);
           if (editing && record) {
             // formValues drops an empty string, which is right for a field left
             // blank and wrong for one deliberately cleared: a PATCH without the
@@ -265,7 +254,6 @@ export function BuildingFormScreen() {
           key={`${selectedCustomer}:${selectedComplex}`}
           options={addressOptions}
           onPick={(fill) => {
-            setNeighborhoodMissing(false);
             const resolved = resolvePick(fill, currentAddressInput(formRef.current));
             setPicked((previous) => ({ fill: resolved, n: (previous?.n ?? 0) + 1 }));
           }}
@@ -276,7 +264,7 @@ export function BuildingFormScreen() {
         <div key={picked?.n ?? 0} className="flex flex-col gap-5">
           <AddressSelect
             name="neighborhood"
-            error={state.fields.neighborhood ?? (neighborhoodMissing ? t("errors.required") : undefined)}
+            error={state.fields.neighborhood}
             initial={address.initial}
             // `BuildingWriteRequest` carries latitude and longitude, so a pin
             // dropped here is a pin that gets saved. That is the whole test for
