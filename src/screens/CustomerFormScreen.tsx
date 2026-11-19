@@ -5,12 +5,14 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
 import {
   createCustomer,
+  createCustomerAddress,
   customerQuery,
   keys,
   updateCustomer,
   type Customer,
   type CustomerWrite,
 } from "@/api/queries";
+import { billingAddressBody, customerWriteBody } from "@/lib/address-book";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
 import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
@@ -60,6 +62,9 @@ function CustomerForm({ record }: { record?: Customer }) {
   const navigate = useNavigate();
   const editing = Boolean(record);
   const idempotencyKey = useIdempotencyKey();
+  // A second key, not the customer's: the two requests are two different
+  // intentions, and sharing one would make the server replay the first answer.
+  const addressIdempotencyKey = useIdempotencyKey();
 
   // The one piece of state on the form. Everything else is uncontrolled,
   // because the server decides and the browser only has to hand over what was
@@ -69,14 +74,36 @@ function CustomerForm({ record }: { record?: Customer }) {
   );
   const individual = type === "individual";
 
-  const { submit, state } = useSubmit<Partial<CustomerWrite>, Customer>({
-    mutationFn: (body) =>
-      record ? updateCustomer(record.id, body) : createCustomer(body as CustomerWrite, idempotencyKey),
+  const { submit, state } = useSubmit<
+    { body: Partial<CustomerWrite>; address: ReturnType<typeof billingAddressBody> },
+    { customer: Customer; addressSaved: boolean }
+  >({
+    mutationFn: async ({ body, address }) => {
+      if (record) return { customer: await updateCustomer(record.id, body), addressSaved: true };
+
+      const customer = await createCustomer(body as CustomerWrite, idempotencyKey);
+      if (!address) return { customer, addressSaved: true };
+      // The customer exists from here on. A failure of this second request must
+      // not reject the mutation: the form would stay up with an enabled save
+      // button, and pressing it again would be a second customer if the
+      // idempotency window had passed. It is reported on the customer's page.
+      try {
+        await createCustomerAddress(customer.id, address, addressIdempotencyKey);
+        return { customer, addressSaved: true };
+      } catch {
+        return { customer, addressSaved: false };
+      }
+    },
     // Both lists and the record itself: after an edit the list still holds the
     // old name until something tells it otherwise.
     invalidate: [keys.customers.all],
-    onSuccess: (customer) => {
-      void navigate({ to: "/customers/$id", params: { id: customer.id } });
+    onSuccess: ({ customer, addressSaved }) => {
+      void navigate({
+        to: "/customers/$id",
+        params: { id: customer.id },
+        // Router state: nothing else here carries a message across a navigation.
+        state: addressSaved ? undefined : { addressNotSaved: true },
+      });
     },
   });
 
@@ -85,7 +112,7 @@ function CustomerForm({ record }: { record?: Customer }) {
     const form = event.currentTarget;
     const values = formValues(form);
     const body: Partial<CustomerWrite> = {
-      ...(values as unknown as Partial<CustomerWrite>),
+      ...(customerWriteBody(values) as unknown as Partial<CustomerWrite>),
       // `formValues` drops empty strings, which is right for a field left
       // blank and wrong for one being emptied on purpose. These three are
       // being emptied on purpose, and saying nothing would leave the old value
@@ -94,16 +121,17 @@ function CustomerForm({ record }: { record?: Customer }) {
       tax_office: individual ? "" : (values.tax_office ?? ""),
       tax_number: individual ? "" : (values.tax_number ?? ""),
       national_id: individual ? (values.national_id ?? "") : "",
-      neighborhood: values.neighborhood ? Number(values.neighborhood) : null,
-      street: values.street ?? "",
-      building_number: values.building_number ?? "",
-      unit_number: values.unit_number ?? "",
       notes: values.notes ?? "",
       // An unticked checkbox sends nothing at all, which would read as "leave
       // it as it was" and make the box impossible to untick.
       is_active: (form.elements.namedItem("is_active") as HTMLInputElement).checked,
     };
-    submit(body);
+    // The address block is not part of the customer: it is saved as a separate
+    // request, and only on create (an edit has no block; the card owns it).
+    submit({
+      body,
+      address: editing ? null : billingAddressBody(values, t("customer.billingAddress")),
+    });
   }
 
   return (
@@ -244,58 +272,37 @@ function CustomerForm({ record }: { record?: Customer }) {
           </Field>
         </div>
 
-        <fieldset className="flex flex-col gap-5 rounded-lg border border-border-subtle p-5">
-          <legend className="px-1.5 text-help text-muted-foreground">
-            {t("customer.billingAddress")}
-          </legend>
+        {/* Create only. The block is saved as the customer's billing address in
+            a second request; an existing customer's addresses are managed from
+            the card on its page. */}
+        {!editing && (
+          <fieldset className="flex flex-col gap-5 rounded-lg border border-border-subtle p-5">
+            <legend className="px-1.5 text-help text-muted-foreground">
+              {t("customer.billingAddress")}
+            </legend>
 
-          {/* Optional, unlike a building's: where to send the invoice is
-              frequently not known at the first call, and blocking the record
-              on it would push people into typing something untrue. */}
-          <AddressSelect
-            name="neighborhood"
-            required={false}
-            error={state.fields.neighborhood}
-            initial={
-              record
-                ? {
-                    neighborhoodId: record.neighborhood_id,
-                    districtName: record.district_name,
-                    provinceName: record.province_name,
-                  }
-                : undefined
-            }
-          />
+            {/* Optional, unlike a building's: where to send the invoice is
+                frequently not known at the first call, and blocking the record
+                on it would push people into typing something untrue. */}
+            <AddressSelect name="neighborhood" required={false} />
 
-          <Field
-            label={t("address.fields.street")}
-            htmlFor="cf-street"
-            error={state.fields.street}
-          >
-            <Input name="street" maxLength={150} defaultValue={record?.street} />
-          </Field>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field
-              label={t("address.fields.buildingNumber")}
-              htmlFor="cf-building-number"
-              error={state.fields.building_number}
-            >
-              <Input
-                name="building_number"
-                maxLength={20}
-                defaultValue={record?.building_number}
-              />
+            <Field label={t("address.fields.street")} htmlFor="cf-street">
+              <Input name="street" maxLength={150} />
             </Field>
-            <Field
-              label={t("address.fields.unitNumber")}
-              htmlFor="cf-unit-number"
-              error={state.fields.unit_number}
-            >
-              <Input name="unit_number" maxLength={20} defaultValue={record?.unit_number} />
-            </Field>
-          </div>
-        </fieldset>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field
+                label={t("address.fields.buildingNumber")}
+                htmlFor="cf-building-number"
+              >
+                <Input name="building_number" maxLength={20} />
+              </Field>
+              <Field label={t("address.fields.unitNumber")} htmlFor="cf-unit-number">
+                <Input name="unit_number" maxLength={20} />
+              </Field>
+            </div>
+          </fieldset>
+        )}
 
         <Field label={t("customer.fields.notes")} htmlFor="cf-notes" error={state.fields.notes}>
           <Textarea name="notes" rows={3} defaultValue={record?.notes} />

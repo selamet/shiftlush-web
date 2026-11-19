@@ -156,6 +156,10 @@ const ContactFormScreen = lazyRouteComponent(
   () => import("@/screens/ContactFormScreen"),
   "ContactFormScreen",
 );
+const AddressFormScreen = lazyRouteComponent(
+  () => import("@/screens/AddressFormScreen"),
+  "AddressFormScreen",
+);
 const ComplexListScreen = lazyRouteComponent(
   () => import("@/screens/ComplexListScreen"),
   "ComplexListScreen",
@@ -811,6 +815,13 @@ export const routeTree = rootRoute.addChildren([
     shellChild("/customers/$id/contacts/$contactId", ContactFormScreen, ({ params }) =>
       queryClient.ensureQueryData(customerQuery(params.id)),
     ),
+    // Same shape as the contact routes, for the saved addresses.
+    shellChild("/customers/$id/addresses/new", AddressFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(customerQuery(params.id)),
+    ),
+    shellChild("/customers/$id/addresses/$addressId", AddressFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(customerQuery(params.id)),
+    ),
     shellChild(
       "/customers",
       CustomerListScreen,
@@ -1070,6 +1081,13 @@ export const routeTree = rootRoute.addChildren([
 // The page scrolls the document now (see AppShell), so the router can do what
 // a browser does: put each page back where it was on back/forward, and start a
 // new page at the top.
+declare module "@tanstack/history" {
+  interface HistoryState {
+    /** Set by the customer create form when the billing address request failed. */
+    addressNotSaved?: boolean;
+  }
+}
+
 export const router = createRouter({ routeTree, scrollRestoration: true });
 
 export { RouterProvider };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "@tanstack/react-router";
+import { useParams, Link, useLocation } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, Pencil, Plus, Phone, Mail, Star, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import {
   type Customer,
   type CustomerContact,
 } from "@/api/queries";
+import { addressLine } from "@/lib/address-book";
 import { useSubmit } from "@/lib/form";
 import { DetailSkeleton, DetailError } from "@/components/list/ListStates";
 import { enumLabel } from "@/lib/i18n";
@@ -45,24 +46,6 @@ function Card({
       {children}
     </section>
   );
-}
-
-function billingAddress(customer: {
-  street: string;
-  building_number: string;
-  unit_number: string;
-  neighborhood_name: string | null;
-  district_name: string | null;
-  province_name: string | null;
-}): string | null {
-  const line = [customer.street, customer.building_number, customer.unit_number && `/ ${customer.unit_number}`]
-    .filter(Boolean)
-    .join(" ");
-  const area = [customer.neighborhood_name, customer.district_name, customer.province_name]
-    .filter(Boolean)
-    .join(" · ");
-  const address = [line, area].filter(Boolean).join(", ");
-  return address || null;
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -213,10 +196,55 @@ function ContactList({ customer, canWrite }: { customer: Customer; canWrite: boo
   );
 }
 
+/** The addresses card's body: label, one-line address and the billing badge. */
+function AddressList({ customer, canWrite }: { customer: Customer; canWrite: boolean }) {
+  const { t } = useTranslation();
+  const addresses = customer.addresses ?? [];
+
+  if (addresses.length === 0) {
+    return <p className="text-help text-subtle">{t("customerDetail.noAddresses")}</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {addresses.map((address) => (
+        <div key={address.id} className="flex flex-col gap-1">
+          <span className="flex flex-wrap items-center gap-2 text-cell">
+            {canWrite ? (
+              <Link
+                to="/customers/$id/addresses/$addressId"
+                params={{ id: customer.id, addressId: address.id }}
+                className="hover:underline"
+              >
+                {address.label}
+              </Link>
+            ) : (
+              address.label
+            )}
+            {address.is_billing && (
+              <span className="rounded-sm border border-border-strong px-1.5 text-help text-muted-foreground">
+                {t("customerDetail.billingBadge")}
+              </span>
+            )}
+          </span>
+          {addressLine(address) && (
+            <span className="text-help text-muted-foreground">{addressLine(address)}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function CustomerDetailScreen() {
   const { t } = useTranslation();
   const { id } = useParams({ strict: false }) as { id?: string };
   const { role } = useSession();
+  // Set by the create form when the customer was saved and its billing address
+  // was not; router state is the only thing that survives that navigation.
+  const addressNotSaved = useLocation({
+    select: (location) => Boolean(location.state.addressNotSaved),
+  });
 
   const customerId = id ?? "";
   const query = useQuery({ ...customerQuery(customerId), enabled: Boolean(customerId) });
@@ -250,6 +278,9 @@ export function CustomerDetailScreen() {
 
   return (
     <div className="flex flex-col gap-4 p-6">
+      {addressNotSaved && (
+        <Alert tone="warning" block title={t("customer.addressNotSaved")} />
+      )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1.5">
           <nav className="flex items-center gap-1.5 text-help text-muted-foreground">
@@ -294,11 +325,24 @@ export function CustomerDetailScreen() {
               />
               <Row label={t("customer.fields.phone")} value={formatPhone(customer.phone)} />
               <Row label={t("customer.fields.email")} value={customer.email} />
-              <Row
-                label={t("customerDetail.billingAddress")}
-                value={billingAddress(customer) ?? t("customerDetail.noAddress")}
-              />
             </div>
+          </Card>
+
+          <Card
+            title={t("customerDetail.addresses")}
+            action={
+              canWrite && (
+                <Link
+                  to="/customers/$id/addresses/new"
+                  params={{ id: customer.id }}
+                  className="text-help text-primary hover:underline"
+                >
+                  {t("customerDetail.addAddress")}
+                </Link>
+              )
+            }
+          >
+            <AddressList customer={customer} canWrite={canWrite} />
           </Card>
 
           <Card

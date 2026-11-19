@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -16,8 +16,18 @@ import {
 import { allOf, type BuildingType } from "@/api/enums";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
-import { parseCoordinates } from "@/lib/map-provider";
+import {
+  addressBlockDefaults,
+  currentAddressInput,
+  editWriteBody,
+  pickOptions,
+  pickWrote,
+  resolvePick,
+  type FilledAddress,
+  type PickWrote,
+} from "@/lib/address-book";
 import { AddressSelect } from "@/components/forms/AddressSelect";
+import { SavedAddressPicker } from "@/components/forms/SavedAddressPicker";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
@@ -56,6 +66,17 @@ export function BuildingFormScreen() {
   // the previous customer's.
   const selectedCustomer = customerId || existing.data?.customer_id || "";
 
+  // The complex is tracked for one reason: its address is offered as "Site
+  // adresi". null means "still the record's own"; "" means none.
+  const [complexId, setComplexId] = useState<string | null>(null);
+  const selectedComplex = complexId ?? existing.data?.complex_id ?? "";
+
+  // The last pick, and a counter that remounts the address block so its
+  // uncontrolled fields take the picked values. It is never cleared: changing
+  // the customer resets the picker, not what was already filled in.
+  const [picked, setPicked] = useState<{ fill: FilledAddress; wrote: PickWrote; n: number } | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
   // A building's customer must match its complex's customer — the server checks
   // it (spec 5.9), so the list is narrowed to the one already chosen rather
   // than offering every complex and letting the save fail.
@@ -63,6 +84,12 @@ export function BuildingFormScreen() {
     ...complexListQuery({ customer: selectedCustomer, page_size: 100 }),
     enabled: Boolean(selectedCustomer),
   });
+
+  const customerRecord = customers.data?.results.find((c) => String(c.id) === selectedCustomer);
+  const complexRecord = selectedComplex
+    ? complexes.data?.results.find((c) => c.id === selectedComplex)
+    : undefined;
+  const addressOptions = pickOptions(customerRecord?.addresses ?? [], complexRecord ?? null);
 
   const { submit, state } = useSubmit<BuildingWrite, Building>({
     mutationFn: (body) =>
@@ -79,6 +106,7 @@ export function BuildingFormScreen() {
   }
 
   const record = existing.data;
+  const address = addressBlockDefaults(record, picked?.fill ?? null);
 
   return (
     <div className="flex flex-col gap-4 p-6">
@@ -94,24 +122,20 @@ export function BuildingFormScreen() {
       </div>
 
       <form
+        ref={formRef}
         className="flex max-w-2xl flex-col gap-5"
         onSubmit={(event) => {
           event.preventDefault();
           const values: Record<string, unknown> = formValues(event.currentTarget);
-          // formValues drops an empty string, which is right for a field left
-          // blank and wrong for one deliberately cleared: a PATCH without the
-          // key leaves the old complex attached. null is how the API is told
-          // to detach it.
-          if (editing && record?.complex_id && values.complex === undefined) {
-            values.complex = null;
-          }
-          // Same trap, same fix: the picker renders its hidden inputs only
-          // while it holds a pin, so a cleared location is an absent key. On a
-          // PATCH that means "leave it alone", and the coordinates the user
-          // just removed would still be on the record.
-          if (editing && record?.latitude != null && values.latitude === undefined) {
-            values.latitude = null;
-            values.longitude = null;
+          if (editing && record) {
+            // formValues drops an empty string, which is right for a field left
+            // blank and wrong for one deliberately cleared: a PATCH without the
+            // key leaves the old value. The pin is the same case: the picker
+            // renders its hidden inputs only while it holds one.
+            const body = editWriteBody(values, record, ["street", "building_number", "address_note"]);
+            if (record.complex_id && body.complex === undefined) body.complex = null;
+            submit(body as unknown as BuildingWrite);
+            return;
           }
           submit(values as unknown as BuildingWrite);
         }}
@@ -142,7 +166,12 @@ export function BuildingFormScreen() {
             disabled={customers.isPending}
             invalid={Boolean(state.fields.customer)}
             placeholder={t("building.selectCustomer")}
-            onChange={setCustomerId}
+            onChange={(value) => {
+              setCustomerId(value);
+              // The complex select remounts below and drops the old complex;
+              // a site of the previous customer must not be offered either.
+              setComplexId("");
+            }}
             options={(customers.data?.results ?? []).map((customer) => ({
               value: String(customer.id),
               label: customer.legal_name,
@@ -164,7 +193,8 @@ export function BuildingFormScreen() {
             // belonged to the previous one. Leaving it selected would send the
             // server a pair it is bound to reject.
             key={selectedCustomer}
-            defaultValue={record?.complex_id ?? ""}
+            defaultValue={selectedComplex}
+            onChange={setComplexId}
             disabled={!selectedCustomer || complexes.isPending}
             invalid={Boolean(state.fields.complex)}
             placeholder={t("complex.none")}
@@ -218,47 +248,58 @@ export function BuildingFormScreen() {
           </Field>
         </div>
 
-        <AddressSelect
-          name="neighborhood"
-          error={state.fields.neighborhood}
-          initial={
-            record
-              ? {
-                  neighborhoodId: record.neighborhood_id,
-                  districtName: record.district_name,
-                  provinceName: record.province_name,
-                }
-              : undefined
-          }
-          // `BuildingWriteRequest` carries latitude and longitude, so a pin
-          // dropped here is a pin that gets saved. That is the whole test for
-          // whether a screen may show a map.
-          location={{ initial: parseCoordinates(record?.latitude, record?.longitude) }}
+        <SavedAddressPicker
+          // Reset when the customer changes, so it offers the new customer's
+          // addresses with nothing chosen.
+          // Also when the complex changes: "Site adresi" would otherwise go on
+          // showing, now naming a different site than the one that was copied.
+          key={`${selectedCustomer}:${selectedComplex}`}
+          options={addressOptions}
+          onPick={(fill) => {
+            // `wrote` is what this pick supplies of its own; the next pick
+            // uses it to tell its pin and note from ones the user set.
+            const resolved = resolvePick(fill, currentAddressInput(formRef.current), picked?.wrote ?? null);
+            setPicked({ fill: resolved, wrote: pickWrote(fill), n: (picked?.n ?? 0) + 1 });
+          }}
         />
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label={t("building.fields.street")} htmlFor="bf-street" error={state.fields.street}>
-            <Input name="street" maxLength={150} defaultValue={record?.street} />
-          </Field>
+        {/* Remounted on a pick: these fields are uncontrolled and read their
+            defaults once. Only the address controls live inside. */}
+        <div key={picked?.n ?? 0} className="flex flex-col gap-5">
+          <AddressSelect
+            name="neighborhood"
+            error={state.fields.neighborhood}
+            initial={address.initial}
+            // `BuildingWriteRequest` carries latitude and longitude, so a pin
+            // dropped here is a pin that gets saved. That is the whole test for
+            // whether a screen may show a map.
+            location={{ initial: address.pin }}
+          />
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label={t("building.fields.street")} htmlFor="bf-street" error={state.fields.street}>
+              <Input name="street" maxLength={150} defaultValue={address.street} />
+            </Field>
+            <Field
+              label={t("building.fields.buildingNumber")}
+              htmlFor="bf-number"
+              error={state.fields.building_number}
+            >
+              <Input name="building_number" maxLength={20} defaultValue={address.buildingNumber} />
+            </Field>
+          </div>
+
           <Field
-            label={t("building.fields.buildingNumber")}
-            htmlFor="bf-number"
-            error={state.fields.building_number}
+            label={t("building.fields.addressNote")}
+            htmlFor="bf-note"
+            // Optional, but often the only thing that gets a lift engineer to the
+            // right entrance in a district they do not know.
+            hint={t("building.addressNoteHint")}
+            error={state.fields.address_note}
           >
-            <Input name="building_number" maxLength={20} defaultValue={record?.building_number} />
+            <Textarea name="address_note" rows={2} defaultValue={address.addressNote} />
           </Field>
         </div>
-
-        <Field
-          label={t("building.fields.addressNote")}
-          htmlFor="bf-note"
-          // Optional, but often the only thing that gets a lift engineer to the
-          // right entrance in a district they do not know.
-          hint={t("building.addressNoteHint")}
-          error={state.fields.address_note}
-        >
-          <Textarea name="address_note" rows={2} defaultValue={record?.address_note} />
-        </Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
           <Field
