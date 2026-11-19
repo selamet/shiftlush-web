@@ -156,6 +156,10 @@ const ContactFormScreen = lazyRouteComponent(
   () => import("@/screens/ContactFormScreen"),
   "ContactFormScreen",
 );
+const AddressFormScreen = lazyRouteComponent(
+  () => import("@/screens/AddressFormScreen"),
+  "AddressFormScreen",
+);
 const ComplexListScreen = lazyRouteComponent(
   () => import("@/screens/ComplexListScreen"),
   "ComplexListScreen",
@@ -809,6 +813,13 @@ export const routeTree = rootRoute.addChildren([
       queryClient.ensureQueryData(customerQuery(params.id)),
     ),
     shellChild("/customers/$id/contacts/$contactId", ContactFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(customerQuery(params.id)),
+    ),
+    // Same shape as the contact routes, for the saved addresses.
+    shellChild("/customers/$id/addresses/new", AddressFormScreen, ({ params }) =>
+      queryClient.ensureQueryData(customerQuery(params.id)),
+    ),
+    shellChild("/customers/$id/addresses/$addressId", AddressFormScreen, ({ params }) =>
       queryClient.ensureQueryData(customerQuery(params.id)),
     ),
     shellChild(

@@ -860,6 +860,7 @@
     "SIGNATURE_EXISTS": "Bu bakımın imzası zaten kayıtlı",
     "SIGNATURE_NOT_EXPECTED": "Bu bakım imzalı olarak kaydedilmedi; imza eklenemez",
     "SIGNATURE_CANNOT_BE_DELETED": "Bakım imzası kalıcıdır ve silinemez",
+    "ADDRESS_EMPTY": "Adres için mahalle, sokak, numara veya tarif alanlarından en az biri doldurulmalı.",
     "MONTHLY_REPORT_NEEDS_EMAIL": "Aylık rapor e-postayla gönderilir; e-posta adresi olmayan kişi raporu alamaz",
     "REPORT_NO_RECIPIENT": "Bu müşteride aylık raporu alan kimse yok. Önce bir iletişim kişisini “Aylık raporu alır” olarak işaretleyin",
     "REPORT_FILE_CANNOT_BE_DELETED": "Aylık raporun dosyası rapora aittir ve silinemez",
@@ -1224,9 +1225,23 @@
     "deleteContactTitle": "İletişim kişisi silinsin mi?",
     "deleteContactBody": "{{name}} kaydı silinir; bakım ekibi bu kişiyi müşteri kartında artık göremez.",
     "makePrimary": "Birincil yap",
-    "billingAddress": "Fatura adresi",
-    "noAddress": "Fatura adresi girilmemiş",
+    "addresses": "Adresler",
+    "noAddresses": "Kayıtlı adres yok",
+    "addAddress": "Adres ekle",
+    "billingBadge": "Fatura",
     "receivesReportBadge": "Aylık rapor"
+  },
+  "addressForm": {
+    "newTitle": "Yeni adres",
+    "editTitle": "Adresi düzenle",
+    "fields": {
+      "label": "Adres adı",
+      "addressNote": "Adres tarifi",
+      "isBilling": "Fatura adresi olarak kullan"
+    },
+    "labelHint": "Örn. Merkez ofis, Şantiye girişi",
+    "billingHint": "Bir müşterinin tek fatura adresi olur; işaretlerseniz öncekinin işareti kalkar.",
+    "deleteConfirm": "Bu adres silinsin mi? Bu adresten doldurulmuş site ve binalar değişmez."
   },
   "complexDetail": {
     "buildings": "Site içindeki binalar"
