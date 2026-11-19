@@ -75,6 +75,11 @@ const PATHS = [
   "/customers/c1/contacts/c1-contact-1",
   // A contact with no e-mail: the monthly report box is there, off, and says why.
   "/customers/c1/contacts/c1-contact-2",
+  // The address form on create and on edit, and (through the customer's page)
+  // the card rows; c1 holds a billing address and a second one with a pin.
+  "/customers/c1/addresses/new",
+  "/customers/c1/addresses/c1-address-1",
+  "/customers/c1/addresses/c1-address-2",
   "/customers/c6/edit",
   "/complexes",
   "/complexes/new",
@@ -198,7 +203,8 @@ const EXPECT = {
   // private mode.
   "/outbox": "Gönderilmeyi bekleyen kayıt yok",
   "/customers": "Dadaş",
-  "/customers/c1": "Dadaş",
+  // The card rows: both of c1's saved addresses.
+  "/customers/c1": ["Dadaş", "Fatura adresi", "Depo"],
   // The edit form must arrive with the record already in its inputs; an empty
   // form here would mean the loader or the defaultValue wiring is broken.
   "/customers/c1/edit": "Dadaş",
@@ -211,6 +217,11 @@ const EXPECT = {
     "Aylık raporu alır",
     "Rapor e-postayla gider; işaretlemek için önce bir e-posta adresi girin.",
   ],
+  // The address form: empty on create, and on edit already holding the record
+  // (the label and the note are only there if the record was found).
+  "/customers/c1/addresses/new": ["Yeni adres", "Dadaş"],
+  "/customers/c1/addresses/c1-address-1": ["Adresi düzenle", "Fatura adresi"],
+  "/customers/c1/addresses/c1-address-2": ["Adresi düzenle", "Depo", "Arka kapıdan girin"],
   // An individual customer, so the half of the form only they see is actually
   // rendered rather than only type-checked. The label is the tell: a TC field
   // where an organisation would show a tax office.

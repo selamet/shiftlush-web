@@ -47,7 +47,49 @@
     "updated_at": "2026-02-03T14:20:00Z",
     "neighborhood_name": "Mülk",
     "district_name": "Yakutiye",
-    "province_name": "Erzurum"
+    "province_name": "Erzurum",
+    "addresses": [
+      {
+        "customer_id": "c1",
+        "neighborhood_id": 21660,
+        "neighborhood_name": "Mülk",
+        "district_id": 408,
+        "district_name": "Yakutiye",
+        "province_id": 25,
+        "province_name": "Erzurum",
+        "street": "37. Sokak",
+        "building_number": "11",
+        "unit_number": "",
+        "address_note": "",
+        "latitude": null,
+        "longitude": null,
+        "created_at": "2026-01-12T09:00:00Z",
+        "updated_at": "2026-01-12T09:00:00Z",
+        "id": "c1-address-1",
+        "label": "Fatura adresi",
+        "is_billing": true
+      },
+      {
+        "customer_id": "c1",
+        "neighborhood_id": 21660,
+        "neighborhood_name": "Mülk",
+        "district_id": 408,
+        "district_name": "Yakutiye",
+        "province_id": 25,
+        "province_name": "Erzurum",
+        "street": "12. Sokak",
+        "building_number": "4",
+        "unit_number": "2",
+        "address_note": "Arka kapıdan girin",
+        "latitude": "39.912400",
+        "longitude": "41.256800",
+        "created_at": "2026-01-12T09:00:00Z",
+        "updated_at": "2026-01-12T09:00:00Z",
+        "id": "c1-address-2",
+        "label": "Depo",
+        "is_billing": false
+      }
+    ]
   },
   {
     "id": "c2",
