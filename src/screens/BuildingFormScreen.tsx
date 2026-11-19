@@ -9,6 +9,7 @@ import {
   complexListQuery,
   createBuilding,
   customerListQuery,
+  customerQuery,
   updateBuilding,
   type Building,
   type BuildingWrite,
@@ -85,11 +86,17 @@ export function BuildingFormScreen() {
     enabled: Boolean(selectedCustomer),
   });
 
-  const customerRecord = customers.data?.results.find((c) => String(c.id) === selectedCustomer);
+  // The addresses come from the selected customer's own record, not from the
+  // list above: that list is one page of at most 100, and a firm with more
+  // customers than that never saw the addresses of the ones past it.
+  const customerDetail = useQuery({
+    ...customerQuery(selectedCustomer),
+    enabled: Boolean(selectedCustomer),
+  });
   const complexRecord = selectedComplex
     ? complexes.data?.results.find((c) => c.id === selectedComplex)
     : undefined;
-  const addressOptions = pickOptions(customerRecord?.addresses ?? [], complexRecord ?? null);
+  const addressOptions = pickOptions(customerDetail.data?.addresses ?? [], complexRecord ?? null);
 
   const { submit, state } = useSubmit<BuildingWrite, Building>({
     mutationFn: (body) =>
@@ -254,6 +261,8 @@ export function BuildingFormScreen() {
           // Also when the complex changes: "Site adresi" would otherwise go on
           // showing, now naming a different site than the one that was copied.
           key={`${selectedCustomer}:${selectedComplex}`}
+          customerId={selectedCustomer}
+          loading={customerDetail.isPending && Boolean(selectedCustomer)}
           options={addressOptions}
           onPick={(fill) => {
             // `wrote` is what this pick supplies of its own; the next pick
