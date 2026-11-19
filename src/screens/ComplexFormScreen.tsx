@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +13,14 @@ import {
   type ComplexWrite,
 } from "@/api/queries";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
-import { addressBlockDefaults, pickOptions, type FilledAddress } from "@/lib/address-book";
+import {
+  addressBlockDefaults,
+  currentAddressInput,
+  editWriteBody,
+  pickOptions,
+  resolvePick,
+  type FilledAddress,
+} from "@/lib/address-book";
 import { AddressSelect } from "@/components/forms/AddressSelect";
 import { SavedAddressPicker } from "@/components/forms/SavedAddressPicker";
 import { Alert } from "@/components/ui/alert";
@@ -41,6 +48,10 @@ export function ComplexFormScreen() {
   // uncontrolled fields take the picked values. Changing the customer resets
   // the picker, not what was already filled in.
   const [picked, setPicked] = useState<{ fill: FilledAddress; n: number } | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  // The neighbourhood is required, but its select is disabled until a district
+  // is chosen and a disabled control is skipped by the browser's own check.
+  const [neighborhoodMissing, setNeighborhoodMissing] = useState(false);
 
   const selectedCustomer = customerId ?? existing.data?.customer_id ?? search.customer ?? "";
   const customerRecord = customers.data?.results.find((c) => String(c.id) === selectedCustomer);
@@ -81,16 +92,25 @@ export function ComplexFormScreen() {
       </div>
 
       <form
+        ref={formRef}
         className="flex max-w-2xl flex-col gap-5"
         onSubmit={(event) => {
           event.preventDefault();
           const values: Record<string, unknown> = formValues(event.currentTarget);
-          // The picker renders its hidden inputs only while it holds a pin, so
-          // a cleared location is an absent key — and on a PATCH an absent key
-          // means "leave it alone". null is how the API is told to forget it.
-          if (editing && record?.latitude != null && values.latitude === undefined) {
-            values.latitude = null;
-            values.longitude = null;
+          // Without this, a partial pick (province, no district) would save
+          // the new street under the record's old neighbourhood on an edit, or
+          // no neighbourhood at all on a create.
+          if (values.neighborhood === undefined) {
+            setNeighborhoodMissing(true);
+            return;
+          }
+          setNeighborhoodMissing(false);
+          if (editing && record) {
+            // An absent key means "leave it alone" on a PATCH, so a field the
+            // form holds empty (and the pin, whose hidden inputs exist only
+            // while there is one) is sent explicitly.
+            submit(editWriteBody(values, record, ["street", "building_number"]) as unknown as ComplexWrite);
+            return;
           }
           submit(values as unknown as ComplexWrite);
         }}
@@ -144,7 +164,11 @@ export function ComplexFormScreen() {
           // addresses with nothing chosen.
           key={selectedCustomer}
           options={addressOptions}
-          onPick={(fill) => setPicked((previous) => ({ fill, n: (previous?.n ?? 0) + 1 }))}
+          onPick={(fill) => {
+            setNeighborhoodMissing(false);
+            const resolved = resolvePick(fill, currentAddressInput(formRef.current));
+            setPicked((previous) => ({ fill: resolved, n: (previous?.n ?? 0) + 1 }));
+          }}
         />
 
         {/* Remounted on a pick: these fields are uncontrolled and read their
@@ -152,7 +176,7 @@ export function ComplexFormScreen() {
         <div key={picked?.n ?? 0} className="flex flex-col gap-5">
           <AddressSelect
             name="neighborhood"
-            error={state.fields.neighborhood}
+            error={state.fields.neighborhood ?? (neighborhoodMissing ? t("errors.required") : undefined)}
             initial={address.initial}
             // `ComplexWriteRequest` carries latitude and longitude, so a pin
             // dropped here is a pin that gets saved. That is the whole test for

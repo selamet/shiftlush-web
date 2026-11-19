@@ -15,9 +15,28 @@ export type FilledAddress = {
   neighborhoodName: string | null;
   street: string;
   buildingNumber: string;
-  addressNote: string;
+  /** null: the entry has no note of its own (the site), so a pick keeps the form's. */
+  addressNote: string | null;
   pin: Coordinates | null;
 };
+
+/** What a pick may not destroy: the pin and note the form shows at pick time. */
+export type CurrentAddressInput = { pin: Coordinates | null; addressNote: string };
+
+/**
+ * The fill a pick actually writes, given what the form holds now.
+ *
+ * An entry without a pin keeps the pin on screen (it never removes one), and an
+ * entry without a note of its own keeps the note on screen. A saved address
+ * replaces the note with its own, empty or not.
+ */
+export function resolvePick(fill: FilledAddress, current: CurrentAddressInput): FilledAddress {
+  return {
+    ...fill,
+    pin: fill.pin ?? current.pin,
+    addressNote: fill.addressNote ?? current.addressNote,
+  };
+}
 
 export type PickOption = {
   value: string;
@@ -72,7 +91,7 @@ export function pickOptions(addresses: CustomerAddress[], site: Complex | null):
         neighborhoodName: site.neighborhood_name,
         street: site.street,
         buildingNumber: site.building_number,
-        addressNote: "",
+        addressNote: null,
         pin: null,
       },
     });
@@ -117,28 +136,24 @@ export type AddressRecord = {
 };
 
 /**
- * What the address block opens with: the last pick when there is one, otherwise
- * the record being edited (or nothing on a new form).
- *
- * A pick without a pin leaves the form's pin alone, so the pin falls back to
- * the record's.
+ * What the address block opens with: the resolved pick (see `resolvePick`) when
+ * there is one, otherwise the record being edited (or nothing on a new form).
  */
-export function addressBlockDefaults(record: AddressRecord | undefined, fill: FilledAddress | null) {
-  const recordPin = parseCoordinates(record?.latitude, record?.longitude);
-  if (fill) {
+export function addressBlockDefaults(record: AddressRecord | undefined, pick: FilledAddress | null) {
+  if (pick) {
     return {
       initial: {
-        provinceId: fill.provinceId,
-        provinceName: fill.provinceName,
-        districtId: fill.districtId,
-        districtName: fill.districtName,
-        neighborhoodId: fill.neighborhoodId,
-        neighborhoodName: fill.neighborhoodName,
+        provinceId: pick.provinceId,
+        provinceName: pick.provinceName,
+        districtId: pick.districtId,
+        districtName: pick.districtName,
+        neighborhoodId: pick.neighborhoodId,
+        neighborhoodName: pick.neighborhoodName,
       },
-      street: fill.street,
-      buildingNumber: fill.buildingNumber,
-      addressNote: fill.addressNote,
-      pin: fill.pin ?? recordPin,
+      street: pick.street,
+      buildingNumber: pick.buildingNumber,
+      addressNote: pick.addressNote ?? "",
+      pin: pick.pin,
     };
   }
   return {
@@ -153,7 +168,7 @@ export function addressBlockDefaults(record: AddressRecord | undefined, fill: Fi
     street: record?.street ?? "",
     buildingNumber: record?.building_number ?? "",
     addressNote: record?.address_note ?? "",
-    pin: recordPin,
+    pin: parseCoordinates(record?.latitude, record?.longitude),
   };
 }
 
@@ -207,17 +222,51 @@ export function addressWriteBody(
   record: CustomerAddress | undefined,
   isBilling: boolean,
 ): Record<string, unknown> {
-  const body: Record<string, unknown> = { ...values };
-  if (record && record.neighborhood_id != null && body.neighborhood === undefined) {
-    body.neighborhood = null;
-  }
-  if (record && record.latitude != null && body.latitude === undefined) {
-    body.latitude = null;
-    body.longitude = null;
-  }
+  const body = record ? editWriteBody(values, record, []) : { ...values };
   for (const key of ["street", "building_number", "unit_number", "address_note"]) {
     body[key] = (values[key] as string | undefined) ?? "";
   }
   body.is_billing = isBilling;
   return body;
+}
+
+/**
+ * The PATCH body for an edit, where an absent key means "leave it alone".
+ *
+ * `formValues` drops what the form holds empty, so on edit the record's
+ * clearable fields are sent explicitly: the neighbourhood and the pin as null
+ * when the record had one and the form no longer does, and each of `blankKeys`
+ * as an empty string.
+ */
+export function editWriteBody(
+  values: Record<string, unknown>,
+  record: { neighborhood_id: number | null; latitude?: string | null },
+  blankKeys: string[],
+): Record<string, unknown> {
+  const body: Record<string, unknown> = { ...values };
+  if (record.neighborhood_id != null && body.neighborhood === undefined) {
+    body.neighborhood = null;
+  }
+  if (record.latitude != null && body.latitude === undefined) {
+    body.latitude = null;
+    body.longitude = null;
+  }
+  for (const key of blankKeys) {
+    body[key] = (values[key] as string | undefined) ?? "";
+  }
+  return body;
+}
+
+/** The pin and note a form holds right now, read from its fields at pick time. */
+export function currentAddressInput(form: HTMLFormElement | null): CurrentAddressInput {
+  if (!form) return { pin: null, addressNote: "" };
+  const data = new FormData(form);
+  const text = (name: string) => {
+    const value = data.get(name);
+    return typeof value === "string" ? value : null;
+  };
+  return {
+    pin: parseCoordinates(text("latitude"), text("longitude")),
+    addressNote: text("address_note") ?? "",
+  };
 }
