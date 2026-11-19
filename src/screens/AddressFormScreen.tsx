@@ -228,6 +228,9 @@ function AddressForm({ customer, record }: { customer: Customer; record?: Custom
               type="button"
               variant="ghost"
               className="ml-auto"
+              // The confirm dialog closes as soon as it is answered, so this
+              // button is what stands between the user and a second request.
+              disabled={remove.state.pending}
               onClick={() => setConfirmingDelete(true)}
             >
               {t("common.delete")}
