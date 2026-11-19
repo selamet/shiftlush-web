@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { LocationPicker } from "@/components/forms/LocationPicker";
+import { initialAddressState, type AddressSelectInitial } from "@/lib/address-select-state";
 import {
   ADDRESS_LEVELS,
   hasAnyMatch,
@@ -72,11 +73,7 @@ export function AddressSelect({
    * The names are nullable because the neighbourhood is: a record can be
    * entered before anyone knows where it is, and the API says so now.
    */
-  initial?: {
-    neighborhoodId: number | null;
-    districtName: string | null;
-    provinceName: string | null;
-  };
+  initial?: AddressSelectInitial;
   error?: string;
   /**
    * A building has to be somewhere. A customer does not: the address here is
@@ -95,11 +92,11 @@ export function AddressSelect({
   const { t } = useTranslation();
 
   const provinces = useQuery(provinceQuery());
-  const [provinceId, setProvinceId] = useState<number | null>(null);
-  const [districtId, setDistrictId] = useState<number | null>(null);
-  const [neighborhoodId, setNeighborhoodId] = useState<number | null>(
-    initial?.neighborhoodId ?? null,
-  );
+  // Read once: later changes to `initial` do not reset what the user is editing.
+  const [start] = useState(() => initialAddressState(initial));
+  const [provinceId, setProvinceId] = useState<number | null>(start.provinceId);
+  const [districtId, setDistrictId] = useState<number | null>(start.districtId);
+  const [neighborhoodId, setNeighborhoodId] = useState<number | null>(start.neighborhoodId);
   const [search, setSearch] = useState("");
 
   /**
@@ -110,10 +107,8 @@ export function AddressSelect({
    * read off the record being edited — has no option behind it to take a label
    * from. Without these the picker renders a chosen value as an empty box.
    */
-  const [districtLabel, setDistrictLabel] = useState("");
-  const [neighborhoodLabel, setNeighborhoodLabel] = useState(() =>
-    [initial?.provinceName, initial?.districtName].filter(Boolean).join(" · "),
-  );
+  const [districtLabel, setDistrictLabel] = useState(start.districtLabel);
+  const [neighborhoodLabel, setNeighborhoodLabel] = useState(start.neighborhoodLabel);
 
   /** Levels currently holding a value that came from the map, not from a pick. */
   const [fromMap, setFromMap] = useState<ReadonlySet<AddressLevel>>(() => new Set());

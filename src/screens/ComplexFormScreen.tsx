@@ -131,9 +131,12 @@ export function ComplexFormScreen() {
           initial={
             record
               ? {
-                  neighborhoodId: record.neighborhood_id,
-                  districtName: record.district_name,
+                  provinceId: record.province_id,
                   provinceName: record.province_name,
+                  districtId: record.district_id,
+                  districtName: record.district_name,
+                  neighborhoodId: record.neighborhood_id,
+                  neighborhoodName: record.neighborhood_name,
                 }
               : undefined
           }
