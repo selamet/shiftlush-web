@@ -325,6 +325,35 @@ export function deleteCustomerContact(id: string) {
   return api.delete<void>(`/customer-contacts/${id}/`);
 }
 
+export type CustomerAddress = Schemas["CustomerAddressRead"];
+export type CustomerAddressWrite = Schemas["CustomerAddressWriteRequest"];
+
+/**
+ * Adding a saved address to a customer. Like a contact, the customer travels in
+ * the body. Cache invalidation is the caller's job (as with the contact
+ * mutations): refresh the customer detail and list queries after it resolves.
+ */
+export function createCustomerAddress(
+  customerId: string,
+  body: Omit<CustomerAddressWrite, "customer">,
+  idempotencyKey?: string,
+) {
+  return api.post<CustomerAddress>(
+    "/customer-addresses/",
+    { ...body, customer: customerId },
+    { idempotencyKey },
+  );
+}
+
+export function updateCustomerAddress(id: string, body: Partial<CustomerAddressWrite>) {
+  return api.patch<CustomerAddress>(`/customer-addresses/${id}/`, body);
+}
+
+/** Soft delete, like every delete here. */
+export function deleteCustomerAddress(id: string) {
+  return api.delete<void>(`/customer-addresses/${id}/`);
+}
+
 // --------------------------------------------------------------------------
 // Public authentication flows
 //

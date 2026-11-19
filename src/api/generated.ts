@@ -678,6 +678,73 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/customer-addresses/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description CRUD over a company-owned model.
+         *
+         *     PUT is not routed: partial update is the only update verb. A full replace
+         *     means the client has to send every field it does not want cleared, and the
+         *     moment the model grows a column, old clients start wiping it.
+         */
+        get: operations["customer_addresses_list"];
+        put?: never;
+        /**
+         * @description CRUD over a company-owned model.
+         *
+         *     PUT is not routed: partial update is the only update verb. A full replace
+         *     means the client has to send every field it does not want cleared, and the
+         *     moment the model grows a column, old clients start wiping it.
+         */
+        post: operations["customer_addresses_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer-addresses/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description CRUD over a company-owned model.
+         *
+         *     PUT is not routed: partial update is the only update verb. A full replace
+         *     means the client has to send every field it does not want cleared, and the
+         *     moment the model grows a column, old clients start wiping it.
+         */
+        get: operations["customer_addresses_retrieve"];
+        put?: never;
+        post?: never;
+        /**
+         * @description CRUD over a company-owned model.
+         *
+         *     PUT is not routed: partial update is the only update verb. A full replace
+         *     means the client has to send every field it does not want cleared, and the
+         *     moment the model grows a column, old clients start wiping it.
+         */
+        delete: operations["customer_addresses_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description CRUD over a company-owned model.
+         *
+         *     PUT is not routed: partial update is the only update verb. A full replace
+         *     means the client has to send every field it does not want cleared, and the
+         *     moment the model grows a column, old clients start wiping it.
+         */
+        patch: operations["customer_addresses_partial_update"];
+        trace?: never;
+    };
     "/api/v1/customer-contacts/": {
         parameters: {
             query?: never;
@@ -949,6 +1016,24 @@ export interface paths {
          *     moment the model grows a column, old clients start wiping it.
          */
         patch: operations["customers_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/customers/{id}/addresses/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The addresses of this customer, the billing one first. */
+        get: operations["customers_addresses_list"];
+        put?: never;
+        /** @description Add an address to this customer. The customer comes from the path. */
+        post: operations["customers_addresses_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/customers/{id}/contacts/": {
@@ -3401,6 +3486,8 @@ export interface components {
             /** Format: int64 */
             readonly neighborhood_id: number | null;
             readonly neighborhood_name: string | null;
+            readonly district_id: number | null;
+            readonly province_id: number | null;
             readonly district_name: string | null;
             readonly province_name: string | null;
             readonly street: string;
@@ -3639,6 +3726,8 @@ export interface components {
             /** Format: int64 */
             readonly neighborhood_id: number | null;
             readonly neighborhood_name: string | null;
+            readonly district_id: number | null;
+            readonly province_id: number | null;
             readonly district_name: string | null;
             readonly province_name: string | null;
             readonly street: string;
@@ -3843,6 +3932,84 @@ export interface components {
             readonly currency: string;
         };
         /**
+         * @description The same address, created under `/customers/{id}/addresses`.
+         *
+         *     `customer` is gone from the field list, so `StrictMixin` refuses a body that
+         *     names it; the path is the source.
+         */
+        CustomerAddressNestedWriteRequest: {
+            label: string;
+            /** Format: int64 */
+            neighborhood?: number | null;
+            street?: string;
+            building_number?: string;
+            unit_number?: string;
+            address_note?: string;
+            /** Format: decimal */
+            latitude?: string | null;
+            /** Format: decimal */
+            longitude?: string | null;
+            is_billing?: boolean;
+        };
+        /**
+         * @description The named address behind a `neighborhood` foreign key.
+         *
+         *     Every one of these keys is nullable — a record can be entered before anyone
+         *     knows where it is — so the fields are declared nullable too. Without that
+         *     the contract promises a string on rows that hold nothing, a generated client
+         *     reads the field as always present, and the screen prints an empty line
+         *     without anything having failed.
+         */
+        CustomerAddressRead: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly customer_id: string;
+            readonly label: string;
+            /** Format: int64 */
+            readonly neighborhood_id: number | null;
+            readonly neighborhood_name: string | null;
+            readonly district_id: number | null;
+            readonly district_name: string | null;
+            readonly province_id: number | null;
+            readonly province_name: string | null;
+            readonly street: string;
+            readonly building_number: string;
+            readonly unit_number: string;
+            readonly address_note: string;
+            /** Format: decimal */
+            readonly latitude: string | null;
+            /** Format: decimal */
+            readonly longitude: string | null;
+            readonly is_billing: boolean;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /**
+         * @description Rejects fields the serializer does not declare.
+         *
+         *     DRF ignores them, so a mistyped key returns 200 and the value silently
+         *     never arrives.
+         */
+        CustomerAddressWriteRequest: {
+            /** Format: uuid */
+            customer: string;
+            label: string;
+            /** Format: int64 */
+            neighborhood?: number | null;
+            street?: string;
+            building_number?: string;
+            unit_number?: string;
+            address_note?: string;
+            /** Format: decimal */
+            latitude?: string | null;
+            /** Format: decimal */
+            longitude?: string | null;
+            is_billing?: boolean;
+        };
+        /**
          * @description The same contact, created under `/customers/{id}/contacts`.
          *
          *     `customer` is gone from the field list rather than made read-only, so
@@ -3895,15 +4062,6 @@ export interface components {
             receives_monthly_report?: boolean;
             notes?: string;
         };
-        /**
-         * @description The named address behind a `neighborhood` foreign key.
-         *
-         *     Every one of these keys is nullable — a record can be entered before anyone
-         *     knows where it is — so the fields are declared nullable too. Without that
-         *     the contract promises a string on rows that hold nothing, a generated client
-         *     reads the field as always present, and the screen prints an empty line
-         *     without anything having failed.
-         */
         CustomerRead: {
             /** Format: uuid */
             readonly id: string;
@@ -3914,17 +4072,10 @@ export interface components {
             readonly phone: string;
             /** Format: email */
             readonly email: string;
-            /** Format: int64 */
-            readonly neighborhood_id: number | null;
-            readonly neighborhood_name: string | null;
-            readonly district_name: string | null;
-            readonly province_name: string | null;
-            readonly street: string;
-            readonly building_number: string;
-            readonly unit_number: string;
             readonly notes: string;
             readonly is_active: boolean;
             readonly contacts: components["schemas"]["CustomerContactRead"][];
+            readonly addresses: components["schemas"]["CustomerAddressRead"][];
             /** @default 0 */
             readonly building_count: number;
             /** @default 0 */
@@ -3978,11 +4129,6 @@ export interface components {
             national_id?: string;
             phone?: string;
             email?: string;
-            /** Format: int64 */
-            neighborhood?: number | null;
-            street?: string;
-            building_number?: string;
-            unit_number?: string;
             notes?: string;
             is_active?: boolean;
         };
@@ -5205,6 +5351,19 @@ export interface components {
                 total_pages: number;
             };
         };
+        PaginatedCustomerAddressReadList: {
+            results: components["schemas"]["CustomerAddressRead"][];
+            pagination: {
+                /** @example 1 */
+                page: number;
+                /** @example 25 */
+                page_size: number;
+                /** @example 342 */
+                total: number;
+                /** @example 14 */
+                total_pages: number;
+            };
+        };
         PaginatedCustomerContactReadList: {
             results: components["schemas"]["CustomerContactRead"][];
             pagination: {
@@ -5651,6 +5810,28 @@ export interface components {
          *     DRF ignores them, so a mistyped key returns 200 and the value silently
          *     never arrives.
          */
+        PatchedCustomerAddressWriteRequest: {
+            /** Format: uuid */
+            customer?: string;
+            label?: string;
+            /** Format: int64 */
+            neighborhood?: number | null;
+            street?: string;
+            building_number?: string;
+            unit_number?: string;
+            address_note?: string;
+            /** Format: decimal */
+            latitude?: string | null;
+            /** Format: decimal */
+            longitude?: string | null;
+            is_billing?: boolean;
+        };
+        /**
+         * @description Rejects fields the serializer does not declare.
+         *
+         *     DRF ignores them, so a mistyped key returns 200 and the value silently
+         *     never arrives.
+         */
         PatchedCustomerContactWriteRequest: {
             /** Format: uuid */
             customer?: string;
@@ -5677,11 +5858,6 @@ export interface components {
             national_id?: string;
             phone?: string;
             email?: string;
-            /** Format: int64 */
-            neighborhood?: number | null;
-            street?: string;
-            building_number?: string;
-            unit_number?: string;
             notes?: string;
             is_active?: boolean;
         };
@@ -6788,6 +6964,7 @@ export interface components {
          *     * `SIGNATURE_CANNOT_BE_DELETED` - A visit's signature is kept for good and cannot be deleted
          *     * `INVOICE_LINES_NEED_PRICE` - Every line needs a price before the draft can be issued
          *     * `MONTHLY_REPORT_NEEDS_EMAIL` - A contact without an e-mail address cannot receive the monthly report
+         *     * `ADDRESS_EMPTY` - An address needs a neighbourhood, a street, a number or a note
          *     * `REPORT_NO_RECIPIENT` - Nobody on this customer is set to receive the monthly report
          *     * `REPORT_FILE_CANNOT_BE_DELETED` - A monthly report's file belongs to the report and cannot be deleted
          *     * `CATEGORY_NOT_UPLOADABLE` - Files of this category are made by the server and cannot be uploaded
@@ -6821,7 +6998,7 @@ export interface components {
          *     * `ATTACHMENT_TARGET_MISMATCH` - Attachment does not belong to the record it is being linked to
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "PLANNED_DATE_OUTSIDE_PERIOD" | "PLANNED_DATE_IN_PAST" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "IDEMPOTENCY_KEY_IN_FLIGHT" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "INVOICE_TRANSITION_NOT_ALLOWED" | "SIGNATURE_EXISTS" | "SIGNATURE_NOT_EXPECTED" | "SIGNATURE_CANNOT_BE_DELETED" | "INVOICE_LINES_NEED_PRICE" | "MONTHLY_REPORT_NEEDS_EMAIL" | "REPORT_NO_RECIPIENT" | "REPORT_FILE_CANNOT_BE_DELETED" | "CATEGORY_NOT_UPLOADABLE" | "DUPLICATE_INVOICE_NUMBER" | "FAULT_TRANSITION_NOT_ALLOWED" | "PLAN_ROW_CLOSED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "CURRENCY_MISMATCH" | "PERIOD_CLOSED" | "ALREADY_REVERSED" | "INVOICE_HAS_COLLECTIONS" | "OVERPAYMENT_ON_INVOICE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
+        ErrorCode: "VALIDATION_ERROR" | "NOT_FOUND" | "PERMISSION_DENIED" | "AUTHENTICATION_FAILED" | "INTERNAL_ERROR" | "THROTTLED" | "SERVICE_UNAVAILABLE" | "CONSTRAINT_VIOLATION" | "API_VERSION_SUNSET" | "INVALID_TAX_NUMBER" | "INVALID_NATIONAL_ID" | "INVALID_PHONE" | "INVALID_POSTAL_CODE" | "END_DATE_BEFORE_START_DATE" | "INSTALLATION_DATE_IN_FUTURE" | "PLANNED_DATE_OUTSIDE_PERIOD" | "PLANNED_DATE_IN_PAST" | "RECORD_IN_USE" | "DUPLICATE_REGISTRATION_NUMBER" | "DUPLICATE_CONTRACT_NUMBER" | "DUPLICATE_TAX_NUMBER" | "DUPLICATE_NATIONAL_ID" | "EMAIL_ALREADY_REGISTERED" | "INVITATION_ALREADY_PENDING" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_KEY_REQUIRED" | "IDEMPOTENCY_KEY_IN_FLIGHT" | "ELEVATOR_ALREADY_CONTRACTED" | "NO_ACTIVE_CONTRACT_FOR_ELEVATOR" | "CONTACT_NOT_OF_CUSTOMER" | "CONTACT_HAS_NO_EMAIL" | "PORTAL_ACCOUNT_ALREADY_ACTIVE" | "PORTAL_EMAIL_IN_USE" | "INVOICE_TRANSITION_NOT_ALLOWED" | "SIGNATURE_EXISTS" | "SIGNATURE_NOT_EXPECTED" | "SIGNATURE_CANNOT_BE_DELETED" | "INVOICE_LINES_NEED_PRICE" | "MONTHLY_REPORT_NEEDS_EMAIL" | "ADDRESS_EMPTY" | "REPORT_NO_RECIPIENT" | "REPORT_FILE_CANNOT_BE_DELETED" | "CATEGORY_NOT_UPLOADABLE" | "DUPLICATE_INVOICE_NUMBER" | "FAULT_TRANSITION_NOT_ALLOWED" | "PLAN_ROW_CLOSED" | "NOTIFICATION_EMAIL_LOCKED" | "LAST_OWNER_CANNOT_BE_DEACTIVATED" | "ONLY_TECHNICIANS_ARE_ASSIGNED" | "TECHNICIAN_RECORDS_OWN_VISITS" | "CANNOT_DEACTIVATE_SELF" | "BUILDING_CUSTOMER_MISMATCH" | "TERMINATION_REASON_REQUIRED" | "FIELD_REQUIRED_FOR_CUSTOMER_TYPE" | "FIELD_NOT_VALID_FOR_CUSTOMER_TYPE" | "STATUS_NOT_USER_SELECTABLE" | "CURRENCY_MISMATCH" | "PERIOD_CLOSED" | "ALREADY_REVERSED" | "INVOICE_HAS_COLLECTIONS" | "OVERPAYMENT_ON_INVOICE" | "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "ACCOUNT_INACTIVE" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | "EMAIL_NOT_VERIFIED" | "FILE_TOO_LARGE" | "UNSUPPORTED_MIME_TYPE" | "UPLOAD_NOT_COMPLETED" | "ATTACHMENT_TARGET_MISMATCH";
         /** @description The shape of every error response. There is no `message` field: the backend sends codes, and the words live in the client's translation file, so wording changes in one place and adding a language does not touch the API. */
         ErrorResponse: {
             error: {
@@ -7875,6 +8052,130 @@ export interface operations {
             };
         };
     };
+    customer_addresses_list: {
+        parameters: {
+            query?: {
+                customer?: string;
+                is_billing?: boolean;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCustomerAddressReadList"];
+                };
+            };
+        };
+    };
+    customer_addresses_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerAddressWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CustomerAddressWriteRequest"];
+                "multipart/form-data": components["schemas"]["CustomerAddressWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAddressRead"];
+                };
+            };
+        };
+    };
+    customer_addresses_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this customer address. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAddressRead"];
+                };
+            };
+        };
+    };
+    customer_addresses_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this customer address. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    customer_addresses_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this customer address. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCustomerAddressWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCustomerAddressWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedCustomerAddressWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAddressRead"];
+                };
+            };
+        };
+    };
     customer_contacts_list: {
         parameters: {
             query?: {
@@ -8340,6 +8641,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CustomerRead"];
+                };
+            };
+        };
+    };
+    customers_addresses_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this customer. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCustomerAddressReadList"];
+                };
+            };
+        };
+    };
+    customers_addresses_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this customer. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerAddressNestedWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CustomerAddressNestedWriteRequest"];
+                "multipart/form-data": components["schemas"]["CustomerAddressNestedWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAddressRead"];
                 };
             };
         };
