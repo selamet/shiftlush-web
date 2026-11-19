@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "@tanstack/react-router";
+import { useParams, Link, useLocation } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, Pencil, Plus, Phone, Mail, Star, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -240,6 +240,11 @@ export function CustomerDetailScreen() {
   const { t } = useTranslation();
   const { id } = useParams({ strict: false }) as { id?: string };
   const { role } = useSession();
+  // Set by the create form when the customer was saved and its billing address
+  // was not; router state is the only thing that survives that navigation.
+  const addressNotSaved = useLocation({
+    select: (location) => Boolean(location.state.addressNotSaved),
+  });
 
   const customerId = id ?? "";
   const query = useQuery({ ...customerQuery(customerId), enabled: Boolean(customerId) });
@@ -273,6 +278,9 @@ export function CustomerDetailScreen() {
 
   return (
     <div className="flex flex-col gap-4 p-6">
+      {addressNotSaved && (
+        <Alert tone="warning" block title={t("customer.addressNotSaved")} />
+      )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1.5">
           <nav className="flex items-center gap-1.5 text-help text-muted-foreground">

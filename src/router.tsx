@@ -1081,6 +1081,13 @@ export const routeTree = rootRoute.addChildren([
 // The page scrolls the document now (see AppShell), so the router can do what
 // a browser does: put each page back where it was on back/forward, and start a
 // new page at the top.
+declare module "@tanstack/history" {
+  interface HistoryState {
+    /** Set by the customer create form when the billing address request failed. */
+    addressNotSaved?: boolean;
+  }
+}
+
 export const router = createRouter({ routeTree, scrollRestoration: true });
 
 export { RouterProvider };

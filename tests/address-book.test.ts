@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 import type { Complex, CustomerAddress } from "@/api/queries";
-import { addressLine, hasAddressContent, pickOptions } from "@/lib/address-book";
+import { addressLine, billingAddressBody, hasAddressContent, pickOptions } from "@/lib/address-book";
 
 const empty = {
   street: "",
@@ -122,5 +122,29 @@ describe("hasAddressContent", () => {
   });
   it("is true for any one field", () => {
     expect(hasAddressContent({ unit_number: "5" })).toBe(true);
+  });
+});
+
+describe("billingAddressBody", () => {
+  it("is null when the block was left untouched", () => {
+    expect(billingAddressBody({}, "Billing")).toBeNull();
+    expect(billingAddressBody({ street: "  " }, "Billing")).toBeNull();
+  });
+
+  it("builds a billing address from what was typed", () => {
+    expect(
+      billingAddressBody({ neighborhood: "7", street: "Ataturk Cd.", building_number: "12" }, "Billing"),
+    ).toEqual({
+      label: "Billing",
+      is_billing: true,
+      neighborhood: 7,
+      street: "Ataturk Cd.",
+      building_number: "12",
+      unit_number: "",
+    });
+  });
+
+  it("sends no neighborhood when only the street was typed", () => {
+    expect(billingAddressBody({ street: "Ataturk Cd." }, "Billing")?.neighborhood).toBeNull();
   });
 });

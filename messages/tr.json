@@ -412,6 +412,7 @@
     "elevatorCount": "Asansör",
     "primaryContact": "Birincil iletişim",
     "billingAddress": "Fatura adresi",
+    "addressNotSaved": "Müşteri kaydedildi ancak fatura adresi kaydedilemedi. Adresi müşteri sayfasından ekleyebilirsiniz.",
     "identity": "Kimlik bilgileri",
     "individualHint": "Şahıs müşteride TC kimlik no zorunludur; vergi bilgisi girilmez.",
     "organisationHint": "Kurumsal müşteride vergi numarası zorunludur; TC kimlik no girilmez.",

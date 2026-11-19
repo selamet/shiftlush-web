@@ -112,3 +112,27 @@ export function hasAddressContent(v: {
     (field) => (field ?? "").trim() !== "",
   );
 }
+
+/**
+ * The request body that saves the create form's block as the customer's
+ * billing address, or null when the block holds nothing and no request is due.
+ */
+export function billingAddressBody(
+  v: {
+    neighborhood?: string;
+    street?: string;
+    building_number?: string;
+    unit_number?: string;
+  },
+  label: string,
+) {
+  if (!hasAddressContent(v)) return null;
+  return {
+    label,
+    is_billing: true,
+    neighborhood: v.neighborhood ? Number(v.neighborhood) : null,
+    street: v.street ?? "",
+    building_number: v.building_number ?? "",
+    unit_number: v.unit_number ?? "",
+  };
+}
