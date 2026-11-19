@@ -21,8 +21,10 @@ import {
   currentAddressInput,
   editWriteBody,
   pickOptions,
+  pickWrote,
   resolvePick,
   type FilledAddress,
+  type PickWrote,
 } from "@/lib/address-book";
 import { AddressSelect } from "@/components/forms/AddressSelect";
 import { SavedAddressPicker } from "@/components/forms/SavedAddressPicker";
@@ -72,7 +74,7 @@ export function BuildingFormScreen() {
   // The last pick, and a counter that remounts the address block so its
   // uncontrolled fields take the picked values. It is never cleared: changing
   // the customer resets the picker, not what was already filled in.
-  const [picked, setPicked] = useState<{ fill: FilledAddress; n: number } | null>(null);
+  const [picked, setPicked] = useState<{ fill: FilledAddress; wrote: PickWrote; n: number } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   // A building's customer must match its complex's customer — the server checks
@@ -254,8 +256,10 @@ export function BuildingFormScreen() {
           key={`${selectedCustomer}:${selectedComplex}`}
           options={addressOptions}
           onPick={(fill) => {
-            const resolved = resolvePick(fill, currentAddressInput(formRef.current));
-            setPicked((previous) => ({ fill: resolved, n: (previous?.n ?? 0) + 1 }));
+            // `wrote` is what this pick supplies of its own; the next pick
+            // uses it to tell its pin and note from ones the user set.
+            const resolved = resolvePick(fill, currentAddressInput(formRef.current), picked?.wrote ?? null);
+            setPicked({ fill: resolved, wrote: pickWrote(fill), n: (picked?.n ?? 0) + 1 });
           }}
         />
 

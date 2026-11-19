@@ -4,7 +4,7 @@
  * Pure functions over API reads, so the rules can be tested without a screen.
  */
 import type { Complex, CustomerAddress } from "@/api/queries";
-import { type Coordinates, parseCoordinates } from "@/lib/map-provider";
+import { type Coordinates, coordinateKey, parseCoordinates } from "@/lib/map-provider";
 
 export type FilledAddress = {
   provinceId: number | null;
@@ -23,18 +23,41 @@ export type FilledAddress = {
 /** What a pick may not destroy: the pin and note the form shows at pick time. */
 export type CurrentAddressInput = { pin: Coordinates | null; addressNote: string };
 
+/** The pin and note a pick supplied of its own, before the form's values were folded in. */
+export type PickWrote = { pin: Coordinates | null; addressNote: string | null };
+
+/** What `fill` supplies of its own, to hand back as `previous` on the next pick. */
+export function pickWrote(fill: FilledAddress): PickWrote {
+  return { pin: fill.pin, addressNote: fill.addressNote };
+}
+
 /**
  * The fill a pick actually writes, given what the form holds now.
  *
  * An entry without a pin keeps the pin on screen (it never removes one), and an
  * entry without a note of its own keeps the note on screen. A saved address
  * replaces the note with its own, empty or not.
+ *
+ * "On screen" means set by the user, not written by the pick before this one:
+ * when the form still holds exactly what `previous` wrote, that is treated as
+ * nothing, so picking again replaces it instead of letting it leak into an
+ * address that has no pin or note of its own.
  */
-export function resolvePick(fill: FilledAddress, current: CurrentAddressInput): FilledAddress {
+export function resolvePick(
+  fill: FilledAddress,
+  current: CurrentAddressInput,
+  previous: PickWrote | null = null,
+): FilledAddress {
+  const ownPin =
+    previous?.pin && coordinateKey(previous.pin) === coordinateKey(current.pin) ? null : current.pin;
+  const ownNote =
+    previous?.addressNote != null && previous.addressNote === current.addressNote
+      ? ""
+      : current.addressNote;
   return {
     ...fill,
-    pin: fill.pin ?? current.pin,
-    addressNote: fill.addressNote ?? current.addressNote,
+    pin: fill.pin ?? ownPin,
+    addressNote: fill.addressNote ?? ownNote,
   };
 }
 
@@ -208,6 +231,17 @@ export function billingAddressBody(
   };
 }
 
+const ADDRESS_BLOCK_KEYS = ["neighborhood", "street", "building_number", "unit_number"];
+
+/**
+ * The customer's own write: the form's values without the create form's
+ * address block, which is saved as a separate request and which the customer
+ * endpoint rejects as unknown fields.
+ */
+export function customerWriteBody(values: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(values).filter(([key]) => !ADDRESS_BLOCK_KEYS.includes(key)));
+}
+
 /**
  * The request body for the address form.
  *
@@ -240,11 +274,14 @@ export function addressWriteBody(
  */
 export function editWriteBody(
   values: Record<string, unknown>,
-  record: { neighborhood_id: number | null; latitude?: string | null },
+  record: { neighborhood_id: number | null; district_id?: number | null; latitude?: string | null },
   blankKeys: string[],
 ): Record<string, unknown> {
   const body: Record<string, unknown> = { ...values };
-  if (record.neighborhood_id != null && body.neighborhood === undefined) {
+  // Only when the form could have shown the neighbourhood: its select is
+  // disabled (and not submitted) until a district is known, so without one an
+  // absent value says nothing about what the user wanted.
+  if (record.neighborhood_id != null && record.district_id != null && body.neighborhood === undefined) {
     body.neighborhood = null;
   }
   if (record.latitude != null && body.latitude === undefined) {

@@ -12,7 +12,7 @@ import {
   type Customer,
   type CustomerWrite,
 } from "@/api/queries";
-import { billingAddressBody } from "@/lib/address-book";
+import { billingAddressBody, customerWriteBody } from "@/lib/address-book";
 import { formValues, useIdempotencyKey, useSubmit } from "@/lib/form";
 import { enumLabel } from "@/lib/i18n";
 import { SearchableSelect, enumOptions } from "@/components/ui/searchable-select";
@@ -112,7 +112,7 @@ function CustomerForm({ record }: { record?: Customer }) {
     const form = event.currentTarget;
     const values = formValues(form);
     const body: Partial<CustomerWrite> = {
-      ...(values as unknown as Partial<CustomerWrite>),
+      ...(customerWriteBody(values) as unknown as Partial<CustomerWrite>),
       // `formValues` drops empty strings, which is right for a field left
       // blank and wrong for one being emptied on purpose. These three are
       // being emptied on purpose, and saying nothing would leave the old value

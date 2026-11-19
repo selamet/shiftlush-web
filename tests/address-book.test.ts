@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 import type { Complex, CustomerAddress } from "@/api/queries";
-import { addressBlockDefaults, addressLine, addressWriteBody, editWriteBody, resolvePick, billingAddressBody, hasAddressContent, pickOptions } from "@/lib/address-book";
+import { customerWriteBody, addressBlockDefaults, addressLine, addressWriteBody, editWriteBody, resolvePick, billingAddressBody, hasAddressContent, pickOptions } from "@/lib/address-book";
 
 const empty = {
   street: "",
@@ -195,6 +195,62 @@ describe("addressWriteBody", () => {
   });
 });
 
+describe("customerWriteBody", () => {
+  it("drops the address block's four keys and passes everything else through", () => {
+    const values = {
+      legal_name: "Acme",
+      phone: "1",
+      neighborhood: "7",
+      street: "S",
+      building_number: "1",
+      unit_number: "2",
+    };
+    expect(customerWriteBody(values)).toEqual({ legal_name: "Acme", phone: "1" });
+  });
+  it("does not mutate its input", () => {
+    const values = { street: "S", legal_name: "A" };
+    customerWriteBody(values);
+    expect(values).toEqual({ street: "S", legal_name: "A" });
+  });
+});
+
+describe("resolvePick, what the previous pick wrote", () => {
+  const A = pickOptions([withPin], null)[0].fill;
+  const B = pickOptions([{ ...billing, id: "b2", latitude: null, longitude: null }], null)[0].fill;
+  const siteFill = pickOptions([], site)[0].fill;
+  const wrote = (f: typeof A) => ({ pin: f.pin, addressNote: f.addressNote });
+  const note = (text: string) => ({ pin: null, addressNote: text });
+
+  it("A with a pin, then B without, leaves no pin", () => {
+    expect(resolvePick(B, { pin: A.pin, addressNote: "" }, wrote(A)).pin).toBeNull();
+    expect(resolvePick(siteFill, { pin: A.pin, addressNote: "" }, wrote(A)).pin).toBeNull();
+  });
+  it("a pin dropped by hand, then B without, keeps it", () => {
+    const hand = { latitude: "5.000000", longitude: "6.000000" };
+    expect(resolvePick(B, { pin: hand, addressNote: "" }, wrote(A)).pin).toEqual(hand);
+    expect(resolvePick(B, { pin: hand, addressNote: "" }, null).pin).toEqual(hand);
+  });
+  it("A with a pin, the user moves it, then B without, keeps the moved pin", () => {
+    const moved = { latitude: "41.000000", longitude: "29.000000" };
+    expect(resolvePick(B, { pin: moved, addressNote: "" }, wrote(A)).pin).toEqual(moved);
+  });
+  it("a note the previous pick wrote does not survive a site pick", () => {
+    expect(resolvePick(siteFill, { pin: null, addressNote: "Ring twice" }, wrote(A)).addressNote).toBe("");
+  });
+  it("a note typed by hand survives a site pick", () => {
+    expect(resolvePick(siteFill, { pin: null, addressNote: "mine" }, wrote(A)).addressNote).toBe("mine");
+    expect(resolvePick(siteFill, { pin: null, addressNote: "mine" }, null).addressNote).toBe("mine");
+  });
+  it("a note changed after the pick survives a site pick", () => {
+    expect(resolvePick(siteFill, { pin: null, addressNote: "Ring twice, then call" }, wrote(A)).addressNote).toBe(
+      "Ring twice, then call",
+    );
+  });
+  it("a note the previous site pick kept is the user's own", () => {
+    expect(resolvePick(siteFill, { pin: null, addressNote: "mine" }, note("x")).addressNote).toBe("mine");
+  });
+});
+
 describe("resolvePick", () => {
   const [siteOption, savedOption, pinOption] = pickOptions([billing, withPin], site).slice(0, 3);
   const current = { pin: { latitude: "1.000000", longitude: "2.000000" }, addressNote: "typed note" };
@@ -223,7 +279,7 @@ describe("resolvePick", () => {
 });
 
 describe("editWriteBody", () => {
-  const record = { neighborhood_id: 5, latitude: "41.0" };
+  const record = { neighborhood_id: 5, district_id: 3, latitude: "41.0" };
   it("sends an emptied optional text field as an empty string", () => {
     const body = editWriteBody({ name: "x" }, record, ["street", "address_note"]);
     expect(body.street).toBe("");
@@ -239,9 +295,15 @@ describe("editWriteBody", () => {
     expect(body.longitude).toBeNull();
   });
   it("leaves them out when the record never had them", () => {
-    const body = editWriteBody({}, { neighborhood_id: null, latitude: null }, []);
+    const body = editWriteBody({}, { neighborhood_id: null, district_id: null, latitude: null }, []);
     expect("neighborhood" in body).toBe(false);
     expect("latitude" in body).toBe(false);
+  });
+  it("sends no neighborhood null when the record has no district, as the form could not have shown it", () => {
+    for (const district_id of [null, undefined]) {
+      const body = editWriteBody({}, { neighborhood_id: 5, district_id, latitude: null }, []);
+      expect("neighborhood" in body).toBe(false);
+    }
   });
 });
 
