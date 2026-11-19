@@ -1028,6 +1028,10 @@
   },
   "addressPicker": {
     "title": "Adres",
+    "label": "Kayıtlı adreslerden seç",
+    "placeholder": "Adres seçin",
+    "hint": "Seçtiğiniz adres aşağıdaki alanlara kopyalanır; dilediğiniz gibi değiştirebilirsiniz.",
+    "site": "Site adresi",
     "step": "Adım {{current}} / {{total}}",
     "provinceHint": "81 il · tam liste",
     "districtHint": "İl seçilince yüklendi · {{count}} ilçe",

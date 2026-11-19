@@ -101,6 +101,62 @@ export function pickOptions(addresses: CustomerAddress[], site: Complex | null):
   return options;
 }
 
+/** The saved fields of a site or building, as far as the address block reads them. */
+export type AddressRecord = {
+  province_id: number | null;
+  province_name: string | null;
+  district_id: number | null;
+  district_name: string | null;
+  neighborhood_id: number | null;
+  neighborhood_name: string | null;
+  street: string;
+  building_number: string;
+  address_note?: string;
+  latitude?: string | null;
+  longitude?: string | null;
+};
+
+/**
+ * What the address block opens with: the last pick when there is one, otherwise
+ * the record being edited (or nothing on a new form).
+ *
+ * A pick without a pin leaves the form's pin alone, so the pin falls back to
+ * the record's.
+ */
+export function addressBlockDefaults(record: AddressRecord | undefined, fill: FilledAddress | null) {
+  const recordPin = parseCoordinates(record?.latitude, record?.longitude);
+  if (fill) {
+    return {
+      initial: {
+        provinceId: fill.provinceId,
+        provinceName: fill.provinceName,
+        districtId: fill.districtId,
+        districtName: fill.districtName,
+        neighborhoodId: fill.neighborhoodId,
+        neighborhoodName: fill.neighborhoodName,
+      },
+      street: fill.street,
+      buildingNumber: fill.buildingNumber,
+      addressNote: fill.addressNote,
+      pin: fill.pin ?? recordPin,
+    };
+  }
+  return {
+    initial: {
+      provinceId: record?.province_id ?? null,
+      provinceName: record?.province_name ?? null,
+      districtId: record?.district_id ?? null,
+      districtName: record?.district_name ?? null,
+      neighborhoodId: record?.neighborhood_id ?? null,
+      neighborhoodName: record?.neighborhood_name ?? null,
+    },
+    street: record?.street ?? "",
+    buildingNumber: record?.building_number ?? "",
+    addressNote: record?.address_note ?? "",
+    pin: recordPin,
+  };
+}
+
 /** True when the create form's block holds anything worth a second request. */
 export function hasAddressContent(v: {
   neighborhood?: string;

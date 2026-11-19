@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 import type { Complex, CustomerAddress } from "@/api/queries";
-import { addressLine, addressWriteBody, billingAddressBody, hasAddressContent, pickOptions } from "@/lib/address-book";
+import { addressBlockDefaults, addressLine, addressWriteBody, billingAddressBody, hasAddressContent, pickOptions } from "@/lib/address-book";
 
 const empty = {
   street: "",
@@ -192,5 +192,54 @@ describe("addressWriteBody", () => {
     expect("neighborhood" in body).toBe(false);
     expect("latitude" in body).toBe(false);
     expect(body).toMatchObject({ street: "", is_billing: false });
+  });
+});
+
+describe("addressBlockDefaults", () => {
+  const record = {
+    province_id: 6,
+    province_name: "Ankara",
+    district_id: 60,
+    district_name: "Cankaya",
+    neighborhood_id: 600,
+    neighborhood_name: "Kizilay",
+    street: "Record St.",
+    building_number: "1",
+    address_note: "Record note",
+    latitude: "39.9",
+    longitude: "32.8",
+  };
+  const [first, , third] = pickOptions([billing, depot, withPin], null);
+
+  it("shows the record's saved values until something is picked", () => {
+    const d = addressBlockDefaults(record, null);
+    expect(d.initial.neighborhoodId).toBe(600);
+    expect(d.street).toBe("Record St.");
+    expect(d.addressNote).toBe("Record note");
+    expect(d.pin).toEqual({ latitude: "39.900000", longitude: "32.800000" });
+  });
+
+  it("is empty on a new form with nothing picked", () => {
+    const d = addressBlockDefaults(undefined, null);
+    expect(d.initial.neighborhoodId).toBeNull();
+    expect(d.street).toBe("");
+    expect(d.pin).toBeNull();
+  });
+
+  it("replaces every field with the pick, including the note", () => {
+    const d = addressBlockDefaults(record, first.fill);
+    expect(d.initial).toMatchObject({ provinceId: 34, districtId: 449, neighborhoodId: 9001 });
+    expect(d.street).toBe("Ataturk Cd.");
+    expect(d.buildingNumber).toBe("12");
+    expect(d.addressNote).toBe("Ring twice");
+  });
+
+  it("moves the pin when the pick has one", () => {
+    expect(addressBlockDefaults(record, third.fill).pin).toEqual(third.fill.pin);
+  });
+
+  it("keeps the record's pin when the pick has none", () => {
+    expect(first.fill.pin).toBeNull();
+    expect(addressBlockDefaults(record, first.fill).pin).toEqual({ latitude: "39.900000", longitude: "32.800000" });
   });
 });
