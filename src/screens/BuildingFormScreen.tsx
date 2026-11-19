@@ -193,7 +193,7 @@ export function BuildingFormScreen() {
             // belonged to the previous one. Leaving it selected would send the
             // server a pair it is bound to reject.
             key={selectedCustomer}
-            defaultValue={record?.complex_id ?? ""}
+            defaultValue={selectedComplex}
             onChange={setComplexId}
             disabled={!selectedCustomer || complexes.isPending}
             invalid={Boolean(state.fields.complex)}
